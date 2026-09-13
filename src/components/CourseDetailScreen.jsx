@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { courseName } from '../data/courses.js'
 import { ChapitreRowFull } from './ChapitreRow.jsx'
+import BadgeLegend from './BadgeLegend.jsx'
 import { useStore } from '../state/store.jsx'
 
 export default function CourseDetailScreen({ courseId, chapitres, side, now, onBack, onGoHome }) {
@@ -66,9 +67,13 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
         {ch.length === 0 && !adding && (
           <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Aucun chapitre pour l'instant.</div>
         )}
-        {ch.map((c) => (
-          <ChapitreRowFull key={c.id} chapitre={c} now={now} />
-        ))}
+        {ch.length > 0 && (
+          <div className="chapitre-list">
+            {ch.map((c) => (
+              <ChapitreRowFull key={c.id} chapitre={c} side={side} now={now} />
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="resource-row">
@@ -86,11 +91,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
         </div>
       </div>
 
-      <div className="glass-tight legend-bar">
-        <div className="legend-text">
-          NEUTRE (&lt; 24H) · JAUNE (24H–3J) · ORANGE (3J–7J) · ROUGE (≥ 7J, RAPPEL TOUS LES 2J) · CLIC SUR UN BADGE = RÉVISÉ MAINTENANT
-        </div>
-      </div>
+      <BadgeLegend />
     </div>
   )
 }

@@ -12,20 +12,27 @@ function jStyle(j) {
   return { color: 'var(--text-dim)' }
 }
 
+function isoDatePlusDays(now, days) {
+  const d = new Date(now)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function DevoirsCard({ devoirs, now }) {
   const { dispatch } = useStore()
   const [nom, setNom] = useState('')
-  const [date, setDate] = useState('')
+  const [jours, setJours] = useState('')
 
   const sorted = [...devoirs].sort(
     (a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance),
   )
 
   const add = () => {
-    if (!nom.trim() || !date) return
-    dispatch({ type: 'ADD_DEVOIR', nom: nom.trim(), dateEcheance: date })
+    const n = parseInt(jours, 10)
+    if (!nom.trim() || Number.isNaN(n)) return
+    dispatch({ type: 'ADD_DEVOIR', nom: nom.trim(), dateEcheance: isoDatePlusDays(now, n) })
     setNom('')
-    setDate('')
+    setJours('')
   }
 
   return (
@@ -62,10 +69,11 @@ export default function DevoirsCard({ devoirs, now }) {
           onKeyDown={(e) => e.key === 'Enter' && add()}
         />
         <input
-          name="date"
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
+          name="jours"
+          type="number"
+          placeholder="J-…"
+          value={jours}
+          onChange={(e) => setJours(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && add()}
         />
         <div className="pill pill-accent" onClick={add}>

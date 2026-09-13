@@ -1,5 +1,6 @@
 import { COURSES } from '../data/courses.js'
 import { ChapitreRowCompact } from './ChapitreRow.jsx'
+import BadgeLegend from './BadgeLegend.jsx'
 
 export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpenCourse }) {
   const sideLabel = side === 'td' ? 'TD' : 'Cours'
@@ -40,6 +41,8 @@ export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpe
           )
         })}
       </div>
+
+      <BadgeLegend />
     </div>
   )
 }

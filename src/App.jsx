@@ -80,6 +80,18 @@ export default function App() {
         )}
       </div>
 
+      <div className="bottom-tabs glass-strong">
+        <div className={`bottom-tab${screen === 'home' ? ' active' : ''}`} onClick={goHome}>
+          Accueil
+        </div>
+        <div className="bottom-tab" onClick={() => goListe('cours')}>
+          Ressources
+        </div>
+        <div className="bottom-tab" onClick={() => setSettingsOpen(true)}>
+          Réglages
+        </div>
+      </div>
+
       {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
       {toast && <div className="toast">{toast}</div>}
     </div>
