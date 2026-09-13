@@ -1,6 +1,7 @@
 import { COURSES } from '../data/courses.js'
 import ExamGauge from './ExamGauge.jsx'
 import DevoirsCard from './DevoirsCard.jsx'
+import QuickAccess from './QuickAccess.jsx'
 import { useStore } from '../state/store.jsx'
 
 export default function Home({ now, onGoCours, onGoTd }) {
@@ -15,6 +16,8 @@ export default function Home({ now, onGoCours, onGoTd }) {
         now={now}
         onSetExam={(nextExam) => dispatch({ type: 'SET_NEXT_EXAM', nextExam })}
       />
+
+      <QuickAccess />
 
       <div className="nav-row">
         <div className="nav-btn glass-strong" onClick={onGoCours}>

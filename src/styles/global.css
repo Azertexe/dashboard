@@ -5,6 +5,8 @@
 
 :root {
   --bg: #0b0f14;
+  --bg-stripe-1: #101820;
+  --bg-stripe-2: #0d141b;
   --bg-photo: none;
   --text: #e8edf2;
   --text-dim: rgba(232, 237, 242, 0.62);
@@ -37,6 +39,8 @@
 
 [data-theme='volcanique'] {
   --bg: #100705;
+  --bg-stripe-1: #1a0f08;
+  --bg-stripe-2: #150b06;
   --bg-photo: none;
   --text: #f5ece7;
   --text-dim: rgba(245, 236, 231, 0.62);
@@ -67,9 +71,12 @@ body,
 
 body {
   margin: 0;
-  background: var(--bg-photo), var(--bg);
-  background-size: cover;
-  background-position: center;
+  /* Texture diagonale du wireframe ; une vraie photo perso (--bg-photo) passe par-dessus. */
+  background:
+    var(--bg-photo),
+    repeating-linear-gradient(115deg, var(--bg-stripe-1) 0 22px, var(--bg-stripe-2) 22px 44px);
+  background-size: cover, auto;
+  background-position: center, center;
   color: var(--text);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -317,6 +324,47 @@ select {
   opacity: 1;
 }
 
+/* ---- quick access (decorative, cf. wireframe) ---- */
+
+.quick-access-row {
+  display: flex;
+  justify-content: center;
+}
+
+.quick-access {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 22px;
+  border-radius: 999px;
+  background: var(--glass-1);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  color: var(--text-dimmer);
+  cursor: default;
+}
+
+.quick-access-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(232, 237, 242, 0.5);
+  flex-shrink: 0;
+}
+
+.quick-access-label {
+  flex: 1;
+  font-size: 14px;
+}
+
+.quick-access-kbd {
+  font: 300 10px var(--font-mono);
+  color: rgba(232, 237, 242, 0.3);
+}
+
 /* ---- nav buttons (home) ---- */
 
 .nav-row {
@@ -411,8 +459,21 @@ select {
   font: 400 13.5px var(--font-ui);
 }
 
-.devoir-form input[name='date'] {
+.devoir-form input[name='jours'] {
+  width: 76px;
   font: 400 12px var(--font-mono);
+  text-align: center;
+}
+
+/* neutralise le chrome natif des <input type=number> pour rester proche du wireframe */
+.devoir-form input[type='number']::-webkit-outer-spin-button,
+.devoir-form input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.devoir-form input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
 }
 
 /* ---- lists / groups ---- */
@@ -640,6 +701,25 @@ select {
   padding: 14px 15px;
 }
 
+/* Liste plate (un seul conteneur, lignes séparées par un filet), comme le wireframe. */
+.chapitre-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.chapitre-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 2px;
+  border-top: 1px solid var(--glass-border);
+  cursor: pointer;
+}
+
+.chapitre-list-row:first-child {
+  border-top: none;
+}
+
 .icon-btn {
   width: 26px;
   height: 26px;
@@ -652,6 +732,62 @@ select {
   color: var(--text-dim);
   cursor: pointer;
   font-size: 12px;
+}
+
+/* ---- mobile bottom tab bar (cf. wireframe 2b) ---- */
+
+.bottom-tabs {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding-bottom: 130px;
+  }
+
+  .header-bar .theme-switch {
+    display: none;
+  }
+
+  .devoir-form input[name='nom'] {
+    min-width: 90px;
+  }
+
+  .devoir-form input[name='jours'] {
+    width: 56px;
+  }
+
+  .devoir-form .pill {
+    padding: 9px 12px;
+  }
+
+  .bottom-tabs {
+    display: flex;
+    position: fixed;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    gap: 6px;
+    padding: 8px;
+    z-index: 40;
+  }
+
+  .bottom-tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 8px;
+    border-radius: 999px;
+    font: 400 11px var(--font-mono);
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .bottom-tab.active {
+    background: var(--glass-border-strong);
+    color: var(--text);
+  }
 }
 
 .toast {

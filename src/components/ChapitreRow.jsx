@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import Badge from './Badge.jsx'
 import { useStore } from '../state/store.jsx'
-import { ETATS, etatLabel } from '../data/etats.js'
+import { ETATS } from '../data/etats.js'
 
-/** Ligne compacte : nom + 2 badges. Utilisée dans la vue "Cours"/"TD" groupée par matière. */
+/** Ligne compacte : nom + 1 badge (celui du contexte Cours/TD courant). Utilisée
+ * dans la vue "Cours"/"TD" groupée par matière. */
 export function ChapitreRowCompact({ chapitre, side, now }) {
   const { dispatch } = useStore()
   const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id, side: s })
@@ -15,8 +16,9 @@ export function ChapitreRowCompact({ chapitre, side, now }) {
   )
 }
 
-/** Ligne complète, éditable : utilisée dans le détail d'un cours. */
-export function ChapitreRowFull({ chapitre, now }) {
+/** Ligne plate dans le détail d'un cours : nom + 1 badge (contexte courant) + crayon.
+ * Le crayon ouvre un panneau d'édition (métadonnées + accès à l'autre badge / activation). */
+export function ChapitreRowFull({ chapitre, side, now }) {
   const { dispatch } = useStore()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(() => ({
@@ -26,7 +28,7 @@ export function ChapitreRowFull({ chapitre, now }) {
     etat: chapitre.etat,
   }))
 
-  const onMark = (id, side) => dispatch({ type: 'MARK_BADGE', id, side })
+  const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id, side: s })
   const onActivate = () => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id })
   const onDelete = () => {
     if (confirm(`Supprimer "${chapitre.nom}" ? Cette action est définitive.`)) {
@@ -84,6 +86,21 @@ export function ChapitreRowFull({ chapitre, now }) {
             onChange={(e) => setDraft((d) => ({ ...d, commentaires: e.target.value }))}
           />
         </div>
+        <div className="field-row">
+          <label>Badges</label>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            {chapitre.statut === 'standby' ? (
+              <div className="pill pill-accent" onClick={onActivate}>
+                Activer
+              </div>
+            ) : (
+              <>
+                <Badge chapitre={chapitre} side="cours" onMark={onMark} now={now} />
+                <Badge chapitre={chapitre} side="td" onMark={onMark} now={now} />
+              </>
+            )}
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="pill pill-accent" onClick={saveEdit}>
             Enregistrer
@@ -101,34 +118,18 @@ export function ChapitreRowFull({ chapitre, now }) {
   }
 
   return (
-    <div className="chapitre-editor glass-tight">
-      <div className="chapitre-row">
-        <div className="chapitre-name">{chapitre.nom}</div>
-        <span className="label-mono">{etatLabel(chapitre.etat)}</span>
-        <button className="icon-btn" onClick={startEdit} title="Modifier">
-          ✎
-        </button>
-      </div>
-      {chapitre.description && (
-        <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>{chapitre.description}</div>
-      )}
-      <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-        {chapitre.statut === 'standby' ? (
-          <div className="pill pill-accent" onClick={onActivate}>
-            Activer
-          </div>
-        ) : (
-          <>
-            <Badge chapitre={chapitre} side="cours" onMark={onMark} now={now} />
-            <Badge chapitre={chapitre} side="td" onMark={onMark} now={now} />
-          </>
-        )}
-      </div>
-      {chapitre.commentaires && (
-        <div style={{ fontSize: 12, color: 'var(--text-dimmer)', whiteSpace: 'pre-wrap' }}>
-          {chapitre.commentaires}
+    <div className="chapitre-list-row">
+      <div className="chapitre-name">{chapitre.nom}</div>
+      {chapitre.statut === 'standby' ? (
+        <div className="pill pill-accent" onClick={onActivate}>
+          Activer
         </div>
+      ) : (
+        <Badge chapitre={chapitre} side={side} onMark={onMark} now={now} />
       )}
+      <button className="icon-btn" onClick={startEdit} title="Modifier">
+        ✎
+      </button>
     </div>
   )
 }

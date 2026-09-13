@@ -7,10 +7,19 @@ function daysBetween(now, iso) {
   return Math.ceil((target.getTime() - now) / 86_400_000)
 }
 
+function isoDatePlusDays(now, days) {
+  const d = new Date(now)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
   const [hover, setHover] = useState(null)
   const [editing, setEditing] = useState(!nextExam)
-  const [draft, setDraft] = useState({ matiere: nextExam?.matiere ?? '', date: nextExam?.date ?? '' })
+  const [draft, setDraft] = useState({
+    matiere: nextExam?.matiere ?? '',
+    jours: nextExam ? String(daysBetween(now, nextExam.date)) : '',
+  })
 
   if (editing) {
     return (
@@ -24,16 +33,18 @@ export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
             onChange={(e) => setDraft((d) => ({ ...d, matiere: e.target.value }))}
           />
           <input
-            name="date"
-            type="date"
-            value={draft.date}
-            onChange={(e) => setDraft((d) => ({ ...d, date: e.target.value }))}
+            name="jours"
+            type="number"
+            placeholder="J-…"
+            value={draft.jours}
+            onChange={(e) => setDraft((d) => ({ ...d, jours: e.target.value }))}
           />
           <div
             className="pill pill-accent"
             onClick={() => {
-              if (!draft.matiere.trim() || !draft.date) return
-              onSetExam({ matiere: draft.matiere.trim(), date: draft.date })
+              const n = parseInt(draft.jours, 10)
+              if (!draft.matiere.trim() || Number.isNaN(n)) return
+              onSetExam({ matiere: draft.matiere.trim(), date: isoDatePlusDays(now, n) })
               setEditing(false)
             }}
           >
@@ -64,7 +75,11 @@ export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
         <div>
           <div className="label-mono">Prochain partiel</div>
           <div style={{ fontSize: 19 }}>
-            {nextExam.matiere} — {new Date(nextExam.date + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+            {nextExam.matiere} —{' '}
+            {new Date(nextExam.date + 'T00:00:00').toLocaleDateString('fr-FR', {
+              day: 'numeric',
+              month: 'short',
+            })}
           </div>
         </div>
         <div className="exam-days">
@@ -92,7 +107,14 @@ export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
         ))}
         <div className="gauge-cursor" />
       </div>
-      <div className="pill" style={{ alignSelf: 'flex-start' }} onClick={() => { setDraft({ matiere: nextExam.matiere, date: nextExam.date }); setEditing(true) }}>
+      <div
+        className="pill"
+        style={{ alignSelf: 'flex-start' }}
+        onClick={() => {
+          setDraft({ matiere: nextExam.matiere, jours: String(daysBetween(now, nextExam.date)) })
+          setEditing(true)
+        }}
+      >
         Modifier
       </div>
     </div>
