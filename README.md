@@ -1,1 +1,85 @@
-# dashboard
+# Dashboard L3 Physique
+
+Site perso pour suivre l'avancement en L3 Physique (UGA) : état des chapitres,
+badges de révision TD/Cours indépendants, devoirs, countdown avant le prochain
+partiel. Design basé sur le wireframe "L3 Physique" produit dans Claude Design
+(version fonctionnelle desktop/mobile), implémenté ici en React.
+
+## Stack
+
+- **React + Vite**
+- **GitHub Pages** pour l'hébergement (build via GitHub Actions, voir
+  `.github/workflows/deploy.yml`)
+- Données stockées en **localStorage** pour l'instant — la synchronisation
+  Firebase (PC ↔ téléphone) arrive dans une prochaine partie
+
+## Développement
+
+```bash
+npm install
+npm run dev
+```
+
+```bash
+npm run build    # build de prod dans dist/
+npm run preview  # sert le build localement
+npm run lint      # oxlint
+```
+
+## Déploiement
+
+Le workflow `.github/workflows/deploy.yml` build et déploie automatiquement
+`dist/` sur GitHub Pages à chaque push sur `main`. Dans les réglages du dépôt,
+**Settings → Pages → Source**, sélectionner **GitHub Actions**.
+
+`vite.config.js` fixe `base: '/dashboard/'` pour matcher
+`https://azertexe.github.io/dashboard/` — à adapter si le dépôt est renommé.
+
+Le site n'a pas de mot de passe (accès par URL discrète, non indexée —
+`<meta name="robots" content="noindex, nofollow">` dans `index.html`).
+
+## Où en est l'implémentation
+
+Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.md`) :
+
+- ✅ **Partie 1 — Design** : fait dans Claude Design (wireframe "L3 Physique",
+  version fonctionnelle 2a/2b) puis recréé en composants React ici.
+- ✅ **Partie 2 — Modèle de données des chapitres** : ID stable, nom,
+  description, état, statut standby/actif, 2 badges indépendants, commentaires
+  (`src/state/store.jsx`). Stocké en local pour l'instant.
+- ✅ **Partie 3 — Badges TD/Cours + standby/actif** : logique dans
+  `src/logic/badges.js`, isolée de l'UI. Standby → Activer (sens unique,
+  démarre les 2 horloges) ; 4 niveaux (neutre < 24h, jaune 24h–3j, orange
+  3j–7j, rouge ≥ 7j) ; après le rouge, un pulse visuel revient tous les 2
+  jours. Éditer nom/description ne touche jamais ces dates.
+- ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel (éditable),
+  liste de devoirs réelle avec échéance en J-X.
+- ✅ **Partie 5 — Mode édition** : édition nom/description/état/commentaires
+  sans toucher aux badges ; ajout de chapitres et de devoirs au fil de l'année.
+- 🚧 **Partie 6 — Ressources** : cartes stub (fiche de révision / fiche
+  méthode / polys) sans liens réels pour l'instant.
+- ⬜ **Partie 7 — Sync Firebase** : pas encore fait, données en localStorage.
+- ✅ **Partie 8 — Export & backup** : export JSON (backup/restauration) et
+  export Markdown (état lisible, pour coller dans un chat IA), depuis
+  Réglages. L'import JSON restaure une sauvegarde.
+
+### Thèmes
+
+- **Glacier** (par défaut) et **Volcanique** sont fonctionnels.
+- **Détente** reste un stub non fonctionnel (clic → message "en construction"),
+  comme prévu par la spec.
+- **Fond photo** : pas de photo perso fournie. Pour en ajouter une, la déposer
+  dans `public/` et régler `--bg-photo` dans `src/styles/global.css`, ex. :
+  `--bg-photo: url('/mon-fond.jpg');`. L'effet liquid glass (blur + opacité)
+  est déjà en place sur les panneaux et fonctionnera par-dessus.
+
+## Structure
+
+```
+src/
+  data/       liste des 7 cours, énumération des états de chapitre
+  logic/      logique des badges (pure, testable) + export JSON/Markdown
+  state/      store React (context + reducer) avec persistance localStorage
+  components/ écrans (Accueil, liste Cours/TD, détail d'un cours) et UI
+  styles/     variables de thème + classes "liquid glass"
+```
