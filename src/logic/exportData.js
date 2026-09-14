@@ -26,11 +26,17 @@ export function toMarkdown(state, now = Date.now()) {
     if (ch.length === 0) continue
     lines.push(`## ${course.nom}`, '')
     for (const c of ch) {
-      const cours = badgeStatus(c, 'cours', now)
-      const td = badgeStatus(c, 'td', now)
       lines.push(`- **${c.nom}** — ${etatLabel(c.etat)}`)
-      lines.push(`  - Cours : ${badgeLabel(cours)}`)
-      lines.push(`  - TD : ${badgeLabel(td)}`)
+      if (c.partitionMode === 'parties' && c.parties?.length) {
+        for (const p of c.parties) {
+          lines.push(`  - **${p.nom}**`)
+          lines.push(`    - Cours : ${badgeLabel(badgeStatus(p, 'cours', now))}`)
+          lines.push(`    - TD : ${badgeLabel(badgeStatus(p, 'td', now))}`)
+        }
+      } else {
+        lines.push(`  - Cours : ${badgeLabel(badgeStatus(c, 'cours', now))}`)
+        lines.push(`  - TD : ${badgeLabel(badgeStatus(c, 'td', now))}`)
+      }
       if (c.description) lines.push(`  - Description : ${c.description}`)
       if (c.commentaires) lines.push(`  - Commentaires : ${c.commentaires}`)
     }

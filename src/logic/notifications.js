@@ -1,4 +1,4 @@
-import { needsAttention } from './badges.js'
+import { badgeUnits, needsAttention } from './badges.js'
 import { courseName } from '../data/courses.js'
 
 const NOTIFIED_KEY = 'l3-physique-notified'
@@ -41,16 +41,19 @@ export function checkAndNotify(chapitres, now = Date.now()) {
 
   for (const c of chapitres) {
     for (const side of ['cours', 'td']) {
-      if (!needsAttention(c, side, now)) continue
-      const key = `${c.id}:${side}`
-      if (notified[key] === today) continue
-      const tag = side === 'td' ? 'TD' : 'Cours'
-      new Notification(`${courseName(c.courseId)} — ${c.nom}`, {
-        body: `${tag} à réviser — ça prend du retard.`,
-        tag: key,
-      })
-      notified[key] = today
-      changed = true
+      for (const unit of badgeUnits(c)) {
+        if (!needsAttention(unit.target, side, now)) continue
+        const key = `${c.id}:${unit.partieId ?? 'chapitre'}:${side}`
+        if (notified[key] === today) continue
+        const tag = side === 'td' ? 'TD' : 'Cours'
+        const title = unit.label ? `${courseName(c.courseId)} — ${c.nom} — ${unit.label}` : `${courseName(c.courseId)} — ${c.nom}`
+        new Notification(title, {
+          body: `${tag} à réviser — ça prend du retard.`,
+          tag: key,
+        })
+        notified[key] = today
+        changed = true
+      }
     }
   }
 

@@ -10,6 +10,9 @@ import {
   activateChapitre,
   forceBadgeLevel,
   setForcedAlert,
+  badgeUnits,
+  chapitreNeedsAttention,
+  chapitreHasActiveSide,
 } from './badges.js'
 
 function emptyBadge() {
@@ -33,6 +36,18 @@ function makeChapitre(overrides = {}) {
     id: 'ch-1',
     courseId: 'optique-coherente',
     nom: 'Test',
+    badgeTD: emptyBadge(),
+    badgeCours: emptyBadge(),
+    partitionMode: 'chapitre',
+    parties: [],
+    ...overrides,
+  }
+}
+
+function makePartie(overrides = {}) {
+  return {
+    id: 'pt-1',
+    nom: 'Partie',
     badgeTD: emptyBadge(),
     badgeCours: emptyBadge(),
     ...overrides,
@@ -264,5 +279,60 @@ describe('activateChapitre', () => {
   it('is a no-op if that side is already active', () => {
     const c = makeChapitre({ badgeCours: activeBadge(NOW - DAY_MS) })
     expect(activateChapitre(c, 'cours', NOW + DAY_MS)).toBe(c)
+  })
+})
+
+describe('sous-parties', () => {
+  it('badgeUnits returns the chapter itself in "chapitre" mode', () => {
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+    const units = badgeUnits(c)
+    expect(units).toHaveLength(1)
+    expect(units[0]).toMatchObject({ target: c, partieId: null, label: null })
+  })
+
+  it('badgeUnits returns each sous-partie in "parties" mode, with a label', () => {
+    const p1 = makePartie({ id: 'pt-1', nom: 'Exercice 1' })
+    const p2 = makePartie({ id: 'pt-2', nom: 'Exercice 2' })
+    const c = makeChapitre({ partitionMode: 'parties', parties: [p1, p2] })
+    const units = badgeUnits(c)
+    expect(units).toHaveLength(2)
+    expect(units[0]).toMatchObject({ target: p1, partieId: 'pt-1', label: 'Exercice 1' })
+    expect(units[1]).toMatchObject({ target: p2, partieId: 'pt-2', label: 'Exercice 2' })
+  })
+
+  it('badgeUnits falls back to the chapter itself if "parties" mode has no parts yet', () => {
+    const c = makeChapitre({ partitionMode: 'parties', parties: [] })
+    expect(badgeUnits(c)).toEqual([{ target: c, partieId: null, label: null }])
+  })
+
+  it('chapitreNeedsAttention is true if any sous-partie needs attention, even if the chapter has none itself', () => {
+    const quiet = makePartie({ id: 'pt-1', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) }) // rouge, pas d'alerte
+    const late = makePartie({
+      id: 'pt-2',
+      badgeCours: activeBadge(NOW - 3 * DAY_MS, { validatedStage: BADGE_LEVELS.ROUGE, validatedAt: NOW - 3 * DAY_MS }),
+    }) // orange actif -> alerte
+    const c = makeChapitre({ partitionMode: 'parties', parties: [quiet, late] })
+    expect(chapitreNeedsAttention(c, 'cours', NOW)).toBe(true)
+  })
+
+  it('chapitreHasActiveSide reflects sous-parties in "parties" mode', () => {
+    const inactive = makePartie({ id: 'pt-1' })
+    const active = makePartie({ id: 'pt-2', badgeCours: activeBadge(NOW - DAY_MS) })
+    const cEmpty = makeChapitre({ partitionMode: 'parties', parties: [inactive] })
+    const cActive = makeChapitre({ partitionMode: 'parties', parties: [inactive, active] })
+    expect(chapitreHasActiveSide(cEmpty)).toBe(false)
+    expect(chapitreHasActiveSide(cActive)).toBe(true)
+  })
+
+  it('a real click on a sous-partie only affects that partie, not the chapter or other parties', () => {
+    const p1 = makePartie({ id: 'pt-1', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+    const p2 = makePartie({ id: 'pt-2', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+    const c = makeChapitre({ partitionMode: 'parties', parties: [p1, p2], badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+
+    const updatedP1 = markBadgeNow(p1, 'cours', NOW)
+    expect(badgeStatus(updatedP1, 'cours', NOW).phase).toBe('wait')
+    // p2 et le chapitre lui-même n'ont pas bougé.
+    expect(p2).toEqual(makePartie({ id: 'pt-2', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) }))
+    expect(badgeStatus(c, 'cours', NOW).phase).toBe('active')
   })
 })

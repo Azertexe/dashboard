@@ -215,3 +215,45 @@ export function activateChapitre(chapitre, side, now = Date.now()) {
   if (badge.statut === 'actif') return chapitre
   return withBadge(chapitre, side, { ...badge, statut: 'actif', activatedAt: now })
 }
+
+// ---- sous-parties ----
+//
+// Un chapitre peut suivre ses révisions de deux façons (réglable chapitre par
+// chapitre, cf. `partitionMode`) :
+//  - 'chapitre' (défaut) : un seul badge Cours et un seul badge TD pour tout
+//    le chapitre — c'est le chapitre lui-même qui porte badgeCours/badgeTD.
+//  - 'parties' : le chapitre est découpé en sous-parties (`chapitre.parties`),
+//    chacune avec SON propre badgeCours/badgeTD, complètement indépendant des
+//    autres parties et du chapitre. Toutes les fonctions ci-dessus
+//    (badgeStatus, markBadgeNow, activateChapitre, etc.) sont déjà
+//    génériques sur un objet {badgeCours, badgeTD} — elles marchent donc
+//    aussi bien sur un chapitre que sur une sous-partie, sans changement.
+
+/** Renvoie les "unités" de suivi d'un chapitre pour un côté donné : soit le
+ * chapitre lui-même (mode 'chapitre'), soit chacune de ses sous-parties
+ * (mode 'parties'). Chaque unité expose `target` (l'objet {badgeCours,
+ * badgeTD} sur lequel agir), `partieId` (null si c'est le chapitre) et
+ * `label` (le nom de la partie, pour savoir d'où ça vient quand plusieurs
+ * chapitres/parties sont mélangés dans une même liste, ex. l'Agenda). */
+export function badgeUnits(chapitre) {
+  if (chapitre.partitionMode === 'parties' && chapitre.parties?.length) {
+    return chapitre.parties.map((p) => ({ target: p, partieId: p.id, label: p.nom }))
+  }
+  return [{ target: chapitre, partieId: null, label: null }]
+}
+
+/** Vrai si AU MOINS une unité de suivi du chapitre (lui-même, ou une de ses
+ * sous-parties en mode 'parties') a besoin d'attention sur ce côté. Utilisé
+ * pour le "!" au niveau de la matière/du chapitre, qui doit rester visible
+ * même quand le retard est caché dans une sous-partie précise. */
+export function chapitreNeedsAttention(chapitre, side, now = Date.now()) {
+  return badgeUnits(chapitre).some(({ target }) => needsAttention(target, side, now))
+}
+
+/** Vrai si le chapitre a au moins un côté actif quelque part — sur lui-même
+ * (mode 'chapitre') ou sur une de ses sous-parties (mode 'parties'). */
+export function chapitreHasActiveSide(chapitre) {
+  return badgeUnits(chapitre).some(
+    ({ target }) => target.badgeCours?.statut === 'actif' || target.badgeTD?.statut === 'actif',
+  )
+}

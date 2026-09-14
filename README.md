@@ -93,6 +93,21 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   dans la liste des chapitres d'un cours dès qu'il y en a plus de 3. Chaque
   matière a sa propre teinte (`src/data/courses.js`, `courseAccentStyle`),
   reprise en bordure/pastille dans les listes et le détail d'un cours.
+- ✅ **Sous-parties** : chaque chapitre choisit, dans son panneau d'édition,
+  entre "un badge pour le chapitre" (défaut) et "un badge par partie". En
+  mode partie, la ligne du chapitre dans Cours/TD n'affiche plus de badge —
+  juste "N parties →", qui ouvre un sous-écran dédié (`PartiesScreen.jsx`)
+  listant les sous-parties (ex-exercices), chacune avec ses propres badges
+  Cours/TD, totalement indépendants entre eux, du chapitre et des autres
+  parties. Les fonctions de `src/logic/badges.js` sont déjà génériques sur
+  tout objet `{badgeCours, badgeTD}` — elles marchent donc sans changement
+  sur une sous-partie comme sur un chapitre. Le "!" sur une tuile de
+  matière, le nombre de "badges en retard" (Vue d'ensemble), les
+  notifications et l'export Markdown tiennent tous compte des sous-parties
+  (`badgeUnits`/`chapitreNeedsAttention` dans badges.js). Dans l'Agenda, une
+  entrée venant d'une sous-partie précise toujours d'où elle vient
+  (« Matière — Chapitre — Partie ») pour ne jamais se perdre quand plusieurs
+  chapitres sont mélangés dans la même liste.
 - ✅ **Partie 6 — Ressources** : fiche de révision, fiche méthode et polys
   sont éditables par matière (`ResourceLinkCard` / `ResourcePolysCard`) —
   lien vers une URL externe ou un fichier hébergé dans le repo (ex. PDF dans
