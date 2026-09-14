@@ -6,6 +6,9 @@ import Home from './components/Home.jsx'
 import CourseListScreen from './components/CourseListScreen.jsx'
 import CourseDetailScreen from './components/CourseDetailScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
+import LayoutPicker from './components/LayoutPicker.jsx'
+
+const LAYOUT_KEY = 'l3-physique-layout'
 
 export default function App() {
   const { state } = useStore()
@@ -18,15 +21,28 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState(null)
 
+  const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem(LAYOUT_KEY) || 'mac')
+  const [pickerOpen, setPickerOpen] = useState(true)
+
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme
   }, [state.theme])
+
+  useEffect(() => {
+    document.documentElement.dataset.layout = layoutMode
+  }, [layoutMode])
 
   useEffect(() => {
     if (!toast) return
     const id = setTimeout(() => setToast(null), 2200)
     return () => clearTimeout(id)
   }, [toast])
+
+  const pickLayout = (mode) => {
+    setLayoutMode(mode)
+    localStorage.setItem(LAYOUT_KEY, mode)
+    setPickerOpen(false)
+  }
 
   const goHome = () => {
     setScreen('home')
@@ -48,51 +64,66 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <div className="app-card">
-        <Header
-          onOpenSettings={() => setSettingsOpen(true)}
-          onStubTheme={() => setToast('Thème "Détente" — en construction')}
+      <div className={`app-content${pickerOpen ? ' blurred' : ''}`}>
+        <div className="app-card">
+          <Header
+            onOpenSettings={() => setSettingsOpen(true)}
+            onStubTheme={() => setToast('Thème "Détente" — en construction')}
+          />
+
+          <div key={screen} className="screen-anim">
+            {screen === 'home' && (
+              <Home now={now} onGoCours={() => goListe('cours')} onGoTd={() => goListe('td')} />
+            )}
+
+            {screen === 'liste' && (
+              <CourseListScreen
+                chapitres={state.chapitres}
+                side={side}
+                now={now}
+                onGoHome={goHome}
+                onOpenCourse={openCourse}
+              />
+            )}
+
+            {screen === 'detail' && courseId && (
+              <CourseDetailScreen
+                courseId={courseId}
+                chapitres={state.chapitres}
+                side={side}
+                now={now}
+                onBack={backToListe}
+                onGoHome={goHome}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="bottom-tabs glass-strong">
+          <div className={`bottom-tab${screen === 'home' ? ' active' : ''}`} onClick={goHome}>
+            Accueil
+          </div>
+          <div className="bottom-tab" onClick={() => goListe('cours')}>
+            Ressources
+          </div>
+          <div className="bottom-tab" onClick={() => setSettingsOpen(true)}>
+            Réglages
+          </div>
+        </div>
+      </div>
+
+      {pickerOpen && <LayoutPicker current={layoutMode} onPick={pickLayout} />}
+
+      {settingsOpen && (
+        <SettingsPanel
+          onClose={() => setSettingsOpen(false)}
+          layoutMode={layoutMode}
+          onChangeLayout={() => {
+            setSettingsOpen(false)
+            setPickerOpen(true)
+          }}
         />
-
-        {screen === 'home' && (
-          <Home now={now} onGoCours={() => goListe('cours')} onGoTd={() => goListe('td')} />
-        )}
-
-        {screen === 'liste' && (
-          <CourseListScreen
-            chapitres={state.chapitres}
-            side={side}
-            now={now}
-            onGoHome={goHome}
-            onOpenCourse={openCourse}
-          />
-        )}
-
-        {screen === 'detail' && courseId && (
-          <CourseDetailScreen
-            courseId={courseId}
-            chapitres={state.chapitres}
-            side={side}
-            now={now}
-            onBack={backToListe}
-            onGoHome={goHome}
-          />
-        )}
-      </div>
-
-      <div className="bottom-tabs glass-strong">
-        <div className={`bottom-tab${screen === 'home' ? ' active' : ''}`} onClick={goHome}>
-          Accueil
-        </div>
-        <div className="bottom-tab" onClick={() => goListe('cours')}>
-          Ressources
-        </div>
-        <div className="bottom-tab" onClick={() => setSettingsOpen(true)}>
-          Réglages
-        </div>
-      </div>
-
-      {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      )}
       {toast && <div className="toast">{toast}</div>}
     </div>
   )

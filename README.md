@@ -49,8 +49,8 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   (`src/state/store.jsx`). Stocké en local pour l'instant.
 - ✅ **Partie 3 — Badges TD/Cours + standby/actif** : logique dans
   `src/logic/badges.js`, isolée de l'UI. Standby → Activer (sens unique,
-  démarre les 2 horloges) ; 4 niveaux (neutre < 24h, jaune 24h–3j, orange
-  3j–7j, rouge ≥ 7j) ; après le rouge, un pulse visuel revient tous les 2
+  démarre les 2 horloges) ; 4 couleurs (rouge jour 1 < 24h, orange 24h–3j,
+  jaune 3j–7j, vert ≥ 7j) ; une fois au vert, un pulse bleu revient tous les 2
   jours. Éditer nom/description ne touche jamais ces dates.
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel (éditable),
   liste de devoirs réelle avec échéance en J-X.
@@ -62,6 +62,16 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
 - ✅ **Partie 8 — Export & backup** : export JSON (backup/restauration) et
   export Markdown (état lisible, pour coller dans un chat IA), depuis
   Réglages. L'import JSON restaure une sauvegarde.
+
+### Disposition (PC / Mac / iPhone)
+
+Au démarrage, un sélecteur (fond flouté) demande de choisir l'écran cible —
+**PC** (large, 3 colonnes), **Mac** (moyen, 2 colonnes) ou **iPhone**
+(cadre mobile étroit + barre d'onglets en bas), indépendamment de la largeur
+réelle de la fenêtre. Le choix est mémorisé (`localStorage`) et rappelé au
+prochain démarrage ; il se change à tout moment depuis Réglages → Disposition
+→ Changer. Piloté par l'attribut `data-layout` sur `<html>` et les variables
+CSS `--layout-*` (`src/styles/global.css`).
 
 ### Thèmes
 
