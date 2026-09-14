@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { courseName, courseAccentStyle } from '../data/courses.js'
 import { ChapitreRowFull } from './ChapitreRow.jsx'
-import BadgeLegend from './BadgeLegend.jsx'
 import { useStore } from '../state/store.jsx'
 
 export default function CourseDetailScreen({ courseId, chapitres, side, now, onBack, onGoHome }) {
@@ -78,21 +77,19 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
       </div>
 
       <div className="resource-row">
-        <div className="glass-tight resource-card">
+        <div className="resource-card">
           <div className="resource-title">Fiche de révision</div>
           <div className="resource-sub">CÔTÉ COURS · HTML</div>
         </div>
-        <div className="glass-tight resource-card">
+        <div className="resource-card">
           <div className="resource-title">Fiche méthode</div>
           <div className="resource-sub">CÔTÉ TD · HTML</div>
         </div>
-        <div className="glass-tight resource-card">
+        <div className="resource-card">
           <div className="resource-title">Polys &amp; annexes</div>
           <div className="resource-sub">PDF</div>
         </div>
       </div>
-
-      <BadgeLegend />
     </div>
   )
 }

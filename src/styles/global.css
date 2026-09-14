@@ -686,6 +686,11 @@ select {
   display: flex;
   flex-direction: column;
   gap: 5px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(140, 190, 230, 0.12));
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .resource-title {
@@ -696,21 +701,6 @@ select {
   font: 300 9.5px var(--font-mono);
   letter-spacing: 0.1em;
   color: var(--text-dimmer);
-}
-
-.legend-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 18px;
-  flex-wrap: wrap;
-}
-
-.legend-text {
-  font: 300 10px var(--font-mono);
-  letter-spacing: 0.06em;
-  color: var(--text-dim);
 }
 
 /* ---- forms / edit mode ---- */
@@ -772,7 +762,12 @@ select {
 }
 
 .course-accent-card {
-  background-image: linear-gradient(165deg, var(--course-accent-soft, transparent), transparent 40%);
+  background-image: linear-gradient(
+    165deg,
+    var(--course-accent-strong-soft, transparent),
+    transparent 75%
+  );
+  border-color: var(--course-accent-border, var(--glass-border));
 }
 
 .icon-btn {
