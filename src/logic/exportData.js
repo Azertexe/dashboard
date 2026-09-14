@@ -9,7 +9,7 @@ const ACTIVE_LABEL = {
   vert: 'à jour',
 }
 
-const COLOR_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert' }
+const COLOR_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert turquoise' }
 
 function badgeLabel(status) {
   if (status.phase === 'inactive') return 'standby'

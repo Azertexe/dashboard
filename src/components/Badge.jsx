@@ -4,7 +4,7 @@ const COLOR_NAME = {
   rouge: 'Rouge',
   orange: 'Orange',
   jaune: 'Jaune',
-  vert: 'Vert',
+  vert: 'Vert turquoise',
 }
 
 const ACTIVE_LABEL = {

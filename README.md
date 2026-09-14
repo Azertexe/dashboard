@@ -52,24 +52,28 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   démarre les 2 horloges). Cycle par étapes, chaque couleur devant être
   validée (clic) pour lancer l'attente vers la suivante :
   activation → 1j → **rouge** (validé) → 3j → **orange** (validé) → 7j →
-  **jaune** (validé) → 2j → **vert** (validé) → 2j → **vert**, en boucle tant
-  qu'on continue de cliquer. Pendant l'attente le badge est grisé, pas
-  cliquable, et affiche juste le prochain statut (horloge + jours restants) ;
-  une fois la couleur active, il est cliquable et affiche son libellé
-  (« à réviser ! », « à réviser bientôt », « ok », « à jour »). Si on ne
-  clique jamais une couleur active, elle reste affichée telle quelle
-  indéfiniment (pas de progression automatique au-delà du tout premier
-  passage au rouge). Une fois au vert, un pulse bleu revient tous les 2 jours
-  tant qu'on ne clique pas dessus. Éditer nom/description ne touche jamais
-  ces horloges. Un point d'exclamation rouge apparaît en haut à droite de la
-  tuile d'une matière (vue Cours/TD) dès qu'un de ses badges est orange ou
-  jaune **actif** — pas pendant une attente, pas au rouge (trop tôt), plus au
-  vert/bleu (le pulse suffit déjà). Chaque clic sur un badge garde l'état
+  **jaune** (validé) → 2j → **vert turquoise** (validé) → 2j → **vert
+  turquoise**, en boucle tant qu'on continue de cliquer (vert et bleu sont la
+  même couleur unique — le pulse n'est qu'un rappel visuel périodique, pas un
+  statut à part). Pendant l'attente le badge est grisé, pas cliquable, et
+  affiche juste le prochain statut (horloge + jours restants) ; une fois la
+  couleur active, il est cliquable et affiche son libellé (« à réviser ! »,
+  « à réviser bientôt », « ok », « à jour »). Si on ne clique jamais une
+  couleur active, elle reste affichée telle quelle indéfiniment (pas de
+  progression automatique au-delà du tout premier passage au rouge). Une fois
+  au vert turquoise, un pulse bleu revient tous les 2 jours tant qu'on ne
+  clique pas dessus. Éditer nom/description ne touche jamais ces horloges. Un
+  point d'exclamation rouge apparaît en haut à droite de la tuile d'une
+  matière (vue Cours/TD) dès qu'un de ses badges est orange ou jaune
+  **actif** — pas pendant une attente, pas au rouge (trop tôt), plus au vert
+  turquoise (le pulse suffit déjà). Chaque clic sur un badge garde l'état
   précédent ; un bouton ↺ dans le panneau d'édition du chapitre permet
-  d'annuler un clic fait par erreur. Un **mode debug** dans Réglages permet
-  de forcer le badge Cours ou TD d'un chapitre choisi à n'importe quelle
-  couleur (ou de revenir en "Auto" au statut calculé normalement), pour
-  tester ou corriger un état sans attendre le cycle.
+  d'annuler un clic fait par erreur — et restaure exactement l'état d'avant
+  (pas juste le statut "auto" par défaut). Un **mode debug** dans Réglages
+  permet de forcer le badge Cours ou TD d'un chapitre choisi à n'importe
+  quelle couleur (ou de revenir en "Auto"). Ce forçage règle réellement
+  l'horloge du badge (comme un vrai clic dans le passé), donc il s'intègre au
+  cycle normal et peut lui aussi être annulé avec ↺.
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
   devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
   lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
