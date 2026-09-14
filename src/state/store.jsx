@@ -8,7 +8,7 @@ function emptyState() {
   return {
     version: STORAGE_VERSION,
     theme: 'glacier',
-    nextExam: null, // { matiere, date }
+    exams: [], // { id, matiere, date, createdAt } — les partiels
     devoirs: [], // { id, nom, dateEcheance, createdAt }
     chapitres: [], // voir src/logic/badges.js pour la forme d'un chapitre
   }
@@ -91,8 +91,17 @@ function reducer(state, action) {
     }
     case 'DELETE_DEVOIR':
       return { ...state, devoirs: state.devoirs.filter((d) => d.id !== action.id) }
-    case 'SET_NEXT_EXAM':
-      return { ...state, nextExam: action.nextExam }
+    case 'ADD_EXAM': {
+      const exam = {
+        id: newId('exam'),
+        matiere: action.matiere,
+        date: action.date,
+        createdAt: Date.now(),
+      }
+      return { ...state, exams: [...state.exams, exam] }
+    }
+    case 'DELETE_EXAM':
+      return { ...state, exams: state.exams.filter((e) => e.id !== action.id) }
     case 'SET_THEME':
       return { ...state, theme: action.theme }
     case 'IMPORT_STATE':

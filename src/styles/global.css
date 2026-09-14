@@ -369,45 +369,38 @@ select {
   opacity: 1;
 }
 
-/* ---- quick access (decorative, cf. wireframe) ---- */
+/* ---- accent par matière (nuance de couleur pour distinguer les "cases") ---- */
 
-.quick-access-row {
-  display: flex;
-  justify-content: center;
-}
-
-.quick-access {
-  width: 100%;
-  max-width: 560px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 15px 22px;
+.course-dot {
+  width: 8px;
+  height: 8px;
   border-radius: 999px;
-  background: var(--glass-1);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  color: var(--text-dimmer);
-  cursor: default;
-}
-
-.quick-access-dot {
-  width: 13px;
-  height: 13px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(232, 237, 242, 0.5);
+  background: var(--course-accent, var(--accent));
   flex-shrink: 0;
+  margin-right: 9px;
 }
 
-.quick-access-label {
-  flex: 1;
-  font-size: 14px;
+.pill-course-accent {
+  background: var(--course-accent, var(--accent));
+  color: var(--course-accent-ink, var(--accent-ink));
+  border-color: transparent;
 }
 
-.quick-access-kbd {
+/* ---- cartes-résumé cliquables (accueil → écrans dédiés) ---- */
+
+.summary-card {
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.summary-card:hover {
+  border-color: var(--glass-border-strong);
+}
+
+.summary-hint {
   font: 300 10px var(--font-mono);
-  color: rgba(232, 237, 242, 0.3);
+  color: var(--text-dimmer);
+  letter-spacing: 0.06em;
 }
 
 /* ---- nav buttons (home) ---- */
@@ -558,6 +551,8 @@ select {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  border-left: 3px solid var(--course-accent-border, var(--glass-border));
+  background-image: linear-gradient(165deg, var(--course-accent-soft, transparent), transparent 55%);
 }
 
 .group-head {
@@ -570,6 +565,8 @@ select {
 }
 
 .group-title {
+  display: flex;
+  align-items: center;
   font-size: 15px;
   text-decoration: underline;
   text-decoration-color: var(--text-dimmer);
@@ -764,13 +761,18 @@ select {
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 13px 2px;
+  padding: 13px 2px 13px 10px;
   border-top: 1px solid var(--glass-border);
+  border-left: 2px solid var(--course-accent-border, transparent);
   cursor: pointer;
 }
 
 .chapitre-list-row:first-child {
   border-top: none;
+}
+
+.course-accent-card {
+  background-image: linear-gradient(165deg, var(--course-accent-soft, transparent), transparent 40%);
 }
 
 .icon-btn {

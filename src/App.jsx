@@ -5,6 +5,8 @@ import Header from './components/Header.jsx'
 import Home from './components/Home.jsx'
 import CourseListScreen from './components/CourseListScreen.jsx'
 import CourseDetailScreen from './components/CourseDetailScreen.jsx'
+import PartielsScreen from './components/PartielsScreen.jsx'
+import DevoirsScreen from './components/DevoirsScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
 
@@ -61,6 +63,8 @@ export default function App() {
     setCourseId(null)
     setScreen('liste')
   }
+  const goPartiels = () => setScreen('partiels')
+  const goDevoirs = () => setScreen('devoirs')
 
   return (
     <div className="app-shell">
@@ -73,7 +77,13 @@ export default function App() {
 
           <div key={screen} className="screen-anim">
             {screen === 'home' && (
-              <Home now={now} onGoCours={() => goListe('cours')} onGoTd={() => goListe('td')} />
+              <Home
+                now={now}
+                onGoCours={() => goListe('cours')}
+                onGoTd={() => goListe('td')}
+                onGoPartiels={goPartiels}
+                onGoDevoirs={goDevoirs}
+              />
             )}
 
             {screen === 'liste' && (
@@ -96,6 +106,10 @@ export default function App() {
                 onGoHome={goHome}
               />
             )}
+
+            {screen === 'partiels' && <PartielsScreen now={now} onGoHome={goHome} />}
+
+            {screen === 'devoirs' && <DevoirsScreen now={now} onGoHome={goHome} />}
           </div>
         </div>
 

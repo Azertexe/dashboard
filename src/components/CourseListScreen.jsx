@@ -1,4 +1,4 @@
-import { COURSES } from '../data/courses.js'
+import { COURSES, courseAccentStyle } from '../data/courses.js'
 import { ChapitreRowCompact } from './ChapitreRow.jsx'
 import BadgeLegend from './BadgeLegend.jsx'
 
@@ -23,9 +23,16 @@ export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpe
           const rest = ch.length - shown.length
 
           return (
-            <div key={course.id} className="glass-strong group-card">
+            <div
+              key={course.id}
+              className="glass-strong group-card"
+              style={courseAccentStyle(course.id)}
+            >
               <div className="group-head" onClick={() => onOpenCourse(course.id)}>
-                <div className="group-title">{course.nom}</div>
+                <div className="group-title">
+                  <span className="course-dot" />
+                  {course.nom}
+                </div>
                 <div className="group-open">{sideLabel} ↗</div>
               </div>
               {shown.length === 0 && (

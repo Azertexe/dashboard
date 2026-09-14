@@ -52,10 +52,14 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   démarre les 2 horloges) ; 4 couleurs (rouge jour 1 < 24h, orange 24h–3j,
   jaune 3j–7j, vert ≥ 7j) ; une fois au vert, un pulse bleu revient tous les 2
   jours. Éditer nom/description ne touche jamais ces dates.
-- ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel (éditable),
-  liste de devoirs réelle avec échéance en J-X.
+- ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
+  devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
+  lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
+  écran dédié (clic sur la carte → `PartielsScreen` / `DevoirsScreen`).
 - ✅ **Partie 5 — Mode édition** : édition nom/description/état/commentaires
-  sans toucher aux badges ; ajout de chapitres et de devoirs au fil de l'année.
+  sans toucher aux badges ; ajout de chapitres au fil de l'année. Chaque
+  matière a sa propre teinte (`src/data/courses.js`, `courseAccentStyle`),
+  reprise en bordure/pastille dans les listes et le détail d'un cours.
 - 🚧 **Partie 6 — Ressources** : cartes stub (fiche de révision / fiche
   méthode / polys) sans liens réels pour l'instant.
 - ⬜ **Partie 7 — Sync Firebase** : pas encore fait, données en localStorage.
