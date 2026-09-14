@@ -735,6 +735,26 @@ select {
   cursor: default;
 }
 
+/* Confirmation grisée juste après un clic — sinon un badge déjà rouge
+   (jour 1) ne change pas visuellement et le clic semble n'avoir rien fait. */
+.badge-grise {
+  background: var(--glass-3);
+  color: var(--text);
+  border-color: var(--glass-border-strong);
+  animation: badge-confirm 0.25s ease-out both;
+}
+
+@keyframes badge-confirm {
+  from {
+    transform: scale(0.94);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .badge-rouge {
   background: var(--rouge-bg);
   color: var(--rouge-ink);
