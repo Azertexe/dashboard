@@ -8,7 +8,9 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
   const chapitres = state.chapitres
 
   const nbChapitres = chapitres.length
-  const nbActifs = chapitres.filter((c) => c.statut === 'actif').length
+  const nbActifs = chapitres.filter(
+    (c) => c.badgeCours?.statut === 'actif' || c.badgeTD?.statut === 'actif',
+  ).length
   const nbStandby = nbChapitres - nbActifs
   const nbAlertes = chapitres.reduce((n, c) => {
     return n + (needsAttention(c, 'cours', now) ? 1 : 0) + (needsAttention(c, 'td', now) ? 1 : 0)

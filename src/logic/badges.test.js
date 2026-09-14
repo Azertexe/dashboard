@@ -12,15 +12,29 @@ import {
   setForcedAlert,
 } from './badges.js'
 
+function emptyBadge() {
+  return {
+    statut: 'standby',
+    activatedAt: null,
+    validatedStage: null,
+    validatedAt: null,
+    previousValidatedStage: null,
+    previousValidatedAt: null,
+    forcedAlert: null,
+  }
+}
+
+function activeBadge(activatedAt, overrides = {}) {
+  return { ...emptyBadge(), statut: 'actif', activatedAt, ...overrides }
+}
+
 function makeChapitre(overrides = {}) {
   return {
     id: 'ch-1',
     courseId: 'optique-coherente',
     nom: 'Test',
-    statut: 'standby',
-    activatedAt: null,
-    badgeTD: { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null, forcedAlert: null },
-    badgeCours: { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null, forcedAlert: null },
+    badgeTD: emptyBadge(),
+    badgeCours: emptyBadge(),
     ...overrides,
   }
 }
@@ -28,13 +42,13 @@ function makeChapitre(overrides = {}) {
 const NOW = 1_700_000_000_000 // date fixe arbitraire pour des tests déterministes
 
 describe('badgeStatus', () => {
-  it('is inactive for a standby chapter', () => {
+  it('is inactive for a standby side', () => {
     const c = makeChapitre()
     expect(badgeStatus(c, 'cours', NOW)).toMatchObject({ phase: 'inactive', level: BADGE_LEVELS.INACTIVE })
   })
 
   it('is a grey wait toward rouge right after activation', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 0.3 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 0.3 * DAY_MS) })
     const status = badgeStatus(c, 'cours', NOW)
     expect(status.phase).toBe('wait')
     expect(status.level).toBe(BADGE_LEVELS.ROUGE)
@@ -43,37 +57,30 @@ describe('badgeStatus', () => {
   })
 
   it('becomes active rouge once 1 day has elapsed since activation, with no click needed', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     const status = badgeStatus(c, 'cours', NOW)
     expect(status).toMatchObject({ phase: 'active', level: BADGE_LEVELS.ROUGE, pulse: true })
   })
 
   it('stays active rouge forever if never clicked, no automatic drift to orange', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 50 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 50 * DAY_MS) })
     expect(badgeStatus(c, 'cours', NOW)).toMatchObject({ phase: 'active', level: BADGE_LEVELS.ROUGE })
   })
 
-  it('TD and Cours clocks are independent', () => {
+  it('TD and Cours are fully independent, including standby vs actif', () => {
     const c = makeChapitre({
-      statut: 'actif',
-      activatedAt: NOW - 10 * DAY_MS,
-      badgeCours: {
-        validatedStage: BADGE_LEVELS.ROUGE,
-        validatedAt: NOW - 2 * DAY_MS, // il y a 2j, attente de 3j vers orange -> encore en attente
-        previousValidatedStage: null,
-        previousValidatedAt: null,
-        forcedAlert: null,
-      },
+      badgeCours: activeBadge(NOW - 10 * DAY_MS, { validatedStage: BADGE_LEVELS.ROUGE, validatedAt: NOW - 2 * DAY_MS }),
+      // TD reste en standby : jamais activé
+      badgeTD: emptyBadge(),
     })
-    expect(badgeStatus(c, 'cours', NOW).phase).toBe('wait')
-    expect(badgeStatus(c, 'td', NOW).phase).toBe('active') // TD jamais touché, 10j > 1j -> actif rouge
-    expect(badgeStatus(c, 'td', NOW).level).toBe(BADGE_LEVELS.ROUGE)
+    expect(badgeStatus(c, 'cours', NOW).phase).toBe('wait') // rouge validé il y a 2j, attente de 3j vers orange
+    expect(badgeStatus(c, 'td', NOW)).toMatchObject({ phase: 'inactive', level: BADGE_LEVELS.INACTIVE })
   })
 })
 
 describe('cycle complet valide->attente->actif', () => {
   it('walks rouge -> orange -> jaune -> vert -> vert with the right per-stage waits', () => {
-    let c = makeChapitre({ statut: 'actif', activatedAt: NOW - 2 * DAY_MS })
+    let c = makeChapitre({ badgeCours: activeBadge(NOW - 2 * DAY_MS) })
     // actif rouge (2j > 1j d'attente)
     expect(badgeStatus(c, 'cours', NOW).level).toBe(BADGE_LEVELS.ROUGE)
 
@@ -112,7 +119,7 @@ describe('cycle complet valide->attente->actif', () => {
   })
 
   it('markBadgeNow is a no-op while the badge is in a grey wait (not clickable)', () => {
-    let c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    let c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     c = markBadgeNow(c, 'cours', NOW) // rouge actif -> valide, attente vers orange
     const afterFirstClick = c
     c = markBadgeNow(c, 'cours', NOW) // toujours en attente -> ne doit rien changer
@@ -120,12 +127,10 @@ describe('cycle complet valide->attente->actif', () => {
   })
 
   it('vert pulses every 2 days, rouge/orange/jaune pulse continuously once active', () => {
-    let c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    let c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     expect(badgeStatus(c, 'cours', NOW).pulse).toBe(true) // rouge actif -> pulse continu
 
     c = markBadgeNow(c, 'cours', NOW)
-    c = { ...c, badgeCours: { ...c.badgeCours } }
-    // fait avancer jusqu'à vert
     c = markBadgeNow(c, 'cours', NOW + 3 * DAY_MS)
     const tOrangeValidated = NOW + 3 * DAY_MS
     c = markBadgeNow(c, 'cours', tOrangeValidated + 7 * DAY_MS)
@@ -140,7 +145,7 @@ describe('cycle complet valide->attente->actif', () => {
 
 describe('needsAttention', () => {
   it('is true only for an active orange or jaune badge', () => {
-    const rouge = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    const rouge = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     expect(needsAttention(rouge, 'cours', NOW)).toBe(false)
 
     let c = markBadgeNow(rouge, 'cours', NOW) // -> attente vers orange
@@ -154,15 +159,7 @@ describe('needsAttention', () => {
 
   it('is false for an active vert badge (the pulse is enough)', () => {
     const c = makeChapitre({
-      statut: 'actif',
-      activatedAt: NOW - 20 * DAY_MS,
-      badgeCours: {
-        validatedStage: BADGE_LEVELS.JAUNE,
-        validatedAt: NOW - 3 * DAY_MS,
-        previousValidatedStage: null,
-        previousValidatedAt: null,
-        forcedAlert: null,
-      },
+      badgeCours: activeBadge(NOW - 3 * DAY_MS, { validatedStage: BADGE_LEVELS.JAUNE, validatedAt: NOW - 3 * DAY_MS }),
     })
     expect(badgeStatus(c, 'cours', NOW).level).toBe(BADGE_LEVELS.VERT)
     expect(needsAttention(c, 'cours', NOW)).toBe(false)
@@ -171,13 +168,13 @@ describe('needsAttention', () => {
 
 describe('undoBadge / canUndoBadge', () => {
   it('has nothing to undo before any click', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     expect(canUndoBadge(c, 'cours')).toBe(false)
     expect(undoBadge(c, 'cours')).toBe(c) // no-op
   })
 
   it('restores the exact previous state after one click, not just the "auto" status', () => {
-    let c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    let c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     const before = badgeStatus(c, 'cours', NOW)
     c = markBadgeNow(c, 'cours', NOW)
     expect(canUndoBadge(c, 'cours')).toBe(true)
@@ -190,20 +187,23 @@ describe('undoBadge / canUndoBadge', () => {
 
 describe('forceBadgeLevel (mode debug)', () => {
   it('makes the badge immediately active at the requested level', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 5 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 5 * DAY_MS) })
     const forced = forceBadgeLevel(c, 'cours', BADGE_LEVELS.JAUNE, NOW)
     expect(badgeStatus(forced, 'cours', NOW)).toMatchObject({ phase: 'active', level: BADGE_LEVELS.JAUNE })
   })
 
-  it('activates a standby chapter so the forced color is actually visible', () => {
-    const c = makeChapitre() // standby
+  it('activates only the forced side, never the other one (regression: they used to be coupled)', () => {
+    const c = makeChapitre() // standby des deux côtés
     const forced = forceBadgeLevel(c, 'cours', BADGE_LEVELS.ORANGE, NOW)
-    expect(forced.statut).toBe('actif')
+    expect(forced.badgeCours.statut).toBe('actif')
     expect(badgeStatus(forced, 'cours', NOW).level).toBe(BADGE_LEVELS.ORANGE)
+    // Le TD ne doit pas avoir bougé du tout.
+    expect(forced.badgeTD).toEqual(c.badgeTD)
+    expect(badgeStatus(forced, 'td', NOW)).toMatchObject({ phase: 'inactive', level: BADGE_LEVELS.INACTIVE })
   })
 
   it('sets the real clock, so it behaves like a real click for undo and the next wait', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 20 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 20 * DAY_MS) })
     const forced = forceBadgeLevel(c, 'cours', BADGE_LEVELS.ROUGE, NOW)
     expect(canUndoBadge(forced, 'cours')).toBe(true)
 
@@ -212,7 +212,7 @@ describe('forceBadgeLevel (mode debug)', () => {
   })
 
   it('clearing the force (level=null) goes back to the auto-computed status', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     const forced = forceBadgeLevel(c, 'cours', BADGE_LEVELS.VERT, NOW)
     expect(badgeStatus(forced, 'cours', NOW).level).toBe(BADGE_LEVELS.VERT)
 
@@ -222,12 +222,13 @@ describe('forceBadgeLevel (mode debug)', () => {
 })
 
 describe('setForcedAlert (mode debug)', () => {
-  it('overrides needsAttention regardless of the real computed status', () => {
-    const rouge = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+  it('overrides needsAttention regardless of the real computed status, only on the given side', () => {
+    const rouge = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     expect(needsAttention(rouge, 'cours', NOW)).toBe(false)
 
     const shown = setForcedAlert(rouge, 'cours', true)
     expect(needsAttention(shown, 'cours', NOW)).toBe(true)
+    expect(needsAttention(shown, 'td', NOW)).toBe(false) // TD non affecté
 
     const hidden = setForcedAlert(rouge, 'cours', false)
     expect(needsAttention(hidden, 'cours', NOW)).toBe(false)
@@ -237,7 +238,7 @@ describe('setForcedAlert (mode debug)', () => {
   })
 
   it('survives a real click, an undo, and a color force on the same badge', () => {
-    let c = makeChapitre({ statut: 'actif', activatedAt: NOW - 1.5 * DAY_MS })
+    let c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     c = setForcedAlert(c, 'cours', true)
 
     c = markBadgeNow(c, 'cours', NOW)
@@ -252,15 +253,16 @@ describe('setForcedAlert (mode debug)', () => {
 })
 
 describe('activateChapitre', () => {
-  it('turns a standby chapter active and starts the clock', () => {
+  it('turns one side active and starts its clock, without touching the other side', () => {
     const c = makeChapitre()
-    const activated = activateChapitre(c, NOW)
-    expect(activated.statut).toBe('actif')
-    expect(activated.activatedAt).toBe(NOW)
+    const activated = activateChapitre(c, 'cours', NOW)
+    expect(activated.badgeCours.statut).toBe('actif')
+    expect(activated.badgeCours.activatedAt).toBe(NOW)
+    expect(activated.badgeTD).toEqual(c.badgeTD) // TD intact
   })
 
-  it('is a no-op if already active', () => {
-    const c = makeChapitre({ statut: 'actif', activatedAt: NOW - DAY_MS })
-    expect(activateChapitre(c, NOW + DAY_MS)).toBe(c)
+  it('is a no-op if that side is already active', () => {
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - DAY_MS) })
+    expect(activateChapitre(c, 'cours', NOW + DAY_MS)).toBe(c)
   })
 })

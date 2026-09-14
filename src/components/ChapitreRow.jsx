@@ -31,7 +31,7 @@ export function ChapitreRowFull({ chapitre, side, now }) {
 
   const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id, side: s })
   const onUndo = (s) => dispatch({ type: 'UNDO_BADGE', id: chapitre.id, side: s })
-  const onActivate = () => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id })
+  const onActivate = (s) => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id, side: s })
   const onDelete = () => {
     if (confirm(`Supprimer "${chapitre.nom}" ? Cette action est définitive.`)) {
       dispatch({ type: 'DELETE_CHAPITRE', id: chapitre.id })
@@ -91,38 +91,31 @@ export function ChapitreRowFull({ chapitre, side, now }) {
         <div className="field-row">
           <label>Badges</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            {chapitre.statut === 'standby' ? (
-              <div className="pill pill-accent" onClick={onActivate}>
-                Activer
-              </div>
-            ) : (
-              <>
-                <div className="badge-with-undo">
-                  <Badge chapitre={chapitre} side="cours" onMark={onMark} now={now} />
-                  {canUndoBadge(chapitre, 'cours') && (
+            {['cours', 'td'].map((s) => {
+              const badge = s === 'td' ? chapitre.badgeTD : chapitre.badgeCours
+              const tag = s === 'td' ? 'TD' : 'Cours'
+              if (badge?.statut !== 'actif') {
+                return (
+                  <div key={s} className="pill pill-accent" onClick={() => onActivate(s)}>
+                    Activer {tag}
+                  </div>
+                )
+              }
+              return (
+                <div key={s} className="badge-with-undo">
+                  <Badge chapitre={chapitre} side={s} onMark={onMark} now={now} />
+                  {canUndoBadge(chapitre, s) && (
                     <button
                       className="icon-btn"
-                      onClick={() => onUndo('cours')}
-                      title="Annuler le dernier clic sur ce badge (Cours)"
+                      onClick={() => onUndo(s)}
+                      title={`Annuler le dernier clic sur ce badge (${tag})`}
                     >
                       ↺
                     </button>
                   )}
                 </div>
-                <div className="badge-with-undo">
-                  <Badge chapitre={chapitre} side="td" onMark={onMark} now={now} />
-                  {canUndoBadge(chapitre, 'td') && (
-                    <button
-                      className="icon-btn"
-                      onClick={() => onUndo('td')}
-                      title="Annuler le dernier clic sur ce badge (TD)"
-                    >
-                      ↺
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+              )
+            })}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -144,8 +137,8 @@ export function ChapitreRowFull({ chapitre, side, now }) {
   return (
     <div className="chapitre-list-row">
       <div className="chapitre-name">{chapitre.nom}</div>
-      {chapitre.statut === 'standby' ? (
-        <div className="pill pill-accent" onClick={onActivate}>
+      {(side === 'td' ? chapitre.badgeTD : chapitre.badgeCours)?.statut !== 'actif' ? (
+        <div className="pill pill-accent" onClick={() => onActivate(side)}>
           Activer
         </div>
       ) : (

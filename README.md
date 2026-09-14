@@ -49,8 +49,11 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   description, état, statut standby/actif, 2 badges indépendants, commentaires
   (`src/state/store.jsx`). Stocké en local pour l'instant.
 - ✅ **Partie 3 — Badges TD/Cours + standby/actif** : logique dans
-  `src/logic/badges.js`, isolée de l'UI. Standby → Activer (sens unique,
-  démarre les 2 horloges). Cycle par étapes, chaque couleur devant être
+  `src/logic/badges.js`, isolée de l'UI. Cours et TD sont deux horloges
+  **totalement indépendantes**, y compris pour standby/actif : chacun porte
+  son propre `statut`/`activatedAt` (dans `badgeCours`/`badgeTD`) — activer,
+  cliquer ou forcer un côté ne touche jamais l'autre. Standby → Activer est
+  à sens unique, par côté. Cycle par étapes, chaque couleur devant être
   validée (clic) pour lancer l'attente vers la suivante :
   activation → 1j → **rouge** (validé) → 3j → **orange** (validé) → 7j →
   **jaune** (validé) → 2j → **vert turquoise** (validé) → 2j → **vert
