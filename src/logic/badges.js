@@ -47,7 +47,13 @@ const NEXT_LEVEL = {
 }
 
 function emptyBadge() {
-  return { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null }
+  return {
+    validatedStage: null,
+    validatedAt: null,
+    previousValidatedStage: null,
+    previousValidatedAt: null,
+    forcedLevel: null,
+  }
 }
 
 /**
@@ -62,6 +68,13 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
   }
 
   const badge = (side === 'td' ? chapitre.badgeTD : chapitre.badgeCours) ?? emptyBadge()
+
+  // Mode debug (Réglages) : force ce badge à une couleur donnée, en dehors de
+  // tout calcul de cycle — pratique pour prévisualiser un état sans attendre.
+  if (badge.forcedLevel) {
+    return { phase: 'active', level: badge.forcedLevel, daysLeft: 0, pulse: false, fromClick: false }
+  }
+
   const stageKey = badge.validatedStage ?? 'none'
   const anchor = badge.validatedAt ?? chapitre.activatedAt
   const elapsedDays = Math.max(0, (now - anchor) / DAY_MS)
@@ -107,6 +120,7 @@ export function markBadgeNow(chapitre, side, now = Date.now()) {
       validatedAt: now,
       previousValidatedStage: prev.validatedStage ?? null,
       previousValidatedAt: prev.validatedAt ?? null,
+      forcedLevel: null,
     },
   }
 }
@@ -123,7 +137,23 @@ export function undoBadge(chapitre, side) {
       validatedAt: badge.previousValidatedAt ?? null,
       previousValidatedStage: null,
       previousValidatedAt: null,
+      forcedLevel: null,
     },
+  }
+}
+
+/** Mode debug (Réglages) : force le badge `side` du chapitre à `level`
+ * (une des 4 couleurs), ou retire le forçage si `level` est null — le badge
+ * revient alors au statut calculé normalement. Active le chapitre au passage
+ * si besoin, sinon le forçage ne serait pas visible. */
+export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
+  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
+  const prev = chapitre[key] ?? emptyBadge()
+  const base =
+    chapitre.statut === 'actif' ? chapitre : { ...chapitre, statut: 'actif', activatedAt: chapitre.activatedAt ?? now }
+  return {
+    ...base,
+    [key]: { ...prev, forcedLevel: level },
   }
 }
 
