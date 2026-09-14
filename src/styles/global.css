@@ -777,6 +777,36 @@ select {
   color: var(--vert-ink);
 }
 
+/* Pulse continu sur les badges actifs rouge/orange/jaune : un reflet qui
+   glisse horizontalement, juste une variation de leur propre couleur (pas
+   un changement de teinte) — pour attirer l'oeil sans dénaturer le badge. */
+.badge-rouge.pulse {
+  background-image: linear-gradient(100deg, var(--rouge-bg) 30%, oklch(0.86 0.12 25) 50%, var(--rouge-bg) 70%);
+  background-size: 250% 100%;
+  animation: badge-shimmer 2.4s ease-in-out infinite;
+}
+
+.badge-orange.pulse {
+  background-image: linear-gradient(100deg, var(--orange-bg) 30%, oklch(0.9 0.1 55) 50%, var(--orange-bg) 70%);
+  background-size: 250% 100%;
+  animation: badge-shimmer 2.4s ease-in-out infinite;
+}
+
+.badge-jaune.pulse {
+  background-image: linear-gradient(100deg, var(--jaune-bg) 30%, oklch(0.96 0.09 92) 50%, var(--jaune-bg) 70%);
+  background-size: 250% 100%;
+  animation: badge-shimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes badge-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -50% 0;
+  }
+}
+
 /* Signal bleu qui revient tous les 2 jours une fois au vert. */
 .badge-vert.pulse {
   animation: badge-pulse-bleu 1.6s ease-in-out infinite;
@@ -916,6 +946,67 @@ select {
 .field-row textarea {
   resize: vertical;
   min-height: 60px;
+}
+
+/* ---- settings panel ---- */
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.settings-title {
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+
+.settings-section {
+  padding: 15px 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-section-title {
+  font: 300 10px var(--font-mono);
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.settings-row-desc {
+  font-size: 12.5px;
+  color: var(--text-dim);
+  flex: 1;
+  min-width: 170px;
+  line-height: 1.45;
+}
+
+.settings-subpanel {
+  border-top: 1px solid var(--glass-border);
+  padding-top: 12px;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-note {
+  font-size: 11.5px;
+  color: var(--text-dimmer);
+  line-height: 1.5;
+  padding: 2px 4px;
 }
 
 .chapitre-editor {
