@@ -51,13 +51,44 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
   return { level, elapsedDays, pulse }
 }
 
-/** Marque le badge comme "fait maintenant" — remet son horloge à zéro. */
+/**
+ * Vrai si ce badge mérite un signal d'alerte au niveau de la matière (orange
+ * ou jaune : "vous prenez du retard"). Le rouge (jour 1) est trop tôt pour
+ * alerter, et le vert (avec son pulse bleu) se signale déjà tout seul — pas
+ * besoin d'en rajouter.
+ */
+export function needsAttention(chapitre, side, now = Date.now()) {
+  const { level } = badgeStatus(chapitre, side, now)
+  return level === BADGE_LEVELS.ORANGE || level === BADGE_LEVELS.JAUNE
+}
+
+/** Marque le badge comme "fait maintenant" — remet son horloge à zéro.
+ * Garde l'ancienne valeur pour permettre un annulation (cf. undoBadge). */
 export function markBadgeNow(chapitre, side, now = Date.now()) {
   const key = side === 'td' ? 'badgeTD' : 'badgeCours'
+  const prev = chapitre[key]
   return {
     ...chapitre,
-    [key]: { ...chapitre[key], lastActionAt: now },
+    [key]: { lastActionAt: now, previousActionAt: prev?.lastActionAt ?? null },
   }
+}
+
+/** Annule le dernier clic sur ce badge (au cas où c'était une erreur). */
+export function undoBadge(chapitre, side) {
+  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
+  const badge = chapitre[key]
+  if (!badge || badge.lastActionAt == null) return chapitre
+  const previous = 'previousActionAt' in badge ? badge.previousActionAt : null
+  return {
+    ...chapitre,
+    [key]: { lastActionAt: previous, previousActionAt: null },
+  }
+}
+
+/** Vrai s'il y a quelque chose à annuler pour ce badge (au moins un clic depuis l'activation). */
+export function canUndoBadge(chapitre, side) {
+  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
+  return chapitre[key]?.lastActionAt != null
 }
 
 /** Passe un chapitre de standby à actif — démarre les deux horloges. Sens unique. */

@@ -51,7 +51,12 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   `src/logic/badges.js`, isolée de l'UI. Standby → Activer (sens unique,
   démarre les 2 horloges) ; 4 couleurs (rouge jour 1 < 24h, orange 24h–3j,
   jaune 3j–7j, vert ≥ 7j) ; une fois au vert, un pulse bleu revient tous les 2
-  jours. Éditer nom/description ne touche jamais ces dates.
+  jours. Éditer nom/description ne touche jamais ces dates. Un point
+  d'exclamation rouge apparaît en haut à droite de la tuile d'une matière (vue
+  Cours/TD) dès qu'un de ses badges est orange ou jaune — pas au rouge (trop
+  tôt), plus au vert/bleu (le pulse suffit déjà). Chaque clic sur un badge
+  garde l'état précédent ; un bouton ↺ dans le panneau d'édition du chapitre
+  permet d'annuler un clic fait par erreur.
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
   devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
   lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur

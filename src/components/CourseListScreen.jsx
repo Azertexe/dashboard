@@ -1,5 +1,6 @@
 import { COURSES, courseAccentStyle } from '../data/courses.js'
 import { ChapitreRowCompact } from './ChapitreRow.jsx'
+import { needsAttention } from '../logic/badges.js'
 
 export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpenCourse }) {
   const sideLabel = side === 'td' ? 'TD' : 'Cours'
@@ -20,6 +21,7 @@ export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpe
             .sort((a, b) => b.createdAt - a.createdAt)
           const shown = ch.slice(0, 2)
           const rest = ch.length - shown.length
+          const alert = ch.some((c) => needsAttention(c, side, now))
 
           return (
             <div
@@ -27,6 +29,11 @@ export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpe
               className="glass-strong group-card"
               style={courseAccentStyle(course.id)}
             >
+              {alert && (
+                <div className="group-alert" title="Révisions en retard sur cette matière">
+                  !
+                </div>
+              )}
               <div className="group-head" onClick={() => onOpenCourse(course.id)}>
                 <div className="group-title">
                   <span className="course-dot" />
