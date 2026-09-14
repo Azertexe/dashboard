@@ -26,6 +26,7 @@ export function courseAccentStyle(courseId) {
   return {
     '--course-accent': `oklch(0.78 0.13 ${hue})`,
     '--course-accent-soft': `oklch(0.78 0.13 ${hue} / 0.16)`,
+    '--course-accent-strong-soft': `oklch(0.78 0.13 ${hue} / 0.32)`,
     '--course-accent-border': `oklch(0.78 0.13 ${hue} / 0.5)`,
     '--course-accent-ink': `oklch(0.22 0.05 ${hue})`,
   }
