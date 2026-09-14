@@ -1,23 +1,15 @@
 import { COURSES } from '../data/courses.js'
 import ExamGauge from './ExamGauge.jsx'
 import DevoirsCard from './DevoirsCard.jsx'
-import QuickAccess from './QuickAccess.jsx'
 import { useStore } from '../state/store.jsx'
 
-export default function Home({ now, onGoCours, onGoTd }) {
-  const { state, dispatch } = useStore()
+export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs }) {
+  const { state } = useStore()
   const nbChapitres = state.chapitres.length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <ExamGauge
-        nextExam={state.nextExam}
-        devoirs={state.devoirs}
-        now={now}
-        onSetExam={(nextExam) => dispatch({ type: 'SET_NEXT_EXAM', nextExam })}
-      />
-
-      <QuickAccess />
+      <ExamGauge exams={state.exams} devoirs={state.devoirs} now={now} onOpen={onGoPartiels} />
 
       <div className="nav-row">
         <div className="nav-btn glass-strong" onClick={onGoCours}>
@@ -32,7 +24,7 @@ export default function Home({ now, onGoCours, onGoTd }) {
         </div>
       </div>
 
-      <DevoirsCard devoirs={state.devoirs} now={now} />
+      <DevoirsCard devoirs={state.devoirs} now={now} onOpen={onGoDevoirs} />
     </div>
   )
 }

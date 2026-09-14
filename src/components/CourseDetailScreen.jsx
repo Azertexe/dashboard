@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { courseName } from '../data/courses.js'
+import { courseName, courseAccentStyle } from '../data/courses.js'
 import { ChapitreRowFull } from './ChapitreRow.jsx'
 import BadgeLegend from './BadgeLegend.jsx'
 import { useStore } from '../state/store.jsx'
@@ -22,12 +22,13 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, ...courseAccentStyle(courseId) }}>
       <div className="crumb-row">
         <div className="pill" onClick={onBack}>
           ← {sideLabel}
         </div>
-        <div className="screen-title" style={{ flex: 1 }}>
+        <div className="screen-title" style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+          <span className="course-dot" />
           {courseName(courseId)}
         </div>
         <div className="pill" onClick={onGoHome}>
@@ -35,11 +36,11 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
         </div>
       </div>
 
-      <div className="glass" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div className="glass course-accent-card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <div className="label-mono">Chapitres · du plus récent au plus ancien</div>
           {!adding && (
-            <div className="pill pill-accent" onClick={() => setAdding(true)}>
+            <div className="pill pill-course-accent" onClick={() => setAdding(true)}>
               + Chapitre
             </div>
           )}
@@ -55,7 +56,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
               onKeyDown={(e) => e.key === 'Enter' && addChapitre()}
               autoFocus
             />
-            <div className="pill pill-accent" onClick={addChapitre}>
+            <div className="pill pill-course-accent" onClick={addChapitre}>
               Ajouter
             </div>
             <div className="pill" onClick={() => setAdding(false)}>

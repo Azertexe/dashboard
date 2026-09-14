@@ -1,66 +1,24 @@
 import { useState } from 'react'
+import { daysBetween, nextExam } from '../logic/dates.js'
 
 const HORIZON_DAYS = 30 // fenêtre de visualisation de la jauge (pas de sens fonctionnel fort)
 
-function daysBetween(now, iso) {
-  const target = new Date(iso + 'T00:00:00')
-  return Math.ceil((target.getTime() - now) / 86_400_000)
-}
-
-function isoDatePlusDays(now, days) {
-  const d = new Date(now)
-  d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
-}
-
-export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
+/** Résumé lecture seule sur l'accueil — clic pour aller gérer les partiels. */
+export default function ExamGauge({ exams, devoirs, now, onOpen }) {
   const [hover, setHover] = useState(null)
-  const [editing, setEditing] = useState(!nextExam)
-  const [draft, setDraft] = useState({
-    matiere: nextExam?.matiere ?? '',
-    jours: nextExam ? String(daysBetween(now, nextExam.date)) : '',
-  })
+  const exam = nextExam(exams, now)
 
-  if (editing) {
+  if (!exam) {
     return (
-      <div className="glass exam-card">
+      <div className="glass exam-card summary-card" onClick={onOpen}>
         <div className="label-mono">Prochain partiel</div>
-        <div className="devoir-form">
-          <input
-            name="nom"
-            placeholder="Matière (ex : Optique cohérente)"
-            value={draft.matiere}
-            onChange={(e) => setDraft((d) => ({ ...d, matiere: e.target.value }))}
-          />
-          <input
-            name="jours"
-            type="number"
-            placeholder="J-…"
-            value={draft.jours}
-            onChange={(e) => setDraft((d) => ({ ...d, jours: e.target.value }))}
-          />
-          <div
-            className="pill pill-accent"
-            onClick={() => {
-              const n = parseInt(draft.jours, 10)
-              if (!draft.matiere.trim() || Number.isNaN(n)) return
-              onSetExam({ matiere: draft.matiere.trim(), date: isoDatePlusDays(now, n) })
-              setEditing(false)
-            }}
-          >
-            Enregistrer
-          </div>
-          {nextExam && (
-            <div className="pill" onClick={() => setEditing(false)}>
-              Annuler
-            </div>
-          )}
-        </div>
+        <div style={{ fontSize: 13.5, color: 'var(--text-dim)' }}>Aucun partiel enregistré.</div>
+        <div className="summary-hint">Cliquer pour en ajouter →</div>
       </div>
     )
   }
 
-  const daysLeft = daysBetween(now, nextExam.date)
+  const daysLeft = daysBetween(now, exam.date)
   const fillPct = Math.max(0, Math.min(100, (1 - daysLeft / HORIZON_DAYS) * 100))
 
   const ticks = devoirs.map((d) => {
@@ -70,13 +28,13 @@ export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
   })
 
   return (
-    <div className="glass exam-card">
+    <div className="glass exam-card summary-card" onClick={onOpen}>
       <div className="exam-head">
         <div>
           <div className="label-mono">Prochain partiel</div>
           <div style={{ fontSize: 19 }}>
-            {nextExam.matiere} —{' '}
-            {new Date(nextExam.date + 'T00:00:00').toLocaleDateString('fr-FR', {
+            {exam.matiere} —{' '}
+            {new Date(exam.date + 'T00:00:00').toLocaleDateString('fr-FR', {
               day: 'numeric',
               month: 'short',
             })}
@@ -96,7 +54,10 @@ export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
             key={d.id}
             className="gauge-tick"
             style={{ left: `${d.pos}%` }}
-            onMouseEnter={() => setHover(d.id)}
+            onMouseEnter={(e) => {
+              e.stopPropagation()
+              setHover(d.id)
+            }}
             onMouseLeave={() => setHover(null)}
           >
             <div className="gauge-tick-line" style={hover === d.id ? { background: 'var(--text)' } : undefined} />
@@ -107,16 +68,8 @@ export default function ExamGauge({ nextExam, devoirs, now, onSetExam }) {
         ))}
         <div className="gauge-cursor" />
       </div>
-      <div
-        className="pill"
-        style={{ alignSelf: 'flex-start' }}
-        onClick={() => {
-          setDraft({ matiere: nextExam.matiere, jours: String(daysBetween(now, nextExam.date)) })
-          setEditing(true)
-        }}
-      >
-        Modifier
-      </div>
+      {exams.length > 1 && <div className="summary-hint">+{exams.length - 1} autre(s) partiel(s)</div>}
+      <div className="summary-hint">Cliquer pour gérer les partiels →</div>
     </div>
   )
 }

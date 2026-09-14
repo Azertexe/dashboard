@@ -30,6 +30,14 @@ export function toMarkdown(state, now = Date.now()) {
     lines.push('')
   }
 
+  if (state.exams?.length) {
+    lines.push('## Partiels', '')
+    for (const e of state.exams) {
+      lines.push(`- ${e.matiere} — ${e.date}`)
+    }
+    lines.push('')
+  }
+
   if (state.devoirs.length) {
     lines.push('## Devoirs', '')
     for (const d of state.devoirs) {
