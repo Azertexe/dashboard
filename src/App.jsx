@@ -7,8 +7,14 @@ import CourseListScreen from './components/CourseListScreen.jsx'
 import CourseDetailScreen from './components/CourseDetailScreen.jsx'
 import PartielsScreen from './components/PartielsScreen.jsx'
 import DevoirsScreen from './components/DevoirsScreen.jsx'
+import StatsScreen from './components/StatsScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
+import { checkAndNotify } from './logic/notifications.js'
+import { lastExportAt } from './logic/exportData.js'
+
+const EXPORT_REMINDER_MS = 14 * 24 * 60 * 60 * 1000
+const NOTIFY_CHECK_MS = 10 * 60 * 1000
 
 const LAYOUT_KEY = 'l3-physique-layout'
 
@@ -40,6 +46,27 @@ export default function App() {
     return () => clearTimeout(id)
   }, [toast])
 
+  // Rappel d'export périodique tant qu'il n'y a pas de sync cloud.
+  useEffect(() => {
+    if (state.chapitres.length === 0) return
+    const last = lastExportAt()
+    if (last && Date.now() - last < EXPORT_REMINDER_MS) return
+    const id = setTimeout(
+      () => setToast('Pensez à exporter une sauvegarde (Réglages → Export)'),
+      1500,
+    )
+    return () => clearTimeout(id)
+    // Un seul rappel par ouverture d'app.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Notifications navigateur pour les badges en retard (si activées).
+  useEffect(() => {
+    checkAndNotify(state.chapitres, now)
+    const id = setInterval(() => checkAndNotify(state.chapitres, Date.now()), NOTIFY_CHECK_MS)
+    return () => clearInterval(id)
+  }, [state.chapitres, now])
+
   const pickLayout = (mode) => {
     setLayoutMode(mode)
     localStorage.setItem(LAYOUT_KEY, mode)
@@ -65,6 +92,12 @@ export default function App() {
   }
   const goPartiels = () => setScreen('partiels')
   const goDevoirs = () => setScreen('devoirs')
+  const goStats = () => setScreen('stats')
+  const openCourseFromStats = (id) => {
+    setSide('cours')
+    setCourseId(id)
+    setScreen('detail')
+  }
 
   return (
     <div className="app-shell">
@@ -89,6 +122,7 @@ export default function App() {
                 onGoTd={() => goListe('td')}
                 onGoPartiels={goPartiels}
                 onGoDevoirs={goDevoirs}
+                onGoStats={goStats}
               />
             )}
 
@@ -116,6 +150,10 @@ export default function App() {
             {screen === 'partiels' && <PartielsScreen now={now} onGoHome={goHome} />}
 
             {screen === 'devoirs' && <DevoirsScreen now={now} onGoHome={goHome} />}
+
+            {screen === 'stats' && (
+              <StatsScreen now={now} onGoHome={goHome} onOpenCourse={openCourseFromStats} />
+            )}
           </div>
         </div>
 
@@ -142,7 +180,6 @@ export default function App() {
             setSettingsOpen(false)
             setPickerOpen(true)
           }}
-          onStubTheme={() => setToast('Thème "Détente" — en construction')}
         />
       )}
       {toast && <div className="toast">{toast}</div>}

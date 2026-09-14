@@ -48,7 +48,11 @@ export default function DevoirsScreen({ now, onGoHome }) {
               </div>
               <button
                 className="devoir-del"
-                onClick={() => dispatch({ type: 'DELETE_DEVOIR', id: d.id })}
+                onClick={() => {
+                  if (confirm(`Supprimer "${d.nom}" ?`)) {
+                    dispatch({ type: 'DELETE_DEVOIR', id: d.id })
+                  }
+                }}
                 aria-label="Supprimer"
               >
                 ×

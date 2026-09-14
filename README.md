@@ -62,12 +62,18 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
   écran dédié (clic sur la carte → `PartielsScreen` / `DevoirsScreen`).
 - ✅ **Partie 5 — Mode édition** : édition nom/description/état/commentaires
-  sans toucher aux badges ; ajout de chapitres au fil de l'année. Chaque
+  sans toucher aux badges ; ajout de chapitres au fil de l'année ; recherche
+  dans la liste des chapitres d'un cours dès qu'il y en a plus de 3. Chaque
   matière a sa propre teinte (`src/data/courses.js`, `courseAccentStyle`),
   reprise en bordure/pastille dans les listes et le détail d'un cours.
-- 🚧 **Partie 6 — Ressources** : cartes stub (fiche de révision / fiche
-  méthode / polys) sans liens réels pour l'instant.
-- ⬜ **Partie 7 — Sync Firebase** : pas encore fait, données en localStorage.
+- ✅ **Partie 6 — Ressources** : fiche de révision, fiche méthode et polys
+  sont éditables par matière (`ResourceLinkCard` / `ResourcePolysCard`) —
+  lien vers une URL externe ou un fichier hébergé dans le repo (ex. PDF dans
+  `public/`), avec édition/suppression en place.
+- ⬜ **Partie 7 — Sync Firebase** : pas encore fait, données en localStorage
+  (report demandé par l'utilisateur — nécessite un projet Firebase de son
+  côté). En attendant : export/import JSON manuel, et un rappel périodique
+  suggère d'exporter une sauvegarde si ça fait plus de 14 jours.
 - ✅ **Partie 8 — Export & backup** : export JSON (backup/restauration) et
   export Markdown (état lisible, pour coller dans un chat IA), depuis
   Réglages. L'import JSON restaure une sauvegarde.
@@ -97,20 +103,44 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
 
 - **Glacier** (par défaut) et **Volcanique** sont fonctionnels, choisis
   depuis Réglages → Thème (ou en cliquant le logo de l'accueil).
-- **Détente** reste un stub non fonctionnel (clic → message "en construction"),
-  comme prévu par la spec.
+- **Détente** (marron/vert) est maintenant fonctionnel comme les deux autres.
 - **Fond photo** : pas de photo perso fournie. Pour en ajouter une, la déposer
   dans `public/` et régler `--bg-photo` dans `src/styles/global.css`, ex. :
   `--bg-photo: url('/mon-fond.jpg');`. L'effet liquid glass (blur + opacité)
   est déjà en place sur les panneaux et fonctionnera par-dessus.
 
+### Vue d'ensemble
+
+Un lien "Vue d'ensemble →" sous les onglets Cours/TD de l'accueil ouvre un
+écran récapitulatif (`StatsScreen.jsx`) : nombre de chapitres, actifs vs
+standby, badges en retard, répartition par état, et par matière (avec le même
+point d'exclamation que sur les tuiles Cours/TD si une matière a du retard).
+
+### App installable (PWA)
+
+Le site est installable sur l'écran d'accueil (mobile ou desktop) et reste
+consultable hors-ligne grâce à un service worker minimal
+(`public/sw.js`, réseau-d'abord avec repli sur le cache — pas de précache figé
+puisque les noms de fichiers changent à chaque build Vite). Manifest et icônes
+dans `public/manifest.json` et `public/icons/`.
+
+### Notifications
+
+Depuis Réglages → Notifications, on peut activer des notifications
+navigateur : un badge qui passe orange ou jaune sans être traité déclenche une
+notification (au plus une par badge et par jour), via `src/logic/notifications.js`.
+Nécessite que l'onglet soit ouvert (pas de push serveur).
+
 ## Structure
 
 ```
 src/
-  data/       liste des 7 cours, énumération des états de chapitre
-  logic/      logique des badges (pure, testable) + export JSON/Markdown
+  data/       liste des 7 cours, énumération des états de chapitre, thèmes
+  logic/      logique des badges, dates, export, notifications (pur, testable)
   state/      store React (context + reducer) avec persistance localStorage
-  components/ écrans (Accueil, liste Cours/TD, détail d'un cours) et UI
+  components/ écrans (Accueil, liste Cours/TD, détail d'un cours, vue
+              d'ensemble, partiels, devoirs) et UI
   styles/     variables de thème + classes "liquid glass"
+public/
+  manifest.json, icons/, sw.js   PWA
 ```
