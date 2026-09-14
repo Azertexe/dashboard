@@ -46,13 +46,22 @@ const NEXT_LEVEL = {
   vert: BADGE_LEVELS.VERT,
 }
 
+// Pour forcer une couleur ACTIVE donnée (mode debug), on part de l'étape
+// validée juste avant elle dans le cycle normal, et on recule son horloge
+// assez loin pour que l'attente soit déjà écoulée.
+const PREV_STAGE_FOR = {
+  rouge: 'none',
+  orange: 'rouge',
+  jaune: 'orange',
+  vert: 'jaune',
+}
+
 function emptyBadge() {
   return {
     validatedStage: null,
     validatedAt: null,
     previousValidatedStage: null,
     previousValidatedAt: null,
-    forcedLevel: null,
   }
 }
 
@@ -68,13 +77,6 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
   }
 
   const badge = (side === 'td' ? chapitre.badgeTD : chapitre.badgeCours) ?? emptyBadge()
-
-  // Mode debug (Réglages) : force ce badge à une couleur donnée, en dehors de
-  // tout calcul de cycle — pratique pour prévisualiser un état sans attendre.
-  if (badge.forcedLevel) {
-    return { phase: 'active', level: badge.forcedLevel, daysLeft: 0, pulse: false, fromClick: false }
-  }
-
   const stageKey = badge.validatedStage ?? 'none'
   const anchor = badge.validatedAt ?? chapitre.activatedAt
   const elapsedDays = Math.max(0, (now - anchor) / DAY_MS)
@@ -120,12 +122,13 @@ export function markBadgeNow(chapitre, side, now = Date.now()) {
       validatedAt: now,
       previousValidatedStage: prev.validatedStage ?? null,
       previousValidatedAt: prev.validatedAt ?? null,
-      forcedLevel: null,
     },
   }
 }
 
-/** Annule le dernier clic sur ce badge (au cas où c'était une erreur). */
+/** Annule le dernier clic (ou forçage debug) sur ce badge, au cas où c'était
+ * une erreur — restaure exactement l'état d'avant, pas juste le statut
+ * "auto" par défaut. */
 export function undoBadge(chapitre, side) {
   const key = side === 'td' ? 'badgeTD' : 'badgeCours'
   const badge = chapitre[key]
@@ -137,23 +140,45 @@ export function undoBadge(chapitre, side) {
       validatedAt: badge.previousValidatedAt ?? null,
       previousValidatedStage: null,
       previousValidatedAt: null,
-      forcedLevel: null,
     },
   }
 }
 
-/** Mode debug (Réglages) : force le badge `side` du chapitre à `level`
- * (une des 4 couleurs), ou retire le forçage si `level` est null — le badge
- * revient alors au statut calculé normalement. Active le chapitre au passage
- * si besoin, sinon le forçage ne serait pas visible. */
+/** Mode debug (Réglages) : force le badge `side` du chapitre à `level` (une
+ * des 4 couleurs), ou le remet à null pour revenir au statut "auto". Ça ne
+ * pose pas un simple habillage visuel : ça règle réellement l'horloge
+ * (validatedStage/validatedAt) comme si l'étape précédente venait d'être
+ * validée puis son attente déjà écoulée — donc ça influence le cycle normal
+ * (prochaine attente, ↺ pour annuler) exactement comme un vrai clic.
+ * Active le chapitre au passage si besoin, sinon rien ne serait visible. */
 export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
   const key = side === 'td' ? 'badgeTD' : 'badgeCours'
   const prev = chapitre[key] ?? emptyBadge()
   const base =
     chapitre.statut === 'actif' ? chapitre : { ...chapitre, statut: 'actif', activatedAt: chapitre.activatedAt ?? now }
+
+  if (!level) {
+    return {
+      ...base,
+      [key]: {
+        validatedStage: null,
+        validatedAt: null,
+        previousValidatedStage: prev.validatedStage ?? null,
+        previousValidatedAt: prev.validatedAt ?? null,
+      },
+    }
+  }
+
+  const stageKey = PREV_STAGE_FOR[level]
+  const waitMs = WAIT_DAYS[stageKey] * DAY_MS
   return {
     ...base,
-    [key]: { ...prev, forcedLevel: level },
+    [key]: {
+      validatedStage: stageKey === 'none' ? null : stageKey,
+      validatedAt: now - waitMs - 60 * 1000, // largement passé l'attente -> actif tout de suite
+      previousValidatedStage: prev.validatedStage ?? null,
+      previousValidatedAt: prev.validatedAt ?? null,
+    },
   }
 }
 

@@ -13,7 +13,7 @@ import {
 const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
 
 const FORCE_LEVELS = [BADGE_LEVELS.ROUGE, BADGE_LEVELS.ORANGE, BADGE_LEVELS.JAUNE, BADGE_LEVELS.VERT]
-const LEVEL_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert' }
+const LEVEL_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert turquoise' }
 
 function levelPillStyle(level, active) {
   if (!active) return {}
@@ -195,7 +195,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
             {debugChapitre &&
               ['cours', 'td'].map((side) => {
                 const status = badgeStatus(debugChapitre, side, now)
-                const forced = (side === 'td' ? debugChapitre.badgeTD : debugChapitre.badgeCours)?.forcedLevel
+                const active = status.phase === 'active' ? status.level : null
                 return (
                   <div key={side} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
@@ -211,7 +211,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                         <div
                           key={level}
                           className="pill"
-                          style={levelPillStyle(level, forced === level)}
+                          style={levelPillStyle(level, active === level)}
                           onClick={() => forceBadge(side, level)}
                         >
                           {LEVEL_NAME[level]}
