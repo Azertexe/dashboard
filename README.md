@@ -49,14 +49,24 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   (`src/state/store.jsx`). Stocké en local pour l'instant.
 - ✅ **Partie 3 — Badges TD/Cours + standby/actif** : logique dans
   `src/logic/badges.js`, isolée de l'UI. Standby → Activer (sens unique,
-  démarre les 2 horloges) ; 4 couleurs (rouge jour 1 < 24h, orange 24h–3j,
-  jaune 3j–7j, vert ≥ 7j) ; une fois au vert, un pulse bleu revient tous les 2
-  jours. Éditer nom/description ne touche jamais ces dates. Un point
-  d'exclamation rouge apparaît en haut à droite de la tuile d'une matière (vue
-  Cours/TD) dès qu'un de ses badges est orange ou jaune — pas au rouge (trop
-  tôt), plus au vert/bleu (le pulse suffit déjà). Chaque clic sur un badge
-  garde l'état précédent ; un bouton ↺ dans le panneau d'édition du chapitre
-  permet d'annuler un clic fait par erreur.
+  démarre les 2 horloges). Cycle par étapes, chaque couleur devant être
+  validée (clic) pour lancer l'attente vers la suivante :
+  activation → 1j → **rouge** (validé) → 3j → **orange** (validé) → 7j →
+  **jaune** (validé) → 2j → **vert** (validé) → 2j → **vert**, en boucle tant
+  qu'on continue de cliquer. Pendant l'attente le badge est grisé, pas
+  cliquable, et affiche juste le prochain statut (horloge + jours restants) ;
+  une fois la couleur active, il est cliquable et affiche son libellé
+  (« à réviser ! », « à réviser bientôt », « ok », « à jour »). Si on ne
+  clique jamais une couleur active, elle reste affichée telle quelle
+  indéfiniment (pas de progression automatique au-delà du tout premier
+  passage au rouge). Une fois au vert, un pulse bleu revient tous les 2 jours
+  tant qu'on ne clique pas dessus. Éditer nom/description ne touche jamais
+  ces horloges. Un point d'exclamation rouge apparaît en haut à droite de la
+  tuile d'une matière (vue Cours/TD) dès qu'un de ses badges est orange ou
+  jaune **actif** — pas pendant une attente, pas au rouge (trop tôt), plus au
+  vert/bleu (le pulse suffit déjà). Chaque clic sur un badge garde l'état
+  précédent ; un bouton ↺ dans le panneau d'édition du chapitre permet
+  d'annuler un clic fait par erreur.
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
   devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
   lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
