@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
-import { activateChapitre, markBadgeNow, undoBadge, forceBadgeLevel } from '../logic/badges'
+import { activateChapitre, markBadgeNow, undoBadge, forceBadgeLevel, setForcedAlert } from '../logic/badges'
 
 const STORAGE_KEY = 'l3-physique-dashboard'
 const STORAGE_VERSION = 1
@@ -50,8 +50,20 @@ function reducer(state, action) {
         etat: 'pas_commence',
         statut: 'standby',
         activatedAt: null,
-        badgeTD: { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null },
-        badgeCours: { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null },
+        badgeTD: {
+          validatedStage: null,
+          validatedAt: null,
+          previousValidatedStage: null,
+          previousValidatedAt: null,
+          forcedAlert: null,
+        },
+        badgeCours: {
+          validatedStage: null,
+          validatedAt: null,
+          previousValidatedStage: null,
+          previousValidatedAt: null,
+          forcedAlert: null,
+        },
         commentaires: '',
         createdAt: Date.now(),
       }
@@ -93,6 +105,13 @@ function reducer(state, action) {
         ...state,
         chapitres: state.chapitres.map((c) =>
           c.id === action.id ? forceBadgeLevel(c, action.side, action.level) : c,
+        ),
+      }
+    case 'SET_FORCED_ALERT':
+      return {
+        ...state,
+        chapitres: state.chapitres.map((c) =>
+          c.id === action.id ? setForcedAlert(c, action.side, action.value) : c,
         ),
       }
     case 'ADD_DEVOIR': {

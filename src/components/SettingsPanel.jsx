@@ -20,6 +20,11 @@ function levelPillStyle(level, active) {
   return { background: `var(--${level}-bg)`, color: `var(--${level}-ink)`, borderColor: 'transparent' }
 }
 
+function alertPillStyle(active) {
+  if (!active) return {}
+  return { background: 'var(--orange-bg)', color: 'var(--orange-ink)', borderColor: 'transparent' }
+}
+
 export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now }) {
   const { state, dispatch } = useStore()
   const fileInput = useRef(null)
@@ -34,6 +39,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
   const debugChapitre = debugChapitres.find((c) => c.id === debugChapitreId) ?? null
 
   const forceBadge = (side, level) => dispatch({ type: 'FORCE_BADGE', id: debugChapitre.id, side, level })
+  const forceAlert = (side, value) => dispatch({ type: 'SET_FORCED_ALERT', id: debugChapitre.id, side, value })
 
   const toggleNotifications = async () => {
     if (notifOn) {
@@ -216,6 +222,34 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                         <div className="pill" onClick={() => forceBadge(side, null)}>
                           Auto
                         </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginTop: 4 }}>
+                        <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>Point d'exclamation (!) :</span>
+                        {(() => {
+                          const badge = side === 'td' ? debugChapitre.badgeTD : debugChapitre.badgeCours
+                          const forced = badge?.forcedAlert ?? null
+                          return (
+                            <>
+                              <div
+                                className="pill"
+                                style={alertPillStyle(forced === true)}
+                                onClick={() => forceAlert(side, true)}
+                              >
+                                Afficher
+                              </div>
+                              <div
+                                className="pill"
+                                style={alertPillStyle(forced === false)}
+                                onClick={() => forceAlert(side, false)}
+                              >
+                                Masquer
+                              </div>
+                              <div className="pill" onClick={() => forceAlert(side, null)}>
+                                Auto
+                              </div>
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   )

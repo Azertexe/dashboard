@@ -24,6 +24,7 @@ npm run dev
 npm run build    # build de prod dans dist/
 npm run preview  # sert le build localement
 npm run lint      # oxlint
+npm test          # tests automatisés (Vitest) sur la logique des badges
 ```
 
 ## Déploiement
@@ -60,20 +61,26 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   couleur active, il est cliquable et affiche son libellé (« à réviser ! »,
   « à réviser bientôt », « ok », « à jour »). Si on ne clique jamais une
   couleur active, elle reste affichée telle quelle indéfiniment (pas de
-  progression automatique au-delà du tout premier passage au rouge). Une fois
-  au vert turquoise, un pulse bleu revient tous les 2 jours tant qu'on ne
-  clique pas dessus. Éditer nom/description ne touche jamais ces horloges. Un
-  point d'exclamation rouge apparaît en haut à droite de la tuile d'une
-  matière (vue Cours/TD) dès qu'un de ses badges est orange ou jaune
-  **actif** — pas pendant une attente, pas au rouge (trop tôt), plus au vert
-  turquoise (le pulse suffit déjà). Chaque clic sur un badge garde l'état
-  précédent ; un bouton ↺ dans le panneau d'édition du chapitre permet
-  d'annuler un clic fait par erreur — et restaure exactement l'état d'avant
-  (pas juste le statut "auto" par défaut). Un **mode debug** dans Réglages
-  permet de forcer le badge Cours ou TD d'un chapitre choisi à n'importe
-  quelle couleur (ou de revenir en "Auto"). Ce forçage règle réellement
-  l'horloge du badge (comme un vrai clic dans le passé), donc il s'intègre au
-  cycle normal et peut lui aussi être annulé avec ↺.
+  progression automatique au-delà du tout premier passage au rouge). Tant
+  qu'un badge rouge/orange/jaune est actif, il pulse en continu (un reflet
+  qui glisse horizontalement, simple variation de sa propre couleur) pour
+  attirer l'oeil ; une fois vert turquoise, le pulse (bleuté) ne revient que
+  tous les 2 jours pour rappeler discrètement. Éditer nom/description ne
+  touche jamais ces horloges. Un point d'exclamation rouge apparaît en haut
+  à droite de la tuile d'une matière (vue Cours/TD) dès qu'un de ses badges
+  est orange ou jaune **actif** — pas pendant une attente, pas au rouge (trop
+  tôt), plus au vert turquoise (le pulse suffit déjà). Chaque clic sur un
+  badge garde l'état précédent ; un bouton ↺ dans le panneau d'édition du
+  chapitre permet d'annuler un clic fait par erreur — et restaure exactement
+  l'état d'avant (pas juste le statut "auto" par défaut). Un **mode debug**
+  dans Réglages permet de forcer le badge Cours ou TD d'un chapitre choisi à
+  n'importe quelle couleur (ou de revenir en "Auto") ; ce forçage règle
+  réellement l'horloge du badge (comme un vrai clic dans le passé), donc il
+  s'intègre au cycle normal et peut lui aussi être annulé avec ↺. Le même
+  mode debug permet aussi de forcer l'affichage (ou le masquage) du point
+  d'exclamation sur un chapitre précis, indépendamment de son statut réel,
+  pour tester l'alerte sans attendre. La logique du cycle (`src/logic/badges.js`)
+  est couverte par des tests automatisés (`npm test`, via Vitest).
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
   devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
   lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
@@ -132,6 +139,13 @@ Un lien "Vue d'ensemble →" sous les onglets Cours/TD de l'accueil ouvre un
 écran récapitulatif (`StatsScreen.jsx`) : nombre de chapitres, actifs vs
 standby, badges en retard, répartition par état, et par matière (avec le même
 point d'exclamation que sur les tuiles Cours/TD si une matière a du retard).
+
+### Agenda
+
+Un lien "Agenda →" à côté de "Vue d'ensemble →" ouvre `AgendaScreen.jsx` :
+tout ce qui presse au même endroit — les badges actifs orange/jaune (cliquables
+directement depuis là pour les valider) en premier, puis les devoirs et
+partiels à venir triés par date avec leur J-X.
 
 ### App installable (PWA)
 

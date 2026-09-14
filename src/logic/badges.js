@@ -62,6 +62,7 @@ function emptyBadge() {
     validatedAt: null,
     previousValidatedStage: null,
     previousValidatedAt: null,
+    forcedAlert: null,
   }
 }
 
@@ -105,8 +106,20 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
  * pulse bleu) se signale déjà tout seul.
  */
 export function needsAttention(chapitre, side, now = Date.now()) {
+  const badge = side === 'td' ? chapitre.badgeTD : chapitre.badgeCours
+  if (badge?.forcedAlert != null) return badge.forcedAlert
   const { phase, level } = badgeStatus(chapitre, side, now)
   return phase === 'active' && (level === BADGE_LEVELS.ORANGE || level === BADGE_LEVELS.JAUNE)
+}
+
+/** Mode debug (Réglages) : force l'affichage (ou le masquage) du point
+ * d'exclamation "!" pour ce badge, indépendamment de son statut réel.
+ * `value` : true (forcer affiché), false (forcer masqué), null (revenir au
+ * calcul automatique). */
+export function setForcedAlert(chapitre, side, value) {
+  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
+  const prev = chapitre[key] ?? emptyBadge()
+  return { ...chapitre, [key]: { ...prev, forcedAlert: value } }
 }
 
 /** Valide la couleur actuellement active — relance l'attente vers la couleur
@@ -124,6 +137,7 @@ export function markBadgeNow(chapitre, side, now = Date.now()) {
       validatedAt: now,
       previousValidatedStage: prev.validatedStage ?? null,
       previousValidatedAt: prev.validatedAt ?? null,
+      forcedAlert: prev.forcedAlert ?? null,
     },
   }
 }
@@ -142,6 +156,7 @@ export function undoBadge(chapitre, side) {
       validatedAt: badge.previousValidatedAt ?? null,
       previousValidatedStage: null,
       previousValidatedAt: null,
+      forcedAlert: badge.forcedAlert ?? null,
     },
   }
 }
@@ -167,6 +182,7 @@ export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
         validatedAt: null,
         previousValidatedStage: prev.validatedStage ?? null,
         previousValidatedAt: prev.validatedAt ?? null,
+        forcedAlert: prev.forcedAlert ?? null,
       },
     }
   }
@@ -180,6 +196,7 @@ export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
       validatedAt: now - waitMs - 60 * 1000, // largement passé l'attente -> actif tout de suite
       previousValidatedStage: prev.validatedStage ?? null,
       previousValidatedAt: prev.validatedAt ?? null,
+      forcedAlert: prev.forcedAlert ?? null,
     },
   }
 }
