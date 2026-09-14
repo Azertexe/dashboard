@@ -1,20 +1,33 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { downloadJSON, downloadMarkdown } from '../logic/exportData.js'
 import { THEMES } from '../data/themes.js'
+import {
+  notificationsEnabled,
+  setNotificationsEnabled,
+  notificationsSupported,
+} from '../logic/notifications.js'
 
 const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
 
-export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, onStubTheme }) {
+export default function SettingsPanel({ onClose, layoutMode, onChangeLayout }) {
   const { state, dispatch } = useStore()
   const fileInput = useRef(null)
+  const [notifOn, setNotifOn] = useState(notificationsEnabled)
 
-  const pickTheme = (id) => {
-    if (id === 'detente') {
-      onStubTheme()
+  const pickTheme = (id) => dispatch({ type: 'SET_THEME', theme: id })
+
+  const toggleNotifications = async () => {
+    if (notifOn) {
+      setNotificationsEnabled(false)
+      setNotifOn(false)
       return
     }
-    dispatch({ type: 'SET_THEME', theme: id })
+    const perm = await Notification.requestPermission()
+    if (perm === 'granted') {
+      setNotificationsEnabled(true)
+      setNotifOn(true)
+    }
   }
 
   const onImportFile = (e) => {
@@ -67,11 +80,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, onS
             {THEMES.map((t) => (
               <div
                 key={t.id}
-                className={
-                  'theme-pill' +
-                  (state.theme === t.id ? ' active' : '') +
-                  (t.id === 'detente' ? ' pill-disabled' : '')
-                }
+                className={'theme-pill' + (state.theme === t.id ? ' active' : '')}
                 onClick={() => pickTheme(t.id)}
               >
                 {t.label}
@@ -91,6 +100,22 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, onS
             </div>
           </div>
         </div>
+
+        {notificationsSupported() && (
+          <div className="field-row">
+            <label>Notifications</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
+                {notifOn
+                  ? 'Activées — badges en retard signalés une fois par jour.'
+                  : 'Recevoir une notification quand un badge prend du retard.'}
+              </div>
+              <div className="pill" onClick={toggleNotifications}>
+                {notifOn ? 'Désactiver' : 'Activer'}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="field-row">
           <label>Arrière-plan</label>

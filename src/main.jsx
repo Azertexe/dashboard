@@ -11,3 +11,11 @@ createRoot(document.getElementById('root')).render(
     </StoreProvider>
   </StrictMode>,
 )
+
+// PWA : permet d'installer le site sur l'écran d'accueil et de le consulter
+// hors-ligne (les données elles-mêmes vivent en localStorage).
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/dashboard/sw.js').catch(() => {})
+  })
+}

@@ -49,6 +49,17 @@ export function toMarkdown(state, now = Date.now()) {
   return lines.join('\n')
 }
 
+const LAST_EXPORT_KEY = 'l3-physique-last-export'
+
+export function lastExportAt() {
+  const raw = localStorage.getItem(LAST_EXPORT_KEY)
+  return raw ? Number(raw) : null
+}
+
+function markExported() {
+  localStorage.setItem(LAST_EXPORT_KEY, String(Date.now()))
+}
+
 function download(filename, content, mime) {
   const blob = new Blob([content], { type: mime })
   const url = URL.createObjectURL(blob)
@@ -59,6 +70,7 @@ function download(filename, content, mime) {
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+  markExported()
 }
 
 export function downloadJSON(state) {

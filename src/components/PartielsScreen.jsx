@@ -48,7 +48,11 @@ export default function PartielsScreen({ now, onGoHome }) {
               </div>
               <button
                 className="devoir-del"
-                onClick={() => dispatch({ type: 'DELETE_EXAM', id: e.id })}
+                onClick={() => {
+                  if (confirm(`Supprimer le partiel "${e.matiere}" ?`)) {
+                    dispatch({ type: 'DELETE_EXAM', id: e.id })
+                  }
+                }}
                 aria-label="Supprimer"
               >
                 ×

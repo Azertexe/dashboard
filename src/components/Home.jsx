@@ -4,7 +4,7 @@ import DevoirsCard from './DevoirsCard.jsx'
 import MountainLogo from './MountainLogo.jsx'
 import { useStore } from '../state/store.jsx'
 
-export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs }) {
+export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs, onGoStats }) {
   const { state, dispatch } = useStore()
   const nbChapitres = state.chapitres.length
 
@@ -32,6 +32,10 @@ export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs
           <div className="nav-btn-title">TD</div>
           <div className="nav-btn-sub">FEUILLES &amp; MÉTHODES</div>
         </div>
+      </div>
+
+      <div className="home-stats-link" onClick={onGoStats}>
+        Vue d'ensemble →
       </div>
 
       <DevoirsCard devoirs={state.devoirs} now={now} onOpen={onGoDevoirs} />

@@ -11,6 +11,7 @@ function emptyState() {
     exams: [], // { id, matiere, date, createdAt } — les partiels
     devoirs: [], // { id, nom, dateEcheance, createdAt }
     chapitres: [], // voir src/logic/badges.js pour la forme d'un chapitre
+    resources: {}, // { [courseId]: { revision: {url,label}|null, methode: {url,label}|null, polys: [{id,url,label}] } }
   }
 }
 
@@ -109,6 +110,44 @@ function reducer(state, action) {
     }
     case 'DELETE_EXAM':
       return { ...state, exams: state.exams.filter((e) => e.id !== action.id) }
+    case 'SET_RESOURCE_LINK': {
+      const bucket = state.resources[action.courseId] || { revision: null, methode: null, polys: [] }
+      return {
+        ...state,
+        resources: {
+          ...state.resources,
+          [action.courseId]: { ...bucket, [action.kind]: { url: action.url, label: action.label } },
+        },
+      }
+    }
+    case 'DELETE_RESOURCE_LINK': {
+      const bucket = state.resources[action.courseId] || { revision: null, methode: null, polys: [] }
+      return {
+        ...state,
+        resources: { ...state.resources, [action.courseId]: { ...bucket, [action.kind]: null } },
+      }
+    }
+    case 'ADD_POLY': {
+      const bucket = state.resources[action.courseId] || { revision: null, methode: null, polys: [] }
+      const poly = { id: newId('poly'), url: action.url, label: action.label }
+      return {
+        ...state,
+        resources: {
+          ...state.resources,
+          [action.courseId]: { ...bucket, polys: [...bucket.polys, poly] },
+        },
+      }
+    }
+    case 'DELETE_POLY': {
+      const bucket = state.resources[action.courseId] || { revision: null, methode: null, polys: [] }
+      return {
+        ...state,
+        resources: {
+          ...state.resources,
+          [action.courseId]: { ...bucket, polys: bucket.polys.filter((p) => p.id !== action.polyId) },
+        },
+      }
+    }
     case 'SET_THEME':
       return { ...state, theme: action.theme }
     case 'IMPORT_STATE':
