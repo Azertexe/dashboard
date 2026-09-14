@@ -9,6 +9,7 @@ import PartielsScreen from './components/PartielsScreen.jsx'
 import DevoirsScreen from './components/DevoirsScreen.jsx'
 import StatsScreen from './components/StatsScreen.jsx'
 import AgendaScreen from './components/AgendaScreen.jsx'
+import PartiesScreen from './components/PartiesScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
 import { checkAndNotify } from './logic/notifications.js'
@@ -27,6 +28,7 @@ export default function App() {
   const [screen, setScreen] = useState('home')
   const [side, setSide] = useState('cours') // 'cours' | 'td'
   const [courseId, setCourseId] = useState(null)
+  const [partiesChapitreId, setPartiesChapitreId] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [toast, setToast] = useState(null)
 
@@ -105,6 +107,17 @@ export default function App() {
     setCourseId(id)
     setScreen('detail')
   }
+  const openParties = (chapitreId, s) => {
+    if (s) setSide(s)
+    const chapitre = state.chapitres.find((c) => c.id === chapitreId)
+    if (chapitre) setCourseId(chapitre.courseId)
+    setPartiesChapitreId(chapitreId)
+    setScreen('parties')
+  }
+  const backFromParties = () => {
+    setPartiesChapitreId(null)
+    setScreen('detail')
+  }
 
   return (
     <div className="app-shell">
@@ -152,8 +165,25 @@ export default function App() {
                 now={now}
                 onBack={backToListe}
                 onGoHome={goHome}
+                onOpenParties={openParties}
               />
             )}
+
+            {screen === 'parties' &&
+              (() => {
+                const partiesChapitre = state.chapitres.find((c) => c.id === partiesChapitreId)
+                return (
+                  partiesChapitre && (
+                    <PartiesScreen
+                      chapitre={partiesChapitre}
+                      side={side}
+                      now={now}
+                      onBack={backFromParties}
+                      onGoHome={goHome}
+                    />
+                  )
+                )
+              })()}
 
             {screen === 'partiels' && <PartielsScreen now={now} onGoHome={goHome} />}
 
@@ -164,7 +194,12 @@ export default function App() {
             )}
 
             {screen === 'agenda' && (
-              <AgendaScreen now={now} onGoHome={goHome} onOpenCourse={openCourseFromAgenda} />
+              <AgendaScreen
+                now={now}
+                onGoHome={goHome}
+                onOpenCourse={openCourseFromAgenda}
+                onOpenParties={openParties}
+              />
             )}
           </div>
         </div>

@@ -37,6 +37,12 @@ function migrateChapitre(c) {
     ...c,
     badgeCours: migrateBadgeSide(c.badgeCours, legacyActif, c.activatedAt),
     badgeTD: migrateBadgeSide(c.badgeTD, legacyActif, c.activatedAt),
+    partitionMode: c.partitionMode ?? 'chapitre',
+    parties: (c.parties ?? []).map((p) => ({
+      ...p,
+      badgeCours: migrateBadgeSide(p.badgeCours, false, null),
+      badgeTD: migrateBadgeSide(p.badgeTD, false, null),
+    })),
   }
 }
 
@@ -64,19 +70,39 @@ function newId(prefix) {
 // Champs qu'une édition "nom/description" a le droit de toucher — jamais les
 // horloges de badges ni la date d'activation (voir spec, Partie 5).
 const EDITABLE_CHAPITRE_FIELDS = ['nom', 'description', 'etat', 'commentaires']
+const EDITABLE_PARTIE_FIELDS = ['nom', 'description', 'commentaires']
+
+function emptyBadge() {
+  return {
+    statut: 'standby',
+    activatedAt: null,
+    validatedStage: null,
+    validatedAt: null,
+    previousValidatedStage: null,
+    previousValidatedAt: null,
+    forcedAlert: null,
+  }
+}
+
+// Les actions de badge (MARK_BADGE, UNDO_BADGE, FORCE_BADGE, SET_FORCED_ALERT,
+// ACTIVATE_CHAPITRE) visent soit le chapitre lui-même (action.partieId absent),
+// soit une de ses sous-parties (action.partieId présent) — `fn` (une des
+// fonctions de badges.js, déjà génériques sur {badgeCours,badgeTD}) s'applique
+// au bon objet et le résultat est réinjecté au bon endroit.
+function updateChapitreOrPartie(state, id, partieId, fn) {
+  return {
+    ...state,
+    chapitres: state.chapitres.map((c) => {
+      if (c.id !== id) return c
+      if (!partieId) return fn(c)
+      return { ...c, parties: c.parties.map((p) => (p.id === partieId ? fn(p) : p)) }
+    }),
+  }
+}
 
 function reducer(state, action) {
   switch (action.type) {
     case 'ADD_CHAPITRE': {
-      const emptyBadge = () => ({
-        statut: 'standby',
-        activatedAt: null,
-        validatedStage: null,
-        validatedAt: null,
-        previousValidatedStage: null,
-        previousValidatedAt: null,
-        forcedAlert: null,
-      })
       const chapitre = {
         id: newId('ch'),
         courseId: action.courseId,
@@ -87,6 +113,8 @@ function reducer(state, action) {
         badgeCours: emptyBadge(),
         commentaires: '',
         createdAt: Date.now(),
+        partitionMode: 'chapitre', // 'chapitre' (un badge pour tout) | 'parties' (un badge par sous-partie)
+        parties: [],
       }
       return { ...state, chapitres: [...state.chapitres, chapitre] }
     }
@@ -103,36 +131,70 @@ function reducer(state, action) {
     case 'DELETE_CHAPITRE':
       return { ...state, chapitres: state.chapitres.filter((c) => c.id !== action.id) }
     case 'ACTIVATE_CHAPITRE':
-      return {
-        ...state,
-        chapitres: state.chapitres.map((c) => (c.id === action.id ? activateChapitre(c, action.side) : c)),
-      }
+      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
+        activateChapitre(target, action.side),
+      )
     case 'MARK_BADGE':
-      return {
-        ...state,
-        chapitres: state.chapitres.map((c) =>
-          c.id === action.id ? markBadgeNow(c, action.side) : c,
-        ),
-      }
+      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
+        markBadgeNow(target, action.side),
+      )
     case 'UNDO_BADGE':
-      return {
-        ...state,
-        chapitres: state.chapitres.map((c) =>
-          c.id === action.id ? undoBadge(c, action.side) : c,
-        ),
-      }
+      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
+        undoBadge(target, action.side),
+      )
     case 'FORCE_BADGE':
+      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
+        forceBadgeLevel(target, action.side, action.level),
+      )
+    case 'SET_FORCED_ALERT':
+      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
+        setForcedAlert(target, action.side, action.value),
+      )
+    case 'SET_PARTITION_MODE':
       return {
         ...state,
         chapitres: state.chapitres.map((c) =>
-          c.id === action.id ? forceBadgeLevel(c, action.side, action.level) : c,
+          c.id === action.id ? { ...c, partitionMode: action.mode } : c,
         ),
       }
-    case 'SET_FORCED_ALERT':
+    case 'ADD_PARTIE': {
+      const partie = {
+        id: newId('pt'),
+        nom: action.nom,
+        description: '',
+        commentaires: '',
+        badgeCours: emptyBadge(),
+        badgeTD: emptyBadge(),
+        createdAt: Date.now(),
+      }
       return {
         ...state,
         chapitres: state.chapitres.map((c) =>
-          c.id === action.id ? setForcedAlert(c, action.side, action.value) : c,
+          c.id === action.chapitreId ? { ...c, parties: [...c.parties, partie] } : c,
+        ),
+      }
+    }
+    case 'EDIT_PARTIE': {
+      const patch = {}
+      for (const k of EDITABLE_PARTIE_FIELDS) {
+        if (k in action.patch) patch[k] = action.patch[k]
+      }
+      return {
+        ...state,
+        chapitres: state.chapitres.map((c) =>
+          c.id === action.chapitreId
+            ? { ...c, parties: c.parties.map((p) => (p.id === action.partieId ? { ...p, ...patch } : p)) }
+            : c,
+        ),
+      }
+    }
+    case 'DELETE_PARTIE':
+      return {
+        ...state,
+        chapitres: state.chapitres.map((c) =>
+          c.id === action.chapitreId
+            ? { ...c, parties: c.parties.filter((p) => p.id !== action.partieId) }
+            : c,
         ),
       }
     case 'ADD_DEVOIR': {

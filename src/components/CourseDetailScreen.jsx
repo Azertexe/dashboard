@@ -12,7 +12,7 @@ function normalize(s) {
     .replace(/[̀-ͯ]/g, '')
 }
 
-export default function CourseDetailScreen({ courseId, chapitres, side, now, onBack, onGoHome }) {
+export default function CourseDetailScreen({ courseId, chapitres, side, now, onBack, onGoHome, onOpenParties }) {
   const { state, dispatch } = useStore()
   const [adding, setAdding] = useState(false)
   const [nom, setNom] = useState('')
@@ -97,7 +97,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
         {filtered.length > 0 && (
           <div className="chapitre-list">
             {filtered.map((c) => (
-              <ChapitreRowFull key={c.id} chapitre={c} side={side} now={now} />
+              <ChapitreRowFull key={c.id} chapitre={c} side={side} now={now} onOpenParties={onOpenParties} />
             ))}
           </div>
         )}

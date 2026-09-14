@@ -1,6 +1,6 @@
 import { COURSES, courseAccentStyle } from '../data/courses.js'
 import { ETATS, etatLabel } from '../data/etats.js'
-import { needsAttention } from '../logic/badges.js'
+import { badgeUnits, needsAttention } from '../logic/badges.js'
 import { useStore } from '../state/store.jsx'
 
 export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
@@ -13,7 +13,10 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
   ).length
   const nbStandby = nbChapitres - nbActifs
   const nbAlertes = chapitres.reduce((n, c) => {
-    return n + (needsAttention(c, 'cours', now) ? 1 : 0) + (needsAttention(c, 'td', now) ? 1 : 0)
+    return badgeUnits(c).reduce(
+      (m, u) => m + (needsAttention(u.target, 'cours', now) ? 1 : 0) + (needsAttention(u.target, 'td', now) ? 1 : 0),
+      n,
+    )
   }, 0)
 
   const parEtat = ETATS.map((e) => ({
@@ -23,7 +26,9 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
 
   const parCours = COURSES.map((course) => {
     const ch = chapitres.filter((c) => c.courseId === course.id)
-    const alert = ch.some((c) => needsAttention(c, 'cours', now) || needsAttention(c, 'td', now))
+    const alert = ch.some((c) =>
+      badgeUnits(c).some((u) => needsAttention(u.target, 'cours', now) || needsAttention(u.target, 'td', now)),
+    )
     return { course, count: ch.length, alert }
   })
 
