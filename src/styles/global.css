@@ -22,19 +22,53 @@
   --glass-border-strong: rgba(255, 255, 255, 0.18);
   --glass-blur: 22px;
 
-  --neutre-bg: rgba(255, 255, 255, 0.07);
-  --neutre-ink: rgba(232, 237, 242, 0.72);
-  --jaune-bg: oklch(0.85 0.14 92);
-  --jaune-ink: #161003;
-  --orange-bg: oklch(0.76 0.15 55);
-  --orange-ink: #180c02;
   --rouge-bg: oklch(0.72 0.17 25);
   --rouge-ink: #1a0603;
+  --orange-bg: oklch(0.76 0.15 55);
+  --orange-ink: #180c02;
+  --jaune-bg: oklch(0.85 0.14 92);
+  --jaune-ink: #161003;
+  --vert-bg: oklch(0.8 0.15 150);
+  --vert-ink: #04150b;
+  --bleu-bg: oklch(0.8 0.12 235);
+  --bleu-ink: #04121c;
 
   --font-ui: 'Space Grotesk', system-ui, sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
 
   color-scheme: dark;
+}
+
+/* Disposition choisie au démarrage (PC / Mac / iPhone) — indépendante du thème. */
+:root,
+[data-layout='mac'] {
+  --layout-max-width: 860px;
+  --layout-columns: 1fr 1fr;
+  --layout-gap: 20px;
+}
+
+[data-layout='pc'] {
+  --layout-max-width: 1400px;
+  --layout-columns: repeat(3, 1fr);
+  --layout-gap: 26px;
+}
+
+[data-layout='iphone'] {
+  --layout-max-width: 430px;
+  --layout-columns: 1fr;
+  --layout-gap: 16px;
+}
+
+[data-layout='pc'] .exam-days-n {
+  font-size: 56px;
+}
+
+[data-layout='pc'] .nav-btn-title {
+  font-size: 26px;
+}
+
+[data-layout='pc'] .app-shell {
+  padding: 40px 40px 60px;
 }
 
 [data-theme='volcanique'] {
@@ -54,9 +88,6 @@
   --glass-3: rgba(255, 220, 200, 0.09);
   --glass-border: rgba(255, 200, 170, 0.14);
   --glass-border-strong: rgba(255, 200, 170, 0.22);
-
-  --neutre-bg: rgba(255, 220, 200, 0.09);
-  --neutre-ink: rgba(245, 236, 231, 0.72);
 }
 
 * {
@@ -101,12 +132,26 @@ select {
   padding: 20px 16px 60px;
 }
 
-.app-card {
+.app-content {
   width: 100%;
-  max-width: 720px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  transition: filter 0.4s ease;
+}
+
+.app-content.blurred {
+  filter: blur(18px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.app-card {
+  width: 100%;
+  max-width: var(--layout-max-width, 860px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-gap, 20px);
 }
 
 .label-mono {
@@ -491,7 +536,7 @@ select {
 
 .group-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: var(--layout-columns, 1fr 1fr);
   gap: 12px;
 }
 
@@ -502,6 +547,10 @@ select {
   .exam-days-n {
     font-size: 36px;
   }
+}
+
+[data-layout='iphone'] .group-grid {
+  grid-template-columns: 1fr;
 }
 
 .group-card {
@@ -586,15 +635,9 @@ select {
   cursor: default;
 }
 
-.badge-neutre {
-  background: var(--neutre-bg);
-  color: var(--neutre-ink);
-  border-color: var(--glass-border);
-}
-
-.badge-jaune {
-  background: var(--jaune-bg);
-  color: var(--jaune-ink);
+.badge-rouge {
+  background: var(--rouge-bg);
+  color: var(--rouge-ink);
 }
 
 .badge-orange {
@@ -602,21 +645,31 @@ select {
   color: var(--orange-ink);
 }
 
-.badge-rouge {
-  background: var(--rouge-bg);
-  color: var(--rouge-ink);
+.badge-jaune {
+  background: var(--jaune-bg);
+  color: var(--jaune-ink);
 }
 
-.badge-rouge.pulse {
-  animation: badge-pulse 1.1s ease-in-out infinite;
+.badge-vert {
+  background: var(--vert-bg);
+  color: var(--vert-ink);
 }
 
-@keyframes badge-pulse {
+/* Signal bleu qui revient tous les 2 jours une fois au vert. */
+.badge-vert.pulse {
+  animation: badge-pulse-bleu 1.6s ease-in-out infinite;
+}
+
+@keyframes badge-pulse-bleu {
   0%,
   100% {
+    background: var(--vert-bg);
+    color: var(--vert-ink);
     box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
   }
   50% {
+    background: var(--bleu-bg);
+    color: var(--bleu-ink);
     box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
   }
 }
@@ -790,6 +843,56 @@ select {
   }
 }
 
+/* Disposition "iPhone" choisie explicitement : même chrome mobile que ci-dessus,
+   mais indépendant de la largeur réelle de la fenêtre (cadre téléphone dans le navigateur). */
+[data-layout='iphone'] .app-shell {
+  padding-bottom: 130px;
+}
+
+[data-layout='iphone'] .header-bar .theme-switch {
+  display: none;
+}
+
+[data-layout='iphone'] .devoir-form input[name='nom'] {
+  min-width: 90px;
+}
+
+[data-layout='iphone'] .devoir-form input[name='jours'] {
+  width: 56px;
+}
+
+[data-layout='iphone'] .devoir-form .pill {
+  padding: 9px 12px;
+}
+
+[data-layout='iphone'] .bottom-tabs {
+  display: flex;
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  gap: 6px;
+  padding: 8px;
+  z-index: 40;
+}
+
+[data-layout='iphone'] .bottom-tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 999px;
+  font: 400 11px var(--font-mono);
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+[data-layout='iphone'] .bottom-tab.active {
+  background: var(--glass-border-strong);
+  color: var(--text);
+}
+
 .toast {
   position: fixed;
   bottom: 20px;
@@ -802,4 +905,142 @@ select {
   backdrop-filter: blur(18px);
   font-size: 12.5px;
   z-index: 50;
+}
+
+/* ---- sélecteur de disposition (au démarrage) ---- */
+
+.layout-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: dc-in 0.35s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.layout-picker {
+  background: rgba(11, 15, 20, 0.72);
+  border: 1px solid var(--glass-border-strong);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 22px;
+  padding: 26px;
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.layout-picker-options {
+  display: flex;
+  gap: 10px;
+}
+
+.layout-picker-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 12px;
+  border-radius: 16px;
+  background: var(--glass-2);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.18s, border-color 0.18s;
+}
+
+.layout-picker-option:hover {
+  background: var(--glass-3);
+}
+
+.layout-picker-option.active {
+  background: var(--glass-border-strong);
+  border-color: var(--accent);
+}
+
+.layout-picker-label {
+  font-size: 15px;
+}
+
+.layout-picker-sub {
+  font: 300 9.5px var(--font-mono);
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+/* ---- animations d'apparition (cf. wireframe : dcIn / dcPop) ---- */
+
+@keyframes dc-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+@keyframes dc-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+.screen-anim {
+  animation: dc-pop 0.4s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.group-card,
+.devoir-row,
+.chapitre-list-row,
+.nav-btn,
+.resource-card {
+  animation: dc-in 0.45s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.group-grid > .group-card:nth-child(1) { animation-delay: 0ms; }
+.group-grid > .group-card:nth-child(2) { animation-delay: 50ms; }
+.group-grid > .group-card:nth-child(3) { animation-delay: 100ms; }
+.group-grid > .group-card:nth-child(4) { animation-delay: 150ms; }
+.group-grid > .group-card:nth-child(5) { animation-delay: 200ms; }
+.group-grid > .group-card:nth-child(6) { animation-delay: 250ms; }
+.group-grid > .group-card:nth-child(7) { animation-delay: 300ms; }
+
+.devoirs-card .devoir-row:nth-child(2) { animation-delay: 0ms; }
+.devoirs-card .devoir-row:nth-child(3) { animation-delay: 50ms; }
+.devoirs-card .devoir-row:nth-child(4) { animation-delay: 100ms; }
+.devoirs-card .devoir-row:nth-child(5) { animation-delay: 150ms; }
+
+.chapitre-list > .chapitre-list-row:nth-child(1) { animation-delay: 0ms; }
+.chapitre-list > .chapitre-list-row:nth-child(2) { animation-delay: 60ms; }
+.chapitre-list > .chapitre-list-row:nth-child(3) { animation-delay: 120ms; }
+.chapitre-list > .chapitre-list-row:nth-child(4) { animation-delay: 180ms; }
+.chapitre-list > .chapitre-list-row:nth-child(5) { animation-delay: 240ms; }
+
+.nav-row > .nav-btn:nth-child(2) { animation-delay: 60ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .screen-anim,
+  .group-card,
+  .devoir-row,
+  .chapitre-list-row,
+  .nav-btn,
+  .resource-card,
+  .layout-picker-overlay {
+    animation: none;
+  }
 }

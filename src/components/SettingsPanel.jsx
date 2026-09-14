@@ -2,7 +2,9 @@ import { useRef } from 'react'
 import { useStore } from '../state/store.jsx'
 import { downloadJSON, downloadMarkdown } from '../logic/exportData.js'
 
-export default function SettingsPanel({ onClose }) {
+const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
+
+export default function SettingsPanel({ onClose, layoutMode, onChangeLayout }) {
   const { state, dispatch } = useStore()
   const fileInput = useRef(null)
 
@@ -48,6 +50,18 @@ export default function SettingsPanel({ onClose }) {
           <button className="icon-btn" onClick={onClose}>
             ×
           </button>
+        </div>
+
+        <div className="field-row">
+          <label>Disposition</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
+              Actuelle : {LAYOUT_LABEL[layoutMode] || layoutMode}
+            </div>
+            <div className="pill" onClick={onChangeLayout}>
+              Changer
+            </div>
+          </div>
         </div>
 
         <div className="field-row">

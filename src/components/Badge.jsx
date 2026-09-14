@@ -2,10 +2,10 @@ import { badgeStatus } from '../logic/badges'
 
 const LABEL = {
   inactive: '—',
-  neutre: 'à jour',
-  jaune: 'à réviser bientôt',
-  orange: 'à réviser',
-  rouge: 'en retard',
+  rouge: 'à réviser',
+  orange: 'à réviser bientôt',
+  jaune: 'ok',
+  vert: 'à jour',
 }
 
 export default function Badge({ chapitre, side, onMark, small, now }) {
@@ -14,7 +14,7 @@ export default function Badge({ chapitre, side, onMark, small, now }) {
   const inactive = level === 'inactive'
   const text = inactive
     ? `${tag} · ${LABEL.inactive}`
-    : `${tag} · ${LABEL[level]}${level !== 'neutre' ? ` · J+${Math.floor(elapsedDays)}` : ''}`
+    : `${tag} · ${LABEL[level]} · J+${Math.floor(elapsedDays)}`
 
   return (
     <div

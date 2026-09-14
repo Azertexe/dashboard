@@ -4,10 +4,10 @@ import { badgeStatus } from './badges.js'
 
 const BADGE_LABEL = {
   inactive: 'standby',
-  neutre: 'à jour',
-  jaune: 'à réviser bientôt',
-  orange: 'à réviser',
-  rouge: 'en retard',
+  rouge: 'à réviser',
+  orange: 'à réviser bientôt',
+  jaune: 'ok',
+  vert: 'à jour',
 }
 
 export function toMarkdown(state, now = Date.now()) {
