@@ -176,6 +176,7 @@ export default function App() {
         <SettingsPanel
           onClose={() => setSettingsOpen(false)}
           layoutMode={layoutMode}
+          now={now}
           onChangeLayout={() => {
             setSettingsOpen(false)
             setPickerOpen(true)

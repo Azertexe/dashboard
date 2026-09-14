@@ -66,7 +66,10 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   jaune **actif** — pas pendant une attente, pas au rouge (trop tôt), plus au
   vert/bleu (le pulse suffit déjà). Chaque clic sur un badge garde l'état
   précédent ; un bouton ↺ dans le panneau d'édition du chapitre permet
-  d'annuler un clic fait par erreur.
+  d'annuler un clic fait par erreur. Un **mode debug** dans Réglages permet
+  de forcer le badge Cours ou TD d'un chapitre choisi à n'importe quelle
+  couleur (ou de revenir en "Auto" au statut calculé normalement), pour
+  tester ou corriger un état sans attendre le cycle.
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
   devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
   lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
