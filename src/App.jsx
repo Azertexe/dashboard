@@ -8,6 +8,7 @@ import CourseDetailScreen from './components/CourseDetailScreen.jsx'
 import PartielsScreen from './components/PartielsScreen.jsx'
 import DevoirsScreen from './components/DevoirsScreen.jsx'
 import StatsScreen from './components/StatsScreen.jsx'
+import AgendaScreen from './components/AgendaScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
 import { checkAndNotify } from './logic/notifications.js'
@@ -93,8 +94,14 @@ export default function App() {
   const goPartiels = () => setScreen('partiels')
   const goDevoirs = () => setScreen('devoirs')
   const goStats = () => setScreen('stats')
+  const goAgenda = () => setScreen('agenda')
   const openCourseFromStats = (id) => {
     setSide('cours')
+    setCourseId(id)
+    setScreen('detail')
+  }
+  const openCourseFromAgenda = (id, s) => {
+    setSide(s)
     setCourseId(id)
     setScreen('detail')
   }
@@ -123,6 +130,7 @@ export default function App() {
                 onGoPartiels={goPartiels}
                 onGoDevoirs={goDevoirs}
                 onGoStats={goStats}
+                onGoAgenda={goAgenda}
               />
             )}
 
@@ -153,6 +161,10 @@ export default function App() {
 
             {screen === 'stats' && (
               <StatsScreen now={now} onGoHome={goHome} onOpenCourse={openCourseFromStats} />
+            )}
+
+            {screen === 'agenda' && (
+              <AgendaScreen now={now} onGoHome={goHome} onOpenCourse={openCourseFromAgenda} />
             )}
           </div>
         </div>
