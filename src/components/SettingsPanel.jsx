@@ -83,26 +83,26 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
       <div
         className="glass-strong"
         style={{
-          padding: 24,
-          maxWidth: 420,
+          padding: 22,
+          maxWidth: 460,
           width: '100%',
           maxHeight: '85vh',
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          gap: 16,
+          gap: 14,
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontSize: 16 }}>Réglages</div>
+        <div className="settings-header">
+          <div className="settings-title">Réglages</div>
           <button className="icon-btn" onClick={onClose}>
             ×
           </button>
         </div>
 
-        <div className="field-row">
-          <label>Thème</label>
+        <div className="glass-tight settings-section">
+          <div className="settings-section-title">Thème</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {THEMES.map((t) => (
               <div
@@ -116,12 +116,10 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
           </div>
         </div>
 
-        <div className="field-row">
-          <label>Disposition</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
-              Actuelle : {LAYOUT_LABEL[layoutMode] || layoutMode}
-            </div>
+        <div className="glass-tight settings-section">
+          <div className="settings-section-title">Disposition</div>
+          <div className="settings-row">
+            <div className="settings-row-desc">Actuelle : {LAYOUT_LABEL[layoutMode] || layoutMode}</div>
             <div className="pill" onClick={onChangeLayout}>
               Changer
             </div>
@@ -129,10 +127,10 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
         </div>
 
         {notificationsSupported() && (
-          <div className="field-row">
-            <label>Notifications</label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
+          <div className="glass-tight settings-section">
+            <div className="settings-section-title">Notifications</div>
+            <div className="settings-row">
+              <div className="settings-row-desc">
                 {notifOn
                   ? 'Activées — badges en retard signalés une fois par jour.'
                   : 'Recevoir une notification quand un badge prend du retard.'}
@@ -144,100 +142,99 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
           </div>
         )}
 
-        <div className="field-row">
-          <label>Mode debug</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
-              Forcer un badge à une couleur précise, pour tester ou corriger un statut sans
-              attendre le cycle normal.
+        <div className="glass-tight settings-section">
+          <div className="settings-row">
+            <div className="settings-section-title" style={{ marginBottom: 0 }}>
+              Mode debug
             </div>
             <div className="pill" onClick={() => setDebugMode((v) => !v)}>
               {debugMode ? 'Fermer' : 'Ouvrir'}
             </div>
           </div>
-        </div>
+          <div className="settings-row-desc" style={{ minWidth: 0 }}>
+            Forcer un badge à une couleur précise, pour tester ou corriger un statut sans
+            attendre le cycle normal.
+          </div>
 
-        {debugMode && (
-          <div
-            className="glass-tight"
-            style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 14 }}
-          >
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <select
-                value={debugCourseId}
-                onChange={(e) => {
-                  setDebugCourseId(e.target.value)
-                  setDebugChapitreId('')
-                }}
-              >
-                {COURSES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nom}
-                  </option>
-                ))}
-              </select>
-              <select value={debugChapitreId} onChange={(e) => setDebugChapitreId(e.target.value)}>
-                <option value="">— Choisir un chapitre —</option>
-                {debugChapitres.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nom}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {!debugChapitre && debugChapitres.length === 0 && (
-              <div style={{ fontSize: 12, color: 'var(--text-dimmer)' }}>
-                Aucun chapitre dans cette matière pour l'instant.
+          {debugMode && (
+            <div className="settings-subpanel">
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <select
+                  value={debugCourseId}
+                  onChange={(e) => {
+                    setDebugCourseId(e.target.value)
+                    setDebugChapitreId('')
+                  }}
+                >
+                  {COURSES.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nom}
+                    </option>
+                  ))}
+                </select>
+                <select value={debugChapitreId} onChange={(e) => setDebugChapitreId(e.target.value)}>
+                  <option value="">— Choisir un chapitre —</option>
+                  {debugChapitres.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nom}
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
 
-            {debugChapitre &&
-              ['cours', 'td'].map((side) => {
-                const status = badgeStatus(debugChapitre, side, now)
-                const active = status.phase === 'active' ? status.level : null
-                return (
-                  <div key={side} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
-                      {side === 'td' ? 'TD' : 'Cours'} — statut actuel :{' '}
-                      {status.phase === 'inactive'
-                        ? 'standby'
-                        : status.phase === 'wait'
-                          ? `attente (${LEVEL_NAME[status.level]})`
-                          : LEVEL_NAME[status.level]}
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {FORCE_LEVELS.map((level) => (
-                        <div
-                          key={level}
-                          className="pill"
-                          style={levelPillStyle(level, active === level)}
-                          onClick={() => forceBadge(side, level)}
-                        >
-                          {LEVEL_NAME[level]}
+              {!debugChapitre && debugChapitres.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--text-dimmer)' }}>
+                  Aucun chapitre dans cette matière pour l'instant.
+                </div>
+              )}
+
+              {debugChapitre &&
+                ['cours', 'td'].map((side) => {
+                  const status = badgeStatus(debugChapitre, side, now)
+                  const active = status.phase === 'active' ? status.level : null
+                  return (
+                    <div key={side} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
+                        {side === 'td' ? 'TD' : 'Cours'} — statut actuel :{' '}
+                        {status.phase === 'inactive'
+                          ? 'standby'
+                          : status.phase === 'wait'
+                            ? `attente (${LEVEL_NAME[status.level]})`
+                            : LEVEL_NAME[status.level]}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {FORCE_LEVELS.map((level) => (
+                          <div
+                            key={level}
+                            className="pill"
+                            style={levelPillStyle(level, active === level)}
+                            onClick={() => forceBadge(side, level)}
+                          >
+                            {LEVEL_NAME[level]}
+                          </div>
+                        ))}
+                        <div className="pill" onClick={() => forceBadge(side, null)}>
+                          Auto
                         </div>
-                      ))}
-                      <div className="pill" onClick={() => forceBadge(side, null)}>
-                        Auto
                       </div>
                     </div>
-                  </div>
-                )
-              })}
-          </div>
-        )}
+                  )
+                })}
+            </div>
+          )}
+        </div>
 
-        <div className="field-row">
-          <label>Arrière-plan</label>
-          <div style={{ fontSize: 12.5, color: 'var(--text-dim)' }}>
+        <div className="glass-tight settings-section">
+          <div className="settings-section-title">Arrière-plan</div>
+          <div className="settings-row-desc" style={{ minWidth: 0 }}>
             Pour utiliser une photo perso comme fond, ajoutez-la dans <code>public/</code> et
             réglez <code>--bg-photo</code> dans <code>src/styles/global.css</code> (ex :{' '}
             <code>url('/mon-fond.jpg')</code>).
           </div>
         </div>
 
-        <div className="field-row">
-          <label>Export &amp; sauvegarde</label>
+        <div className="glass-tight settings-section">
+          <div className="settings-section-title">Export &amp; sauvegarde</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <div className="pill" onClick={() => downloadJSON(state)}>
               Exporter JSON
@@ -258,7 +255,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
           </div>
         </div>
 
-        <div style={{ fontSize: 11.5, color: 'var(--text-dimmer)' }}>
+        <div className="settings-note">
           Données stockées localement dans ce navigateur pour l'instant (la synchronisation
           Firebase entre PC et téléphone arrive dans une prochaine partie).
         </div>

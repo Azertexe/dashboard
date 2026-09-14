@@ -89,10 +89,12 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
   }
 
   // Actif : la couleur `nextLevel` est atteinte et y reste jusqu'au prochain
-  // clic. Une fois vert, un pulse bleu revient tous les 2 jours pour rappeler
-  // discrètement plutôt que de rester silencieux indéfiniment.
+  // clic. Rouge/orange/jaune pulsent en continu pour attirer l'oeil (simple
+  // variation de leur propre couleur). Vert turquoise, lui, ne pulse (en
+  // bleu) que tous les 2 jours pour rappeler discrètement plutôt que de
+  // rester silencieux indéfiniment.
   const pulse =
-    nextLevel === BADGE_LEVELS.VERT && Math.floor(elapsedDays - waitDays) % 2 === 0
+    nextLevel === BADGE_LEVELS.VERT ? Math.floor(elapsedDays - waitDays) % 2 === 0 : true
   return { phase: 'active', level: nextLevel, daysLeft: 0, pulse, fromClick: false }
 }
 
