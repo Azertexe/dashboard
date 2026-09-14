@@ -547,12 +547,37 @@ select {
 }
 
 .group-card {
+  position: relative;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   border-left: 3px solid var(--course-accent-border, var(--glass-border));
   background-image: linear-gradient(165deg, var(--course-accent-soft, transparent), transparent 55%);
+}
+
+/* Point d'exclamation : au moins un badge orange/jaune pas encore traité sur cette matière/côté. */
+.group-alert {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--rouge-bg);
+  color: var(--rouge-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 12px var(--font-ui);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.badge-with-undo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .group-head {

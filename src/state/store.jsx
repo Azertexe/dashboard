@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
-import { activateChapitre, markBadgeNow } from '../logic/badges'
+import { activateChapitre, markBadgeNow, undoBadge } from '../logic/badges'
 
 const STORAGE_KEY = 'l3-physique-dashboard'
 const STORAGE_VERSION = 1
@@ -49,8 +49,8 @@ function reducer(state, action) {
         etat: 'pas_commence',
         statut: 'standby',
         activatedAt: null,
-        badgeTD: { lastActionAt: null },
-        badgeCours: { lastActionAt: null },
+        badgeTD: { lastActionAt: null, previousActionAt: null },
+        badgeCours: { lastActionAt: null, previousActionAt: null },
         commentaires: '',
         createdAt: Date.now(),
       }
@@ -78,6 +78,13 @@ function reducer(state, action) {
         ...state,
         chapitres: state.chapitres.map((c) =>
           c.id === action.id ? markBadgeNow(c, action.side) : c,
+        ),
+      }
+    case 'UNDO_BADGE':
+      return {
+        ...state,
+        chapitres: state.chapitres.map((c) =>
+          c.id === action.id ? undoBadge(c, action.side) : c,
         ),
       }
     case 'ADD_DEVOIR': {

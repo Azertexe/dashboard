@@ -2,6 +2,7 @@ import { useState } from 'react'
 import Badge from './Badge.jsx'
 import { useStore } from '../state/store.jsx'
 import { ETATS } from '../data/etats.js'
+import { canUndoBadge } from '../logic/badges.js'
 
 /** Ligne compacte : nom + 1 badge (celui du contexte Cours/TD courant). Utilisée
  * dans la vue "Cours"/"TD" groupée par matière. */
@@ -29,6 +30,7 @@ export function ChapitreRowFull({ chapitre, side, now }) {
   }))
 
   const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id, side: s })
+  const onUndo = (s) => dispatch({ type: 'UNDO_BADGE', id: chapitre.id, side: s })
   const onActivate = () => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id })
   const onDelete = () => {
     if (confirm(`Supprimer "${chapitre.nom}" ? Cette action est définitive.`)) {
@@ -95,8 +97,30 @@ export function ChapitreRowFull({ chapitre, side, now }) {
               </div>
             ) : (
               <>
-                <Badge chapitre={chapitre} side="cours" onMark={onMark} now={now} />
-                <Badge chapitre={chapitre} side="td" onMark={onMark} now={now} />
+                <div className="badge-with-undo">
+                  <Badge chapitre={chapitre} side="cours" onMark={onMark} now={now} />
+                  {canUndoBadge(chapitre, 'cours') && (
+                    <button
+                      className="icon-btn"
+                      onClick={() => onUndo('cours')}
+                      title="Annuler le dernier clic sur ce badge (Cours)"
+                    >
+                      ↺
+                    </button>
+                  )}
+                </div>
+                <div className="badge-with-undo">
+                  <Badge chapitre={chapitre} side="td" onMark={onMark} now={now} />
+                  {canUndoBadge(chapitre, 'td') && (
+                    <button
+                      className="icon-btn"
+                      onClick={() => onUndo('td')}
+                      title="Annuler le dernier clic sur ce badge (TD)"
+                    >
+                      ↺
+                    </button>
+                  )}
+                </div>
               </>
             )}
           </div>
