@@ -15,13 +15,39 @@ function emptyState() {
   }
 }
 
+// Ancien format : `statut`/`activatedAt` vivaient sur le chapitre (partagés
+// entre Cours et TD). Ils vivent maintenant sur badgeCours/badgeTD (chaque
+// côté a sa propre activation indépendante) — on bascule les anciennes
+// données existantes plutôt que de perdre leur progression.
+function migrateBadgeSide(badge, legacyActif, legacyActivatedAt) {
+  return {
+    statut: badge?.statut ?? (legacyActif ? 'actif' : 'standby'),
+    activatedAt: badge?.activatedAt ?? (legacyActif ? legacyActivatedAt : null),
+    validatedStage: badge?.validatedStage ?? null,
+    validatedAt: badge?.validatedAt ?? null,
+    previousValidatedStage: badge?.previousValidatedStage ?? null,
+    previousValidatedAt: badge?.previousValidatedAt ?? null,
+    forcedAlert: badge?.forcedAlert ?? null,
+  }
+}
+
+function migrateChapitre(c) {
+  const legacyActif = c.statut === 'actif'
+  return {
+    ...c,
+    badgeCours: migrateBadgeSide(c.badgeCours, legacyActif, c.activatedAt),
+    badgeTD: migrateBadgeSide(c.badgeTD, legacyActif, c.activatedAt),
+  }
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return emptyState()
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return emptyState()
-    return { ...emptyState(), ...parsed }
+    const merged = { ...emptyState(), ...parsed }
+    return { ...merged, chapitres: merged.chapitres.map(migrateChapitre) }
   } catch {
     return emptyState()
   }
@@ -42,28 +68,23 @@ const EDITABLE_CHAPITRE_FIELDS = ['nom', 'description', 'etat', 'commentaires']
 function reducer(state, action) {
   switch (action.type) {
     case 'ADD_CHAPITRE': {
+      const emptyBadge = () => ({
+        statut: 'standby',
+        activatedAt: null,
+        validatedStage: null,
+        validatedAt: null,
+        previousValidatedStage: null,
+        previousValidatedAt: null,
+        forcedAlert: null,
+      })
       const chapitre = {
         id: newId('ch'),
         courseId: action.courseId,
         nom: action.nom,
         description: '',
         etat: 'pas_commence',
-        statut: 'standby',
-        activatedAt: null,
-        badgeTD: {
-          validatedStage: null,
-          validatedAt: null,
-          previousValidatedStage: null,
-          previousValidatedAt: null,
-          forcedAlert: null,
-        },
-        badgeCours: {
-          validatedStage: null,
-          validatedAt: null,
-          previousValidatedStage: null,
-          previousValidatedAt: null,
-          forcedAlert: null,
-        },
+        badgeTD: emptyBadge(),
+        badgeCours: emptyBadge(),
         commentaires: '',
         createdAt: Date.now(),
       }
@@ -84,7 +105,7 @@ function reducer(state, action) {
     case 'ACTIVATE_CHAPITRE':
       return {
         ...state,
-        chapitres: state.chapitres.map((c) => (c.id === action.id ? activateChapitre(c) : c)),
+        chapitres: state.chapitres.map((c) => (c.id === action.id ? activateChapitre(c, action.side) : c)),
       }
     case 'MARK_BADGE':
       return {
@@ -176,8 +197,10 @@ function reducer(state, action) {
     }
     case 'SET_THEME':
       return { ...state, theme: action.theme }
-    case 'IMPORT_STATE':
-      return { ...emptyState(), ...action.state, version: STORAGE_VERSION }
+    case 'IMPORT_STATE': {
+      const merged = { ...emptyState(), ...action.state, version: STORAGE_VERSION }
+      return { ...merged, chapitres: merged.chapitres.map(migrateChapitre) }
+    }
     default:
       return state
   }

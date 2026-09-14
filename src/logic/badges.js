@@ -1,9 +1,14 @@
 // Logique des badges TD / Cours — indépendante de l'UI pour rester facile à
 // vérifier et à ajuster (cf. Partie 3 de la spec).
 //
+// Cours et TD sont deux horloges totalement indépendantes, y compris pour
+// leur standby/actif : activer l'un ne touche pas l'autre (chacun a son
+// propre `statut`/`activatedAt`, portés par badgeCours/badgeTD plutôt que
+// par le chapitre).
+//
 // Cycle (précisé par l'utilisateur) : chaque couleur, une fois VALIDÉE (clic),
 // déclenche une attente avant que la couleur suivante ne s'active toute seule :
-//   activation du chapitre  --1j-->  rouge   (aucun clic requis, c'est automatique)
+//   activation du côté (Cours ou TD)  --1j-->  rouge   (aucun clic requis, c'est automatique)
 //   rouge validé (clic)     --3j-->  orange
 //   orange validé (clic)    --7j-->  jaune
 //   jaune validé (clic)     --2j-->  vert
@@ -20,7 +25,7 @@
 export const DAY_MS = 24 * 60 * 60 * 1000
 
 export const BADGE_LEVELS = {
-  INACTIVE: 'inactive', // chapitre en standby : pas d'horloge du tout
+  INACTIVE: 'inactive', // ce côté est en standby : pas d'horloge du tout
   ROUGE: 'rouge',
   ORANGE: 'orange',
   JAUNE: 'jaune',
@@ -29,7 +34,7 @@ export const BADGE_LEVELS = {
 
 // Combien de jours d'attente après avoir validé une couleur avant que la
 // suivante ne s'active. La clé 'none' correspond à la toute première attente,
-// démarrée par l'activation du chapitre plutôt que par un clic.
+// démarrée par l'activation du côté plutôt que par un clic.
 const WAIT_DAYS = {
   none: 1,
   rouge: 3,
@@ -58,12 +63,23 @@ const PREV_STAGE_FOR = {
 
 function emptyBadge() {
   return {
+    statut: 'standby',
+    activatedAt: null,
     validatedStage: null,
     validatedAt: null,
     previousValidatedStage: null,
     previousValidatedAt: null,
     forcedAlert: null,
   }
+}
+
+function badgeOf(chapitre, side) {
+  return (side === 'td' ? chapitre.badgeTD : chapitre.badgeCours) ?? emptyBadge()
+}
+
+function withBadge(chapitre, side, badge) {
+  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
+  return { ...chapitre, [key]: badge }
 }
 
 /**
@@ -73,13 +89,14 @@ function emptyBadge() {
  * @returns {{phase: 'inactive'|'wait'|'active', level: string, daysLeft: number, pulse: boolean, fromClick: boolean}}
  */
 export function badgeStatus(chapitre, side, now = Date.now()) {
-  if (chapitre.statut !== 'actif' || !chapitre.activatedAt) {
+  const badge = badgeOf(chapitre, side)
+
+  if (badge.statut !== 'actif' || !badge.activatedAt) {
     return { phase: 'inactive', level: BADGE_LEVELS.INACTIVE, daysLeft: 0, pulse: false, fromClick: false }
   }
 
-  const badge = (side === 'td' ? chapitre.badgeTD : chapitre.badgeCours) ?? emptyBadge()
   const stageKey = badge.validatedStage ?? 'none'
-  const anchor = badge.validatedAt ?? chapitre.activatedAt
+  const anchor = badge.validatedAt ?? badge.activatedAt
   const elapsedDays = Math.max(0, (now - anchor) / DAY_MS)
   const waitDays = WAIT_DAYS[stageKey]
   const nextLevel = NEXT_LEVEL[stageKey]
@@ -106,8 +123,8 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
  * pulse bleu) se signale déjà tout seul.
  */
 export function needsAttention(chapitre, side, now = Date.now()) {
-  const badge = side === 'td' ? chapitre.badgeTD : chapitre.badgeCours
-  if (badge?.forcedAlert != null) return badge.forcedAlert
+  const badge = badgeOf(chapitre, side)
+  if (badge.forcedAlert != null) return badge.forcedAlert
   const { phase, level } = badgeStatus(chapitre, side, now)
   return phase === 'active' && (level === BADGE_LEVELS.ORANGE || level === BADGE_LEVELS.JAUNE)
 }
@@ -115,50 +132,42 @@ export function needsAttention(chapitre, side, now = Date.now()) {
 /** Mode debug (Réglages) : force l'affichage (ou le masquage) du point
  * d'exclamation "!" pour ce badge, indépendamment de son statut réel.
  * `value` : true (forcer affiché), false (forcer masqué), null (revenir au
- * calcul automatique). */
+ * calcul automatique). N'affecte que ce côté (Cours ou TD). */
 export function setForcedAlert(chapitre, side, value) {
-  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
-  const prev = chapitre[key] ?? emptyBadge()
-  return { ...chapitre, [key]: { ...prev, forcedAlert: value } }
+  const badge = badgeOf(chapitre, side)
+  return withBadge(chapitre, side, { ...badge, forcedAlert: value })
 }
 
 /** Valide la couleur actuellement active — relance l'attente vers la couleur
  * suivante. Ne fait rien si le badge est encore en attente (pas cliquable) ou
- * inactif. Garde l'ancien état pour permettre une annulation (cf. undoBadge). */
+ * inactif. Garde l'ancien état pour permettre une annulation (cf. undoBadge).
+ * N'affecte que ce côté (Cours ou TD). */
 export function markBadgeNow(chapitre, side, now = Date.now()) {
   const { phase, level } = badgeStatus(chapitre, side, now)
   if (phase !== 'active') return chapitre
-  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
-  const prev = chapitre[key] ?? emptyBadge()
-  return {
-    ...chapitre,
-    [key]: {
-      validatedStage: level,
-      validatedAt: now,
-      previousValidatedStage: prev.validatedStage ?? null,
-      previousValidatedAt: prev.validatedAt ?? null,
-      forcedAlert: prev.forcedAlert ?? null,
-    },
-  }
+  const badge = badgeOf(chapitre, side)
+  return withBadge(chapitre, side, {
+    ...badge,
+    validatedStage: level,
+    validatedAt: now,
+    previousValidatedStage: badge.validatedStage ?? null,
+    previousValidatedAt: badge.validatedAt ?? null,
+  })
 }
 
 /** Annule le dernier clic (ou forçage debug) sur ce badge, au cas où c'était
  * une erreur — restaure exactement l'état d'avant, pas juste le statut
- * "auto" par défaut. */
+ * "auto" par défaut. N'affecte que ce côté (Cours ou TD). */
 export function undoBadge(chapitre, side) {
-  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
-  const badge = chapitre[key]
-  if (!badge || badge.validatedAt == null) return chapitre
-  return {
-    ...chapitre,
-    [key]: {
-      validatedStage: badge.previousValidatedStage ?? null,
-      validatedAt: badge.previousValidatedAt ?? null,
-      previousValidatedStage: null,
-      previousValidatedAt: null,
-      forcedAlert: badge.forcedAlert ?? null,
-    },
-  }
+  const badge = badgeOf(chapitre, side)
+  if (badge.validatedAt == null) return chapitre
+  return withBadge(chapitre, side, {
+    ...badge,
+    validatedStage: badge.previousValidatedStage ?? null,
+    validatedAt: badge.previousValidatedAt ?? null,
+    previousValidatedStage: null,
+    previousValidatedAt: null,
+  })
 }
 
 /** Mode debug (Réglages) : force le badge `side` du chapitre à `level` (une
@@ -166,53 +175,43 @@ export function undoBadge(chapitre, side) {
  * pose pas un simple habillage visuel : ça règle réellement l'horloge
  * (validatedStage/validatedAt) comme si l'étape précédente venait d'être
  * validée puis son attente déjà écoulée — donc ça influence le cycle normal
- * (prochaine attente, ↺ pour annuler) exactement comme un vrai clic.
- * Active le chapitre au passage si besoin, sinon rien ne serait visible. */
+ * (prochaine attente, ↺ pour annuler) exactement comme un vrai clic. Active
+ * ce côté au passage si besoin (et UNIQUEMENT ce côté — jamais l'autre),
+ * sinon rien ne serait visible. */
 export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
-  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
-  const prev = chapitre[key] ?? emptyBadge()
-  const base =
-    chapitre.statut === 'actif' ? chapitre : { ...chapitre, statut: 'actif', activatedAt: chapitre.activatedAt ?? now }
+  const prev = badgeOf(chapitre, side)
+  const activated = prev.statut === 'actif' ? prev : { ...prev, statut: 'actif', activatedAt: prev.activatedAt ?? now }
 
   if (!level) {
-    return {
-      ...base,
-      [key]: {
-        validatedStage: null,
-        validatedAt: null,
-        previousValidatedStage: prev.validatedStage ?? null,
-        previousValidatedAt: prev.validatedAt ?? null,
-        forcedAlert: prev.forcedAlert ?? null,
-      },
-    }
+    return withBadge(chapitre, side, {
+      ...activated,
+      validatedStage: null,
+      validatedAt: null,
+      previousValidatedStage: prev.validatedStage ?? null,
+      previousValidatedAt: prev.validatedAt ?? null,
+    })
   }
 
   const stageKey = PREV_STAGE_FOR[level]
   const waitMs = WAIT_DAYS[stageKey] * DAY_MS
-  return {
-    ...base,
-    [key]: {
-      validatedStage: stageKey === 'none' ? null : stageKey,
-      validatedAt: now - waitMs - 60 * 1000, // largement passé l'attente -> actif tout de suite
-      previousValidatedStage: prev.validatedStage ?? null,
-      previousValidatedAt: prev.validatedAt ?? null,
-      forcedAlert: prev.forcedAlert ?? null,
-    },
-  }
+  return withBadge(chapitre, side, {
+    ...activated,
+    validatedStage: stageKey === 'none' ? null : stageKey,
+    validatedAt: now - waitMs - 60 * 1000, // largement passé l'attente -> actif tout de suite
+    previousValidatedStage: prev.validatedStage ?? null,
+    previousValidatedAt: prev.validatedAt ?? null,
+  })
 }
 
 /** Vrai s'il y a quelque chose à annuler pour ce badge (au moins un clic depuis l'activation). */
 export function canUndoBadge(chapitre, side) {
-  const key = side === 'td' ? 'badgeTD' : 'badgeCours'
-  return chapitre[key]?.validatedAt != null
+  return badgeOf(chapitre, side).validatedAt != null
 }
 
-/** Passe un chapitre de standby à actif — démarre les deux horloges. Sens unique. */
-export function activateChapitre(chapitre, now = Date.now()) {
-  if (chapitre.statut === 'actif') return chapitre
-  return {
-    ...chapitre,
-    statut: 'actif',
-    activatedAt: now,
-  }
+/** Passe un côté (Cours ou TD) de standby à actif — démarre SON horloge, sans
+ * toucher à l'autre côté. Sens unique. */
+export function activateChapitre(chapitre, side, now = Date.now()) {
+  const badge = badgeOf(chapitre, side)
+  if (badge.statut === 'actif') return chapitre
+  return withBadge(chapitre, side, { ...badge, statut: 'actif', activatedAt: now })
 }
