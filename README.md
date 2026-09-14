@@ -75,16 +75,28 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
 ### Disposition (PC / Mac / iPhone)
 
 Au démarrage, un sélecteur (fond flouté) demande de choisir l'écran cible —
-**PC** (large, 3 colonnes), **Mac** (moyen, 2 colonnes) ou **iPhone**
-(cadre mobile étroit + barre d'onglets en bas), indépendamment de la largeur
-réelle de la fenêtre. Le choix est mémorisé (`localStorage`) et rappelé au
+**PC** (large, colonnes en `auto-fit`), **Mac** (un peu plus serré) ou
+**iPhone** (cadre mobile étroit + barre d'onglets en bas), indépendamment de
+la largeur réelle de la fenêtre. La largeur (`--layout-max-width`) est fluide
+(`clamp`) pour remplir l'écran sans vide sur les côtés, quelle que soit la
+taille du moniteur. Le choix est mémorisé (`localStorage`) et rappelé au
 prochain démarrage ; il se change à tout moment depuis Réglages → Disposition
 → Changer. Piloté par l'attribut `data-layout` sur `<html>` et les variables
 CSS `--layout-*` (`src/styles/global.css`).
 
+### Accueil
+
+Pas de barre de titre classique : le partiel à venir est tout en haut, les
+onglets Cours/TD centrés avec beaucoup d'espace autour (pour laisser voir le
+fond), et les devoirs à faire tout en bas. Au milieu, un logo "L3 Physique"
+(silhouette de montagne + typographie manuscrite) fait office de titre —
+cliquer dessus bascule entre les thèmes Glacier et Volcanique. Un bouton ⚙
+discret en haut à droite ouvre Réglages depuis l'accueil.
+
 ### Thèmes
 
-- **Glacier** (par défaut) et **Volcanique** sont fonctionnels.
+- **Glacier** (par défaut) et **Volcanique** sont fonctionnels, choisis
+  depuis Réglages → Thème (ou en cliquant le logo de l'accueil).
 - **Détente** reste un stub non fonctionnel (clic → message "en construction"),
   comme prévu par la spec.
 - **Fond photo** : pas de photo perso fournie. Pour en ajouter une, la déposer

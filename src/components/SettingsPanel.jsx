@@ -1,12 +1,21 @@
 import { useRef } from 'react'
 import { useStore } from '../state/store.jsx'
 import { downloadJSON, downloadMarkdown } from '../logic/exportData.js'
+import { THEMES } from '../data/themes.js'
 
 const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
 
-export default function SettingsPanel({ onClose, layoutMode, onChangeLayout }) {
+export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, onStubTheme }) {
   const { state, dispatch } = useStore()
   const fileInput = useRef(null)
+
+  const pickTheme = (id) => {
+    if (id === 'detente') {
+      onStubTheme()
+      return
+    }
+    dispatch({ type: 'SET_THEME', theme: id })
+  }
 
   const onImportFile = (e) => {
     const file = e.target.files?.[0]
@@ -50,6 +59,25 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout }) {
           <button className="icon-btn" onClick={onClose}>
             ×
           </button>
+        </div>
+
+        <div className="field-row">
+          <label>Thème</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {THEMES.map((t) => (
+              <div
+                key={t.id}
+                className={
+                  'theme-pill' +
+                  (state.theme === t.id ? ' active' : '') +
+                  (t.id === 'detente' ? ' pill-disabled' : '')
+                }
+                onClick={() => pickTheme(t.id)}
+              >
+                {t.label}
+              </div>
+            ))}
+          </div>
         </div>
 
         <div className="field-row">

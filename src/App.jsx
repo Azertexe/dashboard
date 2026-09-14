@@ -70,10 +70,16 @@ export default function App() {
     <div className="app-shell">
       <div className={`app-content${pickerOpen ? ' blurred' : ''}`}>
         <div className="app-card">
-          <Header
-            onOpenSettings={() => setSettingsOpen(true)}
-            onStubTheme={() => setToast('Thème "Détente" — en construction')}
-          />
+          {screen !== 'home' && <Header onOpenSettings={() => setSettingsOpen(true)} />}
+          {screen === 'home' && (
+            <button
+              className="icon-btn settings-fab"
+              onClick={() => setSettingsOpen(true)}
+              title="Réglages"
+            >
+              ⚙
+            </button>
+          )}
 
           <div key={screen} className="screen-anim">
             {screen === 'home' && (
@@ -136,6 +142,7 @@ export default function App() {
             setSettingsOpen(false)
             setPickerOpen(true)
           }}
+          onStubTheme={() => setToast('Thème "Détente" — en construction')}
         />
       )}
       {toast && <div className="toast">{toast}</div>}

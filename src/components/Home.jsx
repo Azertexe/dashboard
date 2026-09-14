@@ -1,17 +1,27 @@
 import { COURSES } from '../data/courses.js'
 import ExamGauge from './ExamGauge.jsx'
 import DevoirsCard from './DevoirsCard.jsx'
+import MountainLogo from './MountainLogo.jsx'
 import { useStore } from '../state/store.jsx'
 
 export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs }) {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const nbChapitres = state.chapitres.length
 
+  const toggleTheme = () => {
+    dispatch({ type: 'SET_THEME', theme: state.theme === 'volcanique' ? 'glacier' : 'volcanique' })
+  }
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <div className="home-shell">
       <ExamGauge exams={state.exams} devoirs={state.devoirs} now={now} onOpen={onGoPartiels} />
 
-      <div className="nav-row">
+      <div className="home-hero" onClick={toggleTheme} title="Changer de thème">
+        <MountainLogo />
+        <div className="home-hero-title">L3 Physique</div>
+      </div>
+
+      <div className="nav-row home-nav-row">
         <div className="nav-btn glass-strong" onClick={onGoCours}>
           <div className="nav-btn-title">COURS</div>
           <div className="nav-btn-sub">
