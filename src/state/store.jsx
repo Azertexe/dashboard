@@ -50,8 +50,8 @@ function reducer(state, action) {
         etat: 'pas_commence',
         statut: 'standby',
         activatedAt: null,
-        badgeTD: { lastActionAt: null, previousActionAt: null },
-        badgeCours: { lastActionAt: null, previousActionAt: null },
+        badgeTD: { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null },
+        badgeCours: { validatedStage: null, validatedAt: null, previousValidatedStage: null, previousValidatedAt: null },
         commentaires: '',
         createdAt: Date.now(),
       }

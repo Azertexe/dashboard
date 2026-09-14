@@ -2,12 +2,19 @@ import { COURSES, courseName } from '../data/courses.js'
 import { etatLabel } from '../data/etats.js'
 import { badgeStatus } from './badges.js'
 
-const BADGE_LABEL = {
-  inactive: 'standby',
-  rouge: 'à réviser',
+const ACTIVE_LABEL = {
+  rouge: 'à réviser !',
   orange: 'à réviser bientôt',
   jaune: 'ok',
   vert: 'à jour',
+}
+
+const COLOR_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert' }
+
+function badgeLabel(status) {
+  if (status.phase === 'inactive') return 'standby'
+  if (status.phase === 'wait') return `en attente (${COLOR_NAME[status.level]} dans J-${status.daysLeft})`
+  return ACTIVE_LABEL[status.level]
 }
 
 export function toMarkdown(state, now = Date.now()) {
@@ -22,8 +29,8 @@ export function toMarkdown(state, now = Date.now()) {
       const cours = badgeStatus(c, 'cours', now)
       const td = badgeStatus(c, 'td', now)
       lines.push(`- **${c.nom}** — ${etatLabel(c.etat)}`)
-      lines.push(`  - Cours : ${BADGE_LABEL[cours.level]}`)
-      lines.push(`  - TD : ${BADGE_LABEL[td.level]}`)
+      lines.push(`  - Cours : ${badgeLabel(cours)}`)
+      lines.push(`  - TD : ${badgeLabel(td)}`)
       if (c.description) lines.push(`  - Description : ${c.description}`)
       if (c.commentaires) lines.push(`  - Commentaires : ${c.commentaires}`)
     }

@@ -735,12 +735,14 @@ select {
   cursor: default;
 }
 
-/* Confirmation grisée juste après un clic — sinon un badge déjà rouge
-   (jour 1) ne change pas visuellement et le clic semble n'avoir rien fait. */
-.badge-grise {
+/* Attente grisée entre deux couleurs (après validation d'un clic, ou juste
+   après l'activation d'un chapitre) — pas cliquable, affiche juste le
+   prochain statut à venir. */
+.badge-attente {
   background: var(--glass-3);
   color: var(--text);
   border-color: var(--glass-border-strong);
+  cursor: default;
   animation: badge-confirm 0.25s ease-out both;
 }
 
