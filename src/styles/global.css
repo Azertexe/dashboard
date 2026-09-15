@@ -1012,6 +1012,11 @@ select {
   color: var(--jaune-ink);
 }
 
+.sync-pill.sync-stalled {
+  background: var(--orange-bg);
+  color: var(--orange-ink);
+}
+
 .sync-pill.sync-error {
   background: var(--rouge-bg);
   color: var(--rouge-ink);
