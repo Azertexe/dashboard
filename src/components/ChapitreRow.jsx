@@ -29,7 +29,8 @@ export function ChapitreRowCompact({ chapitre, side, now }) {
 }
 
 /** Ligne plate dans le détail d'un cours : nom + 1 badge (contexte courant) + crayon.
- * Le crayon ouvre un panneau d'édition (métadonnées + accès à l'autre badge / activation,
+ * Le crayon ouvre un panneau d'édition (métadonnées, badge/activation UNIQUEMENT
+ * pour le côté courant — Cours et TD ne se croisent jamais sur le même écran —
  * et le choix entre un badge pour tout le chapitre ou un badge par sous-partie). */
 export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
   const { dispatch } = useStore()
@@ -119,23 +120,23 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              {['cours', 'td'].map((s) => {
-                const badge = s === 'td' ? chapitre.badgeTD : chapitre.badgeCours
-                const tag = s === 'td' ? 'TD' : 'Cours'
+              {(() => {
+                const badge = side === 'td' ? chapitre.badgeTD : chapitre.badgeCours
+                const tag = side === 'td' ? 'TD' : 'Cours'
                 if (badge?.statut !== 'actif') {
                   return (
-                    <div key={s} className="pill pill-accent" onClick={() => onActivate(s)}>
+                    <div className="pill pill-accent" onClick={() => onActivate(side)}>
                       Activer {tag}
                     </div>
                   )
                 }
                 return (
-                  <div key={s} className="badge-with-undo">
-                    <Badge chapitre={chapitre} side={s} onMark={onMark} now={now} />
-                    {canUndoBadge(chapitre, s) && (
+                  <div className="badge-with-undo">
+                    <Badge chapitre={chapitre} side={side} onMark={onMark} now={now} />
+                    {canUndoBadge(chapitre, side) && (
                       <button
                         className="icon-btn"
-                        onClick={() => onUndo(s)}
+                        onClick={() => onUndo(side)}
                         title={`Annuler le dernier clic sur ce badge (${tag})`}
                       >
                         ↺
@@ -143,7 +144,7 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
                     )}
                   </div>
                 )
-              })}
+              })()}
             </div>
           )}
         </div>

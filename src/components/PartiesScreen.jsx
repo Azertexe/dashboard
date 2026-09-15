@@ -57,23 +57,23 @@ function PartieRow({ chapitre, partie, side, now, dispatch }) {
         <div className="field-row">
           <label>Badges</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            {['cours', 'td'].map((s) => {
-              const badge = s === 'td' ? partie.badgeTD : partie.badgeCours
-              const tag = s === 'td' ? 'TD' : 'Cours'
+            {(() => {
+              const badge = side === 'td' ? partie.badgeTD : partie.badgeCours
+              const tag = side === 'td' ? 'TD' : 'Cours'
               if (badge?.statut !== 'actif') {
                 return (
-                  <div key={s} className="pill pill-accent" onClick={() => onActivate(s)}>
+                  <div className="pill pill-accent" onClick={() => onActivate(side)}>
                     Activer {tag}
                   </div>
                 )
               }
               return (
-                <div key={s} className="badge-with-undo">
-                  <Badge chapitre={partie} side={s} onMark={onMark} now={now} />
-                  {canUndoBadge(partie, s) && (
+                <div className="badge-with-undo">
+                  <Badge chapitre={partie} side={side} onMark={onMark} now={now} />
+                  {canUndoBadge(partie, side) && (
                     <button
                       className="icon-btn"
-                      onClick={() => onUndo(s)}
+                      onClick={() => onUndo(side)}
                       title={`Annuler le dernier clic sur ce badge (${tag})`}
                     >
                       ↺
@@ -81,7 +81,7 @@ function PartieRow({ chapitre, partie, side, now, dispatch }) {
                   )}
                 </div>
               )
-            })}
+            })()}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
