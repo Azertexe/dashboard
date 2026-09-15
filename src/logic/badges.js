@@ -67,8 +67,7 @@ function emptyBadge() {
     activatedAt: null,
     validatedStage: null,
     validatedAt: null,
-    previousValidatedStage: null,
-    previousValidatedAt: null,
+    previousSnapshot: null,
     forcedAlert: null,
   }
 }
@@ -80,6 +79,20 @@ function badgeOf(chapitre, side) {
 function withBadge(chapitre, side, badge) {
   const key = side === 'td' ? 'badgeTD' : 'badgeCours'
   return { ...chapitre, [key]: badge }
+}
+
+// Un ↺ doit pouvoir annuler N'IMPORTE QUELLE dernière action sur ce badge —
+// une activation ("Activer" cliqué par erreur) tout comme une validation de
+// couleur — donc on capture un instantané complet (statut/activatedAt/
+// validatedStage/validatedAt) avant chaque action plutôt que de ne garder
+// que les champs touchés par la précédente version de cette logique.
+function snapshot(badge) {
+  return {
+    statut: badge.statut,
+    activatedAt: badge.activatedAt,
+    validatedStage: badge.validatedStage,
+    validatedAt: badge.validatedAt,
+  }
 }
 
 /**
@@ -140,8 +153,8 @@ export function setForcedAlert(chapitre, side, value) {
 
 /** Valide la couleur actuellement active — relance l'attente vers la couleur
  * suivante. Ne fait rien si le badge est encore en attente (pas cliquable) ou
- * inactif. Garde l'ancien état pour permettre une annulation (cf. undoBadge).
- * N'affecte que ce côté (Cours ou TD). */
+ * inactif. Garde un instantané de l'état d'avant pour permettre une
+ * annulation (cf. undoBadge). N'affecte que ce côté (Cours ou TD). */
 export function markBadgeNow(chapitre, side, now = Date.now()) {
   const { phase, level } = badgeStatus(chapitre, side, now)
   if (phase !== 'active') return chapitre
@@ -150,23 +163,21 @@ export function markBadgeNow(chapitre, side, now = Date.now()) {
     ...badge,
     validatedStage: level,
     validatedAt: now,
-    previousValidatedStage: badge.validatedStage ?? null,
-    previousValidatedAt: badge.validatedAt ?? null,
+    previousSnapshot: snapshot(badge),
   })
 }
 
-/** Annule le dernier clic (ou forçage debug) sur ce badge, au cas où c'était
- * une erreur — restaure exactement l'état d'avant, pas juste le statut
- * "auto" par défaut. N'affecte que ce côté (Cours ou TD). */
+/** Annule la dernière action sur ce badge (une validation de couleur, un
+ * forçage debug, OU une activation cliquée par erreur) — restaure exactement
+ * l'état d'avant, pas juste le statut "auto" par défaut. N'affecte que ce
+ * côté (Cours ou TD). */
 export function undoBadge(chapitre, side) {
   const badge = badgeOf(chapitre, side)
-  if (badge.validatedAt == null) return chapitre
+  if (!badge.previousSnapshot) return chapitre
   return withBadge(chapitre, side, {
     ...badge,
-    validatedStage: badge.previousValidatedStage ?? null,
-    validatedAt: badge.previousValidatedAt ?? null,
-    previousValidatedStage: null,
-    previousValidatedAt: null,
+    ...badge.previousSnapshot,
+    previousSnapshot: null,
   })
 }
 
@@ -187,8 +198,7 @@ export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
       ...activated,
       validatedStage: null,
       validatedAt: null,
-      previousValidatedStage: prev.validatedStage ?? null,
-      previousValidatedAt: prev.validatedAt ?? null,
+      previousSnapshot: snapshot(prev),
     })
   }
 
@@ -198,22 +208,23 @@ export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
     ...activated,
     validatedStage: stageKey === 'none' ? null : stageKey,
     validatedAt: now - waitMs - 60 * 1000, // largement passé l'attente -> actif tout de suite
-    previousValidatedStage: prev.validatedStage ?? null,
-    previousValidatedAt: prev.validatedAt ?? null,
+    previousSnapshot: snapshot(prev),
   })
 }
 
-/** Vrai s'il y a quelque chose à annuler pour ce badge (au moins un clic depuis l'activation). */
+/** Vrai s'il y a quelque chose à annuler pour ce badge (une validation, un
+ * forçage debug, ou une simple activation depuis le standby). */
 export function canUndoBadge(chapitre, side) {
-  return badgeOf(chapitre, side).validatedAt != null
+  return badgeOf(chapitre, side).previousSnapshot != null
 }
 
 /** Passe un côté (Cours ou TD) de standby à actif — démarre SON horloge, sans
- * toucher à l'autre côté. Sens unique. */
+ * toucher à l'autre côté. Garde un instantané pour pouvoir annuler (↺) une
+ * activation cliquée par erreur, tant que rien n'a encore été validé depuis. */
 export function activateChapitre(chapitre, side, now = Date.now()) {
   const badge = badgeOf(chapitre, side)
   if (badge.statut === 'actif') return chapitre
-  return withBadge(chapitre, side, { ...badge, statut: 'actif', activatedAt: now })
+  return withBadge(chapitre, side, { ...badge, statut: 'actif', activatedAt: now, previousSnapshot: snapshot(badge) })
 }
 
 // ---- sous-parties ----

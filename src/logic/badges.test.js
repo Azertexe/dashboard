@@ -21,8 +21,7 @@ function emptyBadge() {
     activatedAt: null,
     validatedStage: null,
     validatedAt: null,
-    previousValidatedStage: null,
-    previousValidatedAt: null,
+    previousSnapshot: null,
     forcedAlert: null,
   }
 }
@@ -197,6 +196,33 @@ describe('undoBadge / canUndoBadge', () => {
     c = undoBadge(c, 'cours')
     expect(canUndoBadge(c, 'cours')).toBe(false)
     expect(badgeStatus(c, 'cours', NOW)).toMatchObject({ phase: before.phase, level: before.level })
+  })
+
+  it('can undo an "Activer" clicked by mistake, going all the way back to standby', () => {
+    const c = makeChapitre() // standby des deux côtés
+    const activated = activateChapitre(c, 'cours', NOW)
+    expect(canUndoBadge(activated, 'cours')).toBe(true)
+
+    const reverted = undoBadge(activated, 'cours')
+    expect(reverted.badgeCours).toEqual(c.badgeCours)
+    expect(badgeStatus(reverted, 'cours', NOW)).toMatchObject({ phase: 'inactive' })
+    expect(canUndoBadge(reverted, 'cours')).toBe(false)
+  })
+
+  it('only undoes the most recent action: undo after activate+validate goes back to just-activated, not standby', () => {
+    let c = makeChapitre()
+    c = activateChapitre(c, 'cours', NOW - 1.5 * DAY_MS)
+    const afterActivate = c
+    c = markBadgeNow(c, 'cours', NOW) // valide rouge -> attente vers orange
+
+    c = undoBadge(c, 'cours')
+    expect(c.badgeCours).toMatchObject({
+      statut: afterActivate.badgeCours.statut,
+      activatedAt: afterActivate.badgeCours.activatedAt,
+      validatedStage: afterActivate.badgeCours.validatedStage,
+      validatedAt: afterActivate.badgeCours.validatedAt,
+    })
+    expect(badgeStatus(c, 'cours', NOW)).toMatchObject({ phase: 'active', level: BADGE_LEVELS.ROUGE })
   })
 })
 

@@ -25,8 +25,10 @@ function migrateBadgeSide(badge, legacyActif, legacyActivatedAt) {
     activatedAt: badge?.activatedAt ?? (legacyActif ? legacyActivatedAt : null),
     validatedStage: badge?.validatedStage ?? null,
     validatedAt: badge?.validatedAt ?? null,
-    previousValidatedStage: badge?.previousValidatedStage ?? null,
-    previousValidatedAt: badge?.previousValidatedAt ?? null,
+    // L'ancien format gardait previousValidatedStage/previousValidatedAt à
+    // plat ; le nouveau garde un instantané complet — cette petite perte
+    // d'historique d'annulation (un seul cran) est acceptable à la migration.
+    previousSnapshot: badge?.previousSnapshot ?? null,
     forcedAlert: badge?.forcedAlert ?? null,
   }
 }
@@ -78,8 +80,7 @@ function emptyBadge() {
     activatedAt: null,
     validatedStage: null,
     validatedAt: null,
-    previousValidatedStage: null,
-    previousValidatedAt: null,
+    previousSnapshot: null,
     forcedAlert: null,
   }
 }
