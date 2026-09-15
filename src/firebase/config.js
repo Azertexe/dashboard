@@ -4,10 +4,10 @@
 // cacher ces valeurs. Remplace les "TODO" ci-dessous par les valeurs trouvées dans
 // la console Firebase (Paramètres du projet ⚙️ > Général > "Vos applications" > Config).
 export const firebaseConfig = {
-  apiKey: 'TODO',
-  authDomain: 'TODO.firebaseapp.com',
-  projectId: 'TODO',
-  storageBucket: 'TODO.appspot.com',
-  messagingSenderId: 'TODO',
-  appId: 'TODO',
+  apiKey: 'AIzaSyAgQ-PzGDcR7Y9CblvgJGRrj5hgUTEwzfA',
+  authDomain: 'l3-physic.firebaseapp.com',
+  projectId: 'l3-physic',
+  storageBucket: 'l3-physic.firebasestorage.app',
+  messagingSenderId: '36936484568',
+  appId: '1:36936484568:web:df46697c7e1015eb0cf9ad',
 }
