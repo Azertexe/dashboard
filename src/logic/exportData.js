@@ -25,22 +25,24 @@ export function toMarkdown(state, now = Date.now()) {
       .sort((a, b) => b.createdAt - a.createdAt)
     if (ch.length === 0) continue
     lines.push(`## ${course.nom}`, '')
-    for (const c of ch) {
-      lines.push(`- **${c.nom}** — ${etatLabel(c.etat)}`)
-      if (c.partitionMode === 'parties' && c.parties?.length) {
-        for (const p of c.parties) {
-          lines.push(`  - **${p.nom}**`)
-          lines.push(`    - Cours : ${badgeLabel(badgeStatus(p, 'cours', now))}`)
-          lines.push(`    - TD : ${badgeLabel(badgeStatus(p, 'td', now))}`)
+    for (const side of ['cours', 'td']) {
+      const sideCh = ch.filter((c) => c.side === side)
+      if (sideCh.length === 0) continue
+      lines.push(`### ${side === 'td' ? 'TD' : 'Cours'}`, '')
+      for (const c of sideCh) {
+        lines.push(`- **${c.nom}** — ${etatLabel(c.etat)}`)
+        if (c.partitionMode === 'parties' && c.parties?.length) {
+          for (const p of c.parties) {
+            lines.push(`  - **${p.nom}** : ${badgeLabel(badgeStatus(p, side, now))}`)
+          }
+        } else {
+          lines.push(`  - ${badgeLabel(badgeStatus(c, side, now))}`)
         }
-      } else {
-        lines.push(`  - Cours : ${badgeLabel(badgeStatus(c, 'cours', now))}`)
-        lines.push(`  - TD : ${badgeLabel(badgeStatus(c, 'td', now))}`)
+        if (c.description) lines.push(`  - Description : ${c.description}`)
+        if (c.commentaires) lines.push(`  - Commentaires : ${c.commentaires}`)
       }
-      if (c.description) lines.push(`  - Description : ${c.description}`)
-      if (c.commentaires) lines.push(`  - Commentaires : ${c.commentaires}`)
+      lines.push('')
     }
-    lines.push('')
   }
 
   if (state.exams?.length) {

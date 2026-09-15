@@ -2,22 +2,20 @@ import { useStore } from '../state/store.jsx'
 import { courseName, courseAccentStyle } from '../data/courses.js'
 import { badgeUnits, needsAttention } from '../logic/badges.js'
 import { daysBetween } from '../logic/dates.js'
-import Badge from './Badge.jsx'
+import { BadgeWithUndo } from './Badge.jsx'
 
 /** Vue "Agenda" : ce qui presse, réuni en un seul endroit — les badges qui
  * ont besoin d'une révision maintenant (orange/jaune actifs, que ce soit le
  * badge d'un chapitre entier ou celui d'une de ses sous-parties), puis les
  * devoirs et partiels à venir triés par date. */
 export default function AgendaScreen({ now, onGoHome, onOpenCourse, onOpenParties }) {
-  const { state, dispatch } = useStore()
+  const { state } = useStore()
 
   const aReviser = []
   for (const c of state.chapitres) {
-    for (const side of ['cours', 'td']) {
-      for (const unit of badgeUnits(c)) {
-        if (needsAttention(unit.target, side, now)) {
-          aReviser.push({ chapitre: c, unit, side })
-        }
+    for (const unit of badgeUnits(c)) {
+      if (needsAttention(unit.target, c.side, now)) {
+        aReviser.push({ chapitre: c, unit })
       }
     }
   }
@@ -41,9 +39,8 @@ export default function AgendaScreen({ now, onGoHome, onOpenCourse, onOpenPartie
         {aReviser.length === 0 && (
           <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Rien en retard — tu es à jour.</div>
         )}
-        {aReviser.map(({ chapitre, unit, side }) => {
-          const onMark = (_id, s) =>
-            dispatch({ type: 'MARK_BADGE', id: chapitre.id, partieId: unit.partieId, side: s })
+        {aReviser.map(({ chapitre, unit }) => {
+          const side = chapitre.side
           const label = unit.label
             ? `${courseName(chapitre.courseId)} — ${chapitre.nom} — ${unit.label}`
             : `${courseName(chapitre.courseId)} — ${chapitre.nom}`
@@ -51,14 +48,21 @@ export default function AgendaScreen({ now, onGoHome, onOpenCourse, onOpenPartie
             unit.partieId ? onOpenParties(chapitre.id, side) : onOpenCourse(chapitre.courseId, side)
           return (
             <div
-              key={`${chapitre.id}-${unit.partieId ?? 'chapitre'}-${side}`}
+              key={`${chapitre.id}-${unit.partieId ?? 'chapitre'}`}
               className="chapitre-row card"
               style={courseAccentStyle(chapitre.courseId)}
             >
               <div className="chapitre-name" style={{ cursor: 'pointer' }} onClick={openTarget}>
                 {label}
               </div>
-              <Badge chapitre={unit.target} side={side} onMark={onMark} small now={now} />
+              <BadgeWithUndo
+                chapitre={unit.target}
+                side={side}
+                small
+                now={now}
+                chapitreId={chapitre.id}
+                partieId={unit.partieId}
+              />
             </div>
           )
         })}

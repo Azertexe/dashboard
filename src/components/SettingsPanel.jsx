@@ -182,7 +182,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                   <option value="">— Choisir un chapitre —</option>
                   {debugChapitres.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.nom}
+                      {c.nom} ({c.side === 'td' ? 'TD' : 'Cours'})
                     </option>
                   ))}
                 </select>
@@ -195,11 +195,12 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
               )}
 
               {debugChapitre &&
-                ['cours', 'td'].map((side) => {
+                (() => {
+                  const side = debugChapitre.side
                   const status = badgeStatus(debugChapitre, side, now)
                   const active = status.phase === 'active' ? status.level : null
                   return (
-                    <div key={side} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ fontSize: 11, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '.04em' }}>
                         {side === 'td' ? 'TD' : 'Cours'} — statut actuel :{' '}
                         {status.phase === 'inactive'
@@ -253,7 +254,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                       </div>
                     </div>
                   )
-                })}
+                })()}
             </div>
           )}
         </div>
