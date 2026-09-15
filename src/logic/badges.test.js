@@ -198,11 +198,14 @@ describe('undoBadge / canUndoBadge', () => {
     expect(badgeStatus(c, 'cours', NOW)).toMatchObject({ phase: before.phase, level: before.level })
   })
 
-  it('a simple "Activer" click is NOT undoable — only a validated color is', () => {
+  it('a simple "Activer" click IS undoable — goes back to standby', () => {
     const c = makeChapitre() // standby des deux côtés
     const activated = activateChapitre(c, 'cours', NOW)
-    expect(canUndoBadge(activated, 'cours')).toBe(false)
-    expect(undoBadge(activated, 'cours')).toBe(activated) // no-op
+    expect(canUndoBadge(activated, 'cours')).toBe(true)
+
+    const reverted = undoBadge(activated, 'cours')
+    expect(badgeStatus(reverted, 'cours', NOW)).toMatchObject({ phase: 'inactive' })
+    expect(canUndoBadge(reverted, 'cours')).toBe(false) // un seul cran
   })
 
   it('undoing a validated color on a sous-partie works exactly like on a chapter', () => {

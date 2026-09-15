@@ -172,14 +172,13 @@ export function markBadgeNow(chapitre, side, now = Date.now()) {
   })
 }
 
-/** Annule la dernière validation de couleur (ou forçage debug) sur ce badge —
- * restaure exactement la couleur d'avant, pas juste le statut "auto" par
- * défaut. Une simple activation ("Activer" cliqué) n'est PAS annulable par
- * ↺ — seul un clic sur une couleur (ou un forçage) l'est. N'affecte que ce
+/** Annule la dernière action sur ce badge (activation, validation de couleur
+ * ou forçage debug) — restaure exactement l'état d'avant. Un seul cran
+ * d'historique (annuler à nouveau après ça ne fait rien). N'affecte que ce
  * côté (Cours ou TD). */
 export function undoBadge(chapitre, side) {
   const badge = badgeOf(chapitre, side)
-  if (badge.validatedAt == null || !badge.previousSnapshot) return chapitre
+  if (!badge.previousSnapshot) return chapitre
   return withBadge(chapitre, side, {
     ...badge,
     ...badge.previousSnapshot,
@@ -218,20 +217,25 @@ export function forceBadgeLevel(chapitre, side, level, now = Date.now()) {
   })
 }
 
-/** Vrai s'il y a une couleur validée (clic ou forçage) à annuler pour ce
- * badge — pas juste une activation. */
+/** Vrai s'il y a une dernière action (activation, couleur validée ou
+ * forçage) à annuler pour ce badge. */
 export function canUndoBadge(chapitre, side) {
   const badge = badgeOf(chapitre, side)
-  return badge.validatedAt != null && badge.previousSnapshot != null
+  return badge.previousSnapshot != null
 }
 
 /** Passe un côté (Cours ou TD) de standby à actif — démarre SON horloge, sans
- * toucher à l'autre côté. Sens unique : ne pose pas de couleur, donc rien à
- * annuler avec ↺ (qui n'annule qu'une couleur validée). */
+ * toucher à l'autre côté. Garde un instantané d'avant pour permettre
+ * d'annuler un clic sur "Activer" fait par erreur (retour à standby). */
 export function activateChapitre(chapitre, side, now = Date.now()) {
   const badge = badgeOf(chapitre, side)
   if (badge.statut === 'actif') return chapitre
-  return withBadge(chapitre, side, { ...badge, statut: 'actif', activatedAt: now })
+  return withBadge(chapitre, side, {
+    ...badge,
+    statut: 'actif',
+    activatedAt: now,
+    previousSnapshot: snapshot(badge),
+  })
 }
 
 // ---- sous-parties ----
