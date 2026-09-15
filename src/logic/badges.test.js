@@ -11,8 +11,6 @@ import {
   forceBadgeLevel,
   setForcedAlert,
   badgeUnits,
-  chapitreNeedsAttention,
-  chapitreHasActiveSide,
 } from './badges.js'
 
 function emptyBadge() {
@@ -355,25 +353,6 @@ describe('sous-parties', () => {
   it('badgeUnits falls back to the chapter itself if "parties" mode has no parts yet', () => {
     const c = makeChapitre({ partitionMode: 'parties', parties: [] })
     expect(badgeUnits(c)).toEqual([{ target: c, partieId: null, label: null }])
-  })
-
-  it('chapitreNeedsAttention is true if any sous-partie needs attention, even if the chapter has none itself', () => {
-    const quiet = makePartie({ id: 'pt-1', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) }) // rouge, pas d'alerte
-    const late = makePartie({
-      id: 'pt-2',
-      badgeCours: activeBadge(NOW - 3 * DAY_MS, { validatedStage: BADGE_LEVELS.ROUGE, validatedAt: NOW - 3 * DAY_MS }),
-    }) // orange actif -> alerte
-    const c = makeChapitre({ partitionMode: 'parties', parties: [quiet, late] })
-    expect(chapitreNeedsAttention(c, 'cours', NOW)).toBe(true)
-  })
-
-  it('chapitreHasActiveSide reflects sous-parties in "parties" mode', () => {
-    const inactive = makePartie({ id: 'pt-1' })
-    const active = makePartie({ id: 'pt-2', badgeCours: activeBadge(NOW - DAY_MS) })
-    const cEmpty = makeChapitre({ partitionMode: 'parties', parties: [inactive] })
-    const cActive = makeChapitre({ partitionMode: 'parties', parties: [inactive, active] })
-    expect(chapitreHasActiveSide(cEmpty)).toBe(false)
-    expect(chapitreHasActiveSide(cActive)).toBe(true)
   })
 
   it('a real click on a sous-partie only affects that partie, not the chapter or other parties', () => {

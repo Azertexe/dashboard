@@ -1,12 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
-import { daysBetween, isoDatePlusDays } from '../logic/dates.js'
-
-function jStyle(j) {
-  if (j <= 3) return { color: 'oklch(0.75 0.16 25)' }
-  if (j <= 7) return { color: 'oklch(0.82 0.14 55)' }
-  return { color: 'var(--text-dim)' }
-}
+import { daysBetween, isoDatePlusDays, deadlineStyle } from '../logic/dates.js'
 
 export default function DevoirsScreen({ now, onGoHome }) {
   const { state, dispatch } = useStore()
@@ -42,7 +36,7 @@ export default function DevoirsScreen({ now, onGoHome }) {
           return (
             <div key={d.id} className="devoir-row glass-tight">
               <div className="devoir-name">{d.nom}</div>
-              <div className="devoir-j" style={jStyle(j)}>
+              <div className="devoir-j" style={deadlineStyle(j)}>
                 J{j >= 0 ? '-' : '+'}
                 {Math.abs(j)}
               </div>

@@ -15,3 +15,11 @@ export function nextExam(exams, now) {
   const sorted = [...exams].sort((a, b) => new Date(a.date) - new Date(b.date))
   return sorted.find((e) => daysBetween(now, e.date) >= 0) ?? sorted[sorted.length - 1]
 }
+
+/** Couleur d'urgence pour un délai en jours (devoirs/partiels) — partagée par
+ * DevoirsCard et DevoirsScreen. */
+export function deadlineStyle(j) {
+  if (j <= 3) return { color: 'oklch(0.75 0.16 25)' }
+  if (j <= 7) return { color: 'oklch(0.82 0.14 55)' }
+  return { color: 'var(--text-dim)' }
+}

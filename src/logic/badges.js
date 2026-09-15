@@ -32,6 +32,23 @@ export const BADGE_LEVELS = {
   VERT: 'vert',
 }
 
+// Noms affichés pour chaque couleur — partagés par Badge.jsx, SettingsPanel.jsx
+// et exportData.js pour éviter 3 copies du même mapping.
+export const BADGE_COLOR_NAME = {
+  rouge: 'Rouge',
+  orange: 'Orange',
+  jaune: 'Jaune',
+  vert: 'Vert turquoise',
+}
+
+// Libellé d'une couleur ACTIVE (badge cliquable) — même usage partagé.
+export const BADGE_ACTIVE_LABEL = {
+  rouge: 'à réviser !',
+  orange: 'à réviser bientôt',
+  jaune: 'ok',
+  vert: 'à jour',
+}
+
 // Combien de jours d'attente après avoir validé une couleur avant que la
 // suivante ne s'active. La clé 'none' correspond à la toute première attente,
 // démarrée par l'activation du côté plutôt que par un clic.
@@ -262,20 +279,4 @@ export function badgeUnits(chapitre) {
     return chapitre.parties.map((p) => ({ target: p, partieId: p.id, label: p.nom }))
   }
   return [{ target: chapitre, partieId: null, label: null }]
-}
-
-/** Vrai si AU MOINS une unité de suivi du chapitre (lui-même, ou une de ses
- * sous-parties en mode 'parties') a besoin d'attention sur ce côté. Utilisé
- * pour le "!" au niveau de la matière/du chapitre, qui doit rester visible
- * même quand le retard est caché dans une sous-partie précise. */
-export function chapitreNeedsAttention(chapitre, side, now = Date.now()) {
-  return badgeUnits(chapitre).some(({ target }) => needsAttention(target, side, now))
-}
-
-/** Vrai si le chapitre a au moins un côté actif quelque part — sur lui-même
- * (mode 'chapitre') ou sur une de ses sous-parties (mode 'parties'). */
-export function chapitreHasActiveSide(chapitre) {
-  return badgeUnits(chapitre).some(
-    ({ target }) => target.badgeCours?.statut === 'actif' || target.badgeTD?.statut === 'actif',
-  )
 }

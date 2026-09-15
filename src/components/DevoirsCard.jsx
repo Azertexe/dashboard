@@ -1,10 +1,4 @@
-import { daysBetween } from '../logic/dates.js'
-
-function jStyle(j) {
-  if (j <= 3) return { color: 'oklch(0.75 0.16 25)' }
-  if (j <= 7) return { color: 'oklch(0.82 0.14 55)' }
-  return { color: 'var(--text-dim)' }
-}
+import { daysBetween, deadlineStyle } from '../logic/dates.js'
 
 /** Résumé lecture seule sur l'accueil — clic pour aller gérer les devoirs. */
 export default function DevoirsCard({ devoirs, now, onOpen }) {
@@ -23,7 +17,7 @@ export default function DevoirsCard({ devoirs, now, onOpen }) {
         return (
           <div key={d.id} className="devoir-row glass-tight">
             <div className="devoir-name">{d.nom}</div>
-            <div className="devoir-j" style={jStyle(j)}>
+            <div className="devoir-j" style={deadlineStyle(j)}>
               J{j >= 0 ? '-' : '+'}
               {Math.abs(j)}
             </div>

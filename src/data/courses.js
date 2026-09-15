@@ -16,7 +16,7 @@ export function courseName(courseId) {
   return COURSES.find((c) => c.id === courseId)?.nom ?? courseId
 }
 
-export function courseHue(courseId) {
+function courseHue(courseId) {
   return COURSES.find((c) => c.id === courseId)?.hue ?? 210
 }
 

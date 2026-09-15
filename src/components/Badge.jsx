@@ -1,19 +1,5 @@
 import { useStore } from '../state/store.jsx'
-import { badgeStatus, needsAttention, canUndoBadge } from '../logic/badges'
-
-const COLOR_NAME = {
-  rouge: 'Rouge',
-  orange: 'Orange',
-  jaune: 'Jaune',
-  vert: 'Vert turquoise',
-}
-
-const ACTIVE_LABEL = {
-  rouge: 'à réviser !',
-  orange: 'à réviser bientôt',
-  jaune: 'ok',
-  vert: 'à jour',
-}
+import { badgeStatus, needsAttention, canUndoBadge, BADGE_COLOR_NAME, BADGE_ACTIVE_LABEL } from '../logic/badges'
 
 export default function Badge({ chapitre, side, onMark, small, now }) {
   const { phase, level, daysLeft, pulse, fromClick } = badgeStatus(chapitre, side, now)
@@ -27,9 +13,9 @@ export default function Badge({ chapitre, side, onMark, small, now }) {
     inner = (
       <div
         className={`badge badge-attente${small ? ' badge-small' : ''}`}
-        title={`Prochain statut : ${COLOR_NAME[level]} dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`}
+        title={`Prochain statut : ${BADGE_COLOR_NAME[level]} dans ${daysLeft} jour${daysLeft > 1 ? 's' : ''}`}
       >
-        {tag} · {fromClick ? '✓ ' : ''}🕐 {COLOR_NAME[level]} · J-{daysLeft}
+        {tag} · {fromClick ? '✓ ' : ''}🕐 {BADGE_COLOR_NAME[level]} · J-{daysLeft}
       </div>
     )
   } else {
@@ -39,7 +25,7 @@ export default function Badge({ chapitre, side, onMark, small, now }) {
         onClick={() => onMark(chapitre.id, side)}
         title="Marquer comme fait maintenant"
       >
-        {tag} · {ACTIVE_LABEL[level]}
+        {tag} · {BADGE_ACTIVE_LABEL[level]}
       </div>
     )
   }
