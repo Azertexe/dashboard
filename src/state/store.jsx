@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { activateChapitre, markBadgeNow, undoBadge, forceBadgeLevel, setForcedAlert } from '../logic/badges'
+import { subscribeRemoteState, pushRemoteState, firebaseConfigured } from '../firebase/sync.js'
 
 const STORAGE_KEY = 'l3-physique-dashboard'
 const STORAGE_VERSION = 1
@@ -279,12 +280,55 @@ const StoreContext = createContext(null)
 
 export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadState)
+  const [syncStatus, setSyncStatus] = useState(firebaseConfigured() ? 'syncing' : 'off')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
   }, [state])
 
-  const value = useMemo(() => ({ state, dispatch }), [state])
+  // Synchronisation Firebase temps réel, sans compte : un seul document
+  // partagé entre tous les appareils. Les refs (pas du state React) évitent
+  // le ping-pong entre "recevoir un changement distant" et "republier ce
+  // qu'on vient de recevoir" — voir les commentaires ci-dessous.
+  const lastRemoteJSONRef = useRef(null)
+  const lastLocalPushedJSONRef = useRef(null)
+
+  useEffect(() => {
+    const unsub = subscribeRemoteState(
+      (remoteState) => {
+        setSyncStatus('synced')
+        if (!remoteState) return
+        const json = JSON.stringify(remoteState)
+        // Soit un doublon d'événement, soit l'écho de notre propre écriture
+        // (Firestore renvoie toujours un snapshot après un push) : dans les
+        // deux cas, rien à réappliquer.
+        if (json === lastRemoteJSONRef.current || json === lastLocalPushedJSONRef.current) {
+          lastRemoteJSONRef.current = json
+          return
+        }
+        lastRemoteJSONRef.current = json
+        dispatch({ type: 'IMPORT_STATE', state: remoteState })
+      },
+      () => setSyncStatus('error'),
+    )
+    return unsub
+  }, [])
+
+  useEffect(() => {
+    if (!firebaseConfigured()) return
+    const json = JSON.stringify(state)
+    // Cet état EST ce qu'on vient de recevoir d'un autre appareil : ne pas
+    // le republier (sinon boucle inutile, même si sans risque).
+    if (json === lastRemoteJSONRef.current) return
+    const t = setTimeout(() => {
+      lastLocalPushedJSONRef.current = json
+      setSyncStatus('syncing')
+      pushRemoteState(state, () => setSyncStatus('error'))
+    }, 800)
+    return () => clearTimeout(t)
+  }, [state])
+
+  const value = useMemo(() => ({ state, dispatch, syncStatus }), [state, syncStatus])
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }

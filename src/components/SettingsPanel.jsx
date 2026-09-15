@@ -25,8 +25,15 @@ function alertPillStyle(active) {
   return { background: 'var(--orange-bg)', color: 'var(--orange-ink)', borderColor: 'transparent' }
 }
 
+const SYNC_LABEL = {
+  synced: 'Synchronisé',
+  syncing: 'Synchronisation…',
+  error: 'Erreur de synchronisation',
+  off: 'Non configuré',
+}
+
 export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now }) {
-  const { state, dispatch } = useStore()
+  const { state, dispatch, syncStatus } = useStore()
   const fileInput = useRef(null)
   const [notifOn, setNotifOn] = useState(notificationsEnabled)
   const [debugMode, setDebugMode] = useState(false)
@@ -290,10 +297,21 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
           </div>
         </div>
 
-        <div className="settings-note">
-          Données stockées localement dans ce navigateur pour l'instant (la synchronisation
-          Firebase entre PC et téléphone arrive dans une prochaine partie).
+        <div className="glass-tight settings-section">
+          <div className="settings-row">
+            <div className="settings-section-title" style={{ marginBottom: 0 }}>
+              Synchronisation
+            </div>
+            <div className={`sync-pill sync-${syncStatus}`}>{SYNC_LABEL[syncStatus]}</div>
+          </div>
+          <div className="settings-row-desc" style={{ minWidth: 0 }}>
+            {syncStatus === 'off'
+              ? "Firebase n'est pas encore configuré (src/firebase/config.js) — les données restent locales à cet appareil."
+              : 'Les mêmes données apparaissent automatiquement sur tous tes appareils, sans compte à créer.'}
+          </div>
         </div>
+
+        <div className="settings-note">Données stockées localement sur cet appareil, et synchronisées via Firebase.</div>
       </div>
     </div>
   )
