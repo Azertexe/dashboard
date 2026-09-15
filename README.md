@@ -10,8 +10,10 @@ partiel. Design basé sur le wireframe "L3 Physique" produit dans Claude Design
 - **React + Vite**
 - **GitHub Pages** pour l'hébergement (build via GitHub Actions, voir
   `.github/workflows/deploy.yml`)
-- Données stockées en **localStorage** pour l'instant — la synchronisation
-  Firebase (PC ↔ téléphone) arrive dans une prochaine partie
+- Données stockées en **localStorage** (source de vérité locale, marche hors
+  ligne) et synchronisées en temps réel via **Firebase Firestore** entre tous
+  les appareils, sans compte à créer — voir la section
+  [Synchronisation Firebase](#synchronisation-firebase) plus bas
 
 ## Développement
 
@@ -38,6 +40,60 @@ Le workflow `.github/workflows/deploy.yml` build et déploie automatiquement
 
 Le site n'a pas de mot de passe (accès par URL discrète, non indexée —
 `<meta name="robots" content="noindex, nofollow">` dans `index.html`).
+
+## Synchronisation Firebase
+
+Tous les appareils qui ouvrent le site lisent/écrivent le même document
+Firestore en temps réel (`dashboards/l3-physique`) — pas de compte, pas de
+code à taper : ouvrir l'URL suffit. Un changement fait sur PC (cocher un
+badge, ajouter un chapitre...) apparaît automatiquement sur le téléphone dans
+la seconde, et inversement. Hors ligne, les changements restent en attente
+localement (cache IndexedDB) et repartent seuls à la reconnexion.
+
+C'est un choix volontairement simple (pas d'authentification) : accepté ici
+parce que les données ne sont pas sensibles (juste une progression de
+révisions) et que l'URL du site n'est pas indexée. La sécurité réelle vient
+des règles Firestore ci-dessous, qui limitent l'accès à ce document précis
+plutôt qu'à toute la base.
+
+### Mise en place (une seule fois)
+
+1. Aller sur [console.firebase.google.com](https://console.firebase.google.com),
+   **Ajouter un projet** (nom libre, ex. "l3-physique-dashboard"). Google
+   Analytics n'est pas nécessaire, on peut le désactiver.
+2. Dans le projet, menu de gauche **Build → Firestore Database** →
+   **Créer une base de données**. Choisir une région proche (ex. `eur3`,
+   Europe), démarrer **en mode production** (les règles ci-dessous
+   remplacent le mode test).
+3. Toujours dans Firestore, onglet **Règles**, remplacer le contenu par :
+
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /dashboards/l3-physique {
+         allow read, write: if true;
+       }
+     }
+   }
+   ```
+
+   Cliquer **Publier**. Ça n'autorise l'accès qu'à CE document précis (pas au
+   reste de la base), ce qui suffit puisque personne d'autre ne connaît son
+   chemin ni l'URL du site.
+4. Revenir à la page d'accueil du projet (icône ⚙️ **Paramètres du projet**),
+   section **Vos applications** → cliquer l'icône **Web `</>`** → donner un
+   nom (ex. "dashboard") → **Enregistrer l'application** (pas besoin de
+   Firebase Hosting, on utilise GitHub Pages).
+5. Copier l'objet `firebaseConfig` affiché (`apiKey`, `authDomain`,
+   `projectId`, `storageBucket`, `messagingSenderId`, `appId`) et le coller
+   dans `src/firebase/config.js` à la place des `'TODO'`.
+6. `npm run build` puis déployer (push sur `main`) — Réglages doit alors
+   afficher "Synchronisé" au lieu de "Non configuré".
+
+Ces valeurs de config ne sont pas des secrets (Firebase les rend publiques
+par design, y compris dans le code source d'un site statique) — c'est
+normal qu'elles se retrouvent dans le bundle JS déployé sur GitHub Pages.
 
 ## Où en est l'implémentation
 
@@ -125,10 +181,12 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   sont éditables par matière (`ResourceLinkCard` / `ResourcePolysCard`) —
   lien vers une URL externe ou un fichier hébergé dans le repo (ex. PDF dans
   `public/`), avec édition/suppression en place.
-- ⬜ **Partie 7 — Sync Firebase** : pas encore fait, données en localStorage
-  (report demandé par l'utilisateur — nécessite un projet Firebase de son
-  côté). En attendant : export/import JSON manuel, et un rappel périodique
-  suggère d'exporter une sauvegarde si ça fait plus de 14 jours.
+- ✅ **Partie 7 — Sync Firebase** : synchronisation temps réel entre tous les
+  appareils via un seul document Firestore partagé, sans compte/mot de passe
+  (voir [Synchronisation Firebase](#synchronisation-firebase)). Tant que
+  `src/firebase/config.js` garde ses valeurs `'TODO'`, l'app fonctionne
+  normalement en localStorage seul (Réglages affiche "Non configuré"). Export/
+  import JSON manuel reste dispo en complément (sauvegarde locale).
 - ✅ **Partie 8 — Export & backup** : export JSON (backup/restauration) et
   export Markdown (état lisible, pour coller dans un chat IA), depuis
   Réglages. L'import JSON restaure une sauvegarde.
