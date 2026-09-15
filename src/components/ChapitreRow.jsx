@@ -1,16 +1,12 @@
 import { useState } from 'react'
-import Badge from './Badge.jsx'
+import { BadgeWithUndo } from './Badge.jsx'
 import { useStore } from '../state/store.jsx'
 import { ETATS } from '../data/etats.js'
-import { canUndoBadge } from '../logic/badges.js'
 
 /** Ligne compacte : nom + 1 badge (celui du contexte Cours/TD courant). Utilisée
  * dans la vue "Cours"/"TD" groupée par matière. En mode "un badge par partie",
  * il n'y a pas de badge unique à montrer ici — juste le nombre de parties. */
 export function ChapitreRowCompact({ chapitre, side, now }) {
-  const { dispatch } = useStore()
-  const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id, side: s })
-
   if (chapitre.partitionMode === 'parties') {
     return (
       <div className="chapitre-row">
@@ -23,7 +19,7 @@ export function ChapitreRowCompact({ chapitre, side, now }) {
   return (
     <div className="chapitre-row">
       <div className="chapitre-name">{chapitre.nom}</div>
-      <Badge chapitre={chapitre} side={side} onMark={onMark} small now={now} />
+      <BadgeWithUndo chapitre={chapitre} side={side} small now={now} chapitreId={chapitre.id} />
     </div>
   )
 }
@@ -44,8 +40,6 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
     etat: chapitre.etat,
   }))
 
-  const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id, side: s })
-  const onUndo = (s) => dispatch({ type: 'UNDO_BADGE', id: chapitre.id, side: s })
   const onActivate = (s) => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id, side: s })
   const setMode = (mode) => dispatch({ type: 'SET_PARTITION_MODE', id: chapitre.id, mode })
   const onDelete = () => {
@@ -118,34 +112,12 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
             <div className="pill" onClick={() => onOpenParties(chapitre.id)}>
               Gérer les parties ({parties.length}) →
             </div>
-          ) : (
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              {(() => {
-                const badge = side === 'td' ? chapitre.badgeTD : chapitre.badgeCours
-                const tag = side === 'td' ? 'TD' : 'Cours'
-                if (badge?.statut !== 'actif') {
-                  return (
-                    <div className="pill pill-accent" onClick={() => onActivate(side)}>
-                      Activer {tag}
-                    </div>
-                  )
-                }
-                return (
-                  <div className="badge-with-undo">
-                    <Badge chapitre={chapitre} side={side} onMark={onMark} now={now} />
-                    {canUndoBadge(chapitre, side) && (
-                      <button
-                        className="icon-btn"
-                        onClick={() => onUndo(side)}
-                        title={`Annuler le dernier clic sur ce badge (${tag})`}
-                      >
-                        ↺
-                      </button>
-                    )}
-                  </div>
-                )
-              })()}
+          ) : (chapitre[side === 'td' ? 'badgeTD' : 'badgeCours'])?.statut !== 'actif' ? (
+            <div className="pill pill-accent" onClick={() => onActivate(side)}>
+              Activer {side === 'td' ? 'TD' : 'Cours'}
             </div>
+          ) : (
+            <BadgeWithUndo chapitre={chapitre} side={side} now={now} chapitreId={chapitre.id} />
           )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -176,7 +148,7 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
           Activer
         </div>
       ) : (
-        <Badge chapitre={chapitre} side={side} onMark={onMark} now={now} />
+        <BadgeWithUndo chapitre={chapitre} side={side} now={now} chapitreId={chapitre.id} />
       )}
       <button className="icon-btn" onClick={startEdit} title="Modifier">
         ✎

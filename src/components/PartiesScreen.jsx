@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { courseAccentStyle, courseName } from '../data/courses.js'
-import { canUndoBadge } from '../logic/badges.js'
-import Badge from './Badge.jsx'
+import { BadgeWithUndo } from './Badge.jsx'
 
 /** Ligne d'une sous-partie : même logique qu'un chapitre (nom, édition,
  * activation/badge/undo par côté), mais opère sur `partie` au lieu du
@@ -15,8 +14,6 @@ function PartieRow({ chapitre, partie, side, now, dispatch }) {
     commentaires: partie.commentaires,
   }))
 
-  const onMark = (_id, s) => dispatch({ type: 'MARK_BADGE', id: chapitre.id, partieId: partie.id, side: s })
-  const onUndo = (s) => dispatch({ type: 'UNDO_BADGE', id: chapitre.id, partieId: partie.id, side: s })
   const onActivate = (s) =>
     dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id, partieId: partie.id, side: s })
   const onDelete = () => {
@@ -57,31 +54,13 @@ function PartieRow({ chapitre, partie, side, now, dispatch }) {
         <div className="field-row">
           <label>Badges</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            {(() => {
-              const badge = side === 'td' ? partie.badgeTD : partie.badgeCours
-              const tag = side === 'td' ? 'TD' : 'Cours'
-              if (badge?.statut !== 'actif') {
-                return (
-                  <div className="pill pill-accent" onClick={() => onActivate(side)}>
-                    Activer {tag}
-                  </div>
-                )
-              }
-              return (
-                <div className="badge-with-undo">
-                  <Badge chapitre={partie} side={side} onMark={onMark} now={now} />
-                  {canUndoBadge(partie, side) && (
-                    <button
-                      className="icon-btn"
-                      onClick={() => onUndo(side)}
-                      title={`Annuler le dernier clic sur ce badge (${tag})`}
-                    >
-                      ↺
-                    </button>
-                  )}
-                </div>
-              )
-            })()}
+            {(partie[side === 'td' ? 'badgeTD' : 'badgeCours'])?.statut !== 'actif' ? (
+              <div className="pill pill-accent" onClick={() => onActivate(side)}>
+                Activer {side === 'td' ? 'TD' : 'Cours'}
+              </div>
+            ) : (
+              <BadgeWithUndo chapitre={partie} side={side} now={now} chapitreId={chapitre.id} partieId={partie.id} />
+            )}
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
@@ -108,7 +87,7 @@ function PartieRow({ chapitre, partie, side, now, dispatch }) {
           Activer
         </div>
       ) : (
-        <Badge chapitre={partie} side={side} onMark={onMark} now={now} />
+        <BadgeWithUndo chapitre={partie} side={side} now={now} chapitreId={chapitre.id} partieId={partie.id} />
       )}
       <button className="icon-btn" onClick={startEdit} title="Modifier">
         ✎

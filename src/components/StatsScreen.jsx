@@ -26,10 +26,7 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
 
   const parCours = COURSES.map((course) => {
     const ch = chapitres.filter((c) => c.courseId === course.id)
-    const alert = ch.some((c) =>
-      badgeUnits(c).some((u) => needsAttention(u.target, 'cours', now) || needsAttention(u.target, 'td', now)),
-    )
-    return { course, count: ch.length, alert }
+    return { course, count: ch.length }
   })
 
   return (
@@ -84,7 +81,7 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
       <div className="glass" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div className="label-mono">Par matière</div>
         <div className="stat-course-list">
-          {parCours.map(({ course, count, alert }) => (
+          {parCours.map(({ course, count }) => (
             <div
               key={course.id}
               className="stat-course-row"
@@ -93,7 +90,6 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
             >
               <span className="course-dot" />
               <div className="stat-course-name">{course.nom}</div>
-              {alert && <div className="stat-course-alert">!</div>}
               <div className="stat-course-count">{count}</div>
             </div>
           ))}

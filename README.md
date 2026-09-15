@@ -46,8 +46,12 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
 - ✅ **Partie 1 — Design** : fait dans Claude Design (wireframe "L3 Physique",
   version fonctionnelle 2a/2b) puis recréé en composants React ici.
 - ✅ **Partie 2 — Modèle de données des chapitres** : ID stable, nom,
-  description, état, statut standby/actif, 2 badges indépendants, commentaires
-  (`src/state/store.jsx`). Stocké en local pour l'instant.
+  description, état, statut standby/actif, badge, commentaires
+  (`src/state/store.jsx`). Un chapitre appartient à un seul côté (`side`:
+  'cours' ou 'td', fixé à sa création selon l'onglet où on était) — créer
+  "Interférences" côté Cours ne le fait pas apparaître côté TD ; il faut
+  l'ajouter séparément là-bas si besoin, avec sa propre fiche complètement
+  indépendante (nom, description, badge). Stocké en local pour l'instant.
 - ✅ **Partie 3 — Badges TD/Cours + standby/actif** : logique dans
   `src/logic/badges.js`, isolée de l'UI. Cours et TD sont deux horloges
   **totalement indépendantes**, y compris pour standby/actif : chacun porte
@@ -69,20 +73,22 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   qui glisse horizontalement, simple variation de sa propre couleur) pour
   attirer l'oeil ; une fois vert turquoise, le pulse (bleuté) ne revient que
   tous les 2 jours pour rappeler discrètement. Éditer nom/description ne
-  touche jamais ces horloges. Un point d'exclamation rouge apparaît en haut
-  à droite de la tuile d'une matière (vue Cours/TD) dès qu'un de ses badges
-  est orange ou jaune **actif** — pas pendant une attente, pas au rouge (trop
-  tôt), plus au vert turquoise (le pulse suffit déjà). Chaque clic sur un
-  badge garde un instantané de l'état précédent ; un bouton ↺ dans le
-  panneau d'édition du chapitre permet d'annuler la dernière **couleur**
-  validée par erreur (clic ou forçage debug) et restaure exactement l'état
-  d'avant, pas juste le statut "auto" par défaut. Un simple clic sur
-  "Activer" n'est volontairement pas annulable par ↺ (rien n'a encore été
-  "fait" à ce stade, juste démarré). Le panneau d'édition d'un chapitre (ou
-  d'une sous-partie) n'affiche jamais que le badge du côté qu'on est en
-  train de consulter (Cours ou TD) — jamais les deux ensemble, pour que les
-  deux restent visuellement aussi indépendants qu'ils le sont réellement.
-  Un **mode debug**
+  touche jamais ces horloges. Un point d'exclamation rouge apparaît
+  directement **sur le badge concerné** (`.badge-alert-dot`, coin
+  supérieur droit du badge lui-même) dès qu'il est orange ou jaune
+  **actif** — pas pendant une attente, pas au rouge (trop tôt), plus au
+  vert turquoise (le pulse suffit déjà), et jamais comme un indicateur
+  générique au niveau du chapitre ou de la tuile d'une matière. Chaque clic
+  sur un badge garde un instantané de l'état précédent ; un mini bouton ↺
+  juste à côté de N'IMPORTE QUEL badge (liste, carte, agenda — pas
+  seulement dans un panneau d'édition) permet d'annuler la dernière
+  **couleur** validée par erreur (clic ou forçage debug) et restaure
+  exactement l'état d'avant, pas juste le statut "auto" par défaut. Un
+  simple clic sur "Activer" n'est volontairement pas annulable par ↺ (rien
+  n'a encore été "fait" à ce stade, juste démarré). Le panneau d'édition
+  d'un chapitre (ou d'une sous-partie) n'affiche jamais que le badge du
+  côté qu'on est en train de consulter (Cours ou TD) — jamais les deux
+  ensemble. Un **mode debug**
   dans Réglages permet de forcer le badge Cours ou TD d'un chapitre choisi à
   n'importe quelle couleur (ou de revenir en "Auto") ; ce forçage règle
   réellement l'horloge du badge (comme un vrai clic dans le passé), donc il
@@ -108,8 +114,8 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   Cours/TD, totalement indépendants entre eux, du chapitre et des autres
   parties. Les fonctions de `src/logic/badges.js` sont déjà génériques sur
   tout objet `{badgeCours, badgeTD}` — elles marchent donc sans changement
-  sur une sous-partie comme sur un chapitre. Le "!" sur une tuile de
-  matière, le nombre de "badges en retard" (Vue d'ensemble), les
+  sur une sous-partie comme sur un chapitre. Le "!" sur le badge, le
+  nombre de "badges en retard" (Vue d'ensemble), les
   notifications et l'export Markdown tiennent tous compte des sous-parties
   (`badgeUnits`/`chapitreNeedsAttention` dans badges.js). Dans l'Agenda, une
   entrée venant d'une sous-partie précise toujours d'où elle vient
@@ -162,8 +168,7 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
 
 Un lien "Vue d'ensemble →" sous les onglets Cours/TD de l'accueil ouvre un
 écran récapitulatif (`StatsScreen.jsx`) : nombre de chapitres, actifs vs
-standby, badges en retard, répartition par état, et par matière (avec le même
-point d'exclamation que sur les tuiles Cours/TD si une matière a du retard).
+standby, badges en retard, répartition par état, et par matière.
 
 ### Agenda
 

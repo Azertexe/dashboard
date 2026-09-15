@@ -20,7 +20,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
   const sideLabel = side === 'td' ? 'TD' : 'Cours'
 
   const ch = chapitres
-    .filter((c) => c.courseId === courseId)
+    .filter((c) => c.courseId === courseId && c.side === side)
     .sort((a, b) => b.createdAt - a.createdAt)
   const filtered = search.trim()
     ? ch.filter((c) => normalize(c.nom).includes(normalize(search)))
@@ -28,7 +28,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
 
   const addChapitre = () => {
     if (!nom.trim()) return
-    dispatch({ type: 'ADD_CHAPITRE', courseId, nom: nom.trim() })
+    dispatch({ type: 'ADD_CHAPITRE', courseId, side, nom: nom.trim() })
     setNom('')
     setAdding(false)
   }

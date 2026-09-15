@@ -37,6 +37,11 @@ function migrateChapitre(c) {
   const legacyActif = c.statut === 'actif'
   return {
     ...c,
+    // Avant, un seul chapitre était partagé entre Cours et TD (juste ses 2
+    // badges étaient indépendants) — un chapitre créé côté Cours apparaissait
+    // donc aussi côté TD. Chaque chapitre appartient maintenant à un seul
+    // côté ; les anciens (sans `side`) sont rattachés à Cours par défaut.
+    side: c.side ?? 'cours',
     badgeCours: migrateBadgeSide(c.badgeCours, legacyActif, c.activatedAt),
     badgeTD: migrateBadgeSide(c.badgeTD, legacyActif, c.activatedAt),
     partitionMode: c.partitionMode ?? 'chapitre',
@@ -107,6 +112,7 @@ function reducer(state, action) {
       const chapitre = {
         id: newId('ch'),
         courseId: action.courseId,
+        side: action.side, // le chapitre n'existe QUE de ce côté (Cours ou TD) — jamais les deux
         nom: action.nom,
         description: '',
         etat: 'pas_commence',

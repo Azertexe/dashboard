@@ -826,6 +826,29 @@ select {
   }
 }
 
+/* Point d'exclamation directement sur le badge en retard (orange/jaune actif,
+   ou forcé par le mode debug) — plus au niveau du chapitre/de la matière. */
+.badge-alert-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.badge-alert-dot {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: var(--rouge-bg);
+  color: var(--rouge-ink);
+  font: 700 10px var(--font-ui);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+}
+
 /* ---- course detail ---- */
 
 .resource-row {
