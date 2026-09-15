@@ -284,6 +284,23 @@ describe('setForcedAlert (mode debug)', () => {
     expect(needsAttention(auto, 'cours', NOW)).toBe(false)
   })
 
+  it('is ignored while the badge is in a grey wait or standby — a forced "!" only applies to a colored active badge', () => {
+    const rouge = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+    const forcedShown = setForcedAlert(rouge, 'cours', true)
+
+    // valide rouge -> repasse en attente grisée vers orange : le forçage ne doit plus s'appliquer
+    const waiting = markBadgeNow(forcedShown, 'cours', NOW)
+    expect(badgeStatus(waiting, 'cours', NOW).phase).toBe('wait')
+    expect(needsAttention(waiting, 'cours', NOW)).toBe(false)
+
+    // une fois orange redevenu actif, le forçage s'applique de nouveau
+    expect(needsAttention(waiting, 'cours', NOW + 3 * DAY_MS)).toBe(true)
+
+    // un forçage laissé sur un côté jamais activé (standby) ne doit rien afficher non plus
+    const standby = setForcedAlert(makeChapitre(), 'cours', true)
+    expect(needsAttention(standby, 'cours', NOW)).toBe(false)
+  })
+
   it('survives a real click, an undo, and a color force on the same badge', () => {
     let c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     c = setForcedAlert(c, 'cours', true)
