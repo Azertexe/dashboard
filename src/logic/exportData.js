@@ -1,20 +1,11 @@
-import { COURSES, courseName } from '../data/courses.js'
+import { COURSES } from '../data/courses.js'
 import { etatLabel } from '../data/etats.js'
-import { badgeStatus } from './badges.js'
-
-const ACTIVE_LABEL = {
-  rouge: 'à réviser !',
-  orange: 'à réviser bientôt',
-  jaune: 'ok',
-  vert: 'à jour',
-}
-
-const COLOR_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert turquoise' }
+import { badgeStatus, BADGE_COLOR_NAME, BADGE_ACTIVE_LABEL } from './badges.js'
 
 function badgeLabel(status) {
   if (status.phase === 'inactive') return 'standby'
-  if (status.phase === 'wait') return `en attente (${COLOR_NAME[status.level]} dans J-${status.daysLeft})`
-  return ACTIVE_LABEL[status.level]
+  if (status.phase === 'wait') return `en attente (${BADGE_COLOR_NAME[status.level]} dans J-${status.daysLeft})`
+  return BADGE_ACTIVE_LABEL[status.level]
 }
 
 export function toMarkdown(state, now = Date.now()) {
@@ -94,8 +85,4 @@ export function downloadJSON(state) {
 
 export function downloadMarkdown(state) {
   download(`l3-physique-etat-${new Date().toISOString().slice(0, 10)}.md`, toMarkdown(state), 'text/markdown')
-}
-
-export function courseLabelFor(id) {
-  return courseName(id)
 }

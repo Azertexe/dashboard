@@ -1,8 +1,6 @@
-// Config du projet Firebase — ce ne sont PAS des secrets (contrairement à une clé
-// d'API serveur classique), Firebase les rend publics par design : la sécurité
-// vient uniquement des règles Firestore (voir README, section Firebase), pas de
-// cacher ces valeurs. Remplace les "TODO" ci-dessous par les valeurs trouvées dans
-// la console Firebase (Paramètres du projet ⚙️ > Général > "Vos applications" > Config).
+// Config du projet Firebase (l3-physic) — ce ne sont PAS des secrets (contrairement
+// à une clé d'API serveur classique), Firebase les rend publics par design : la
+// sécurité vient uniquement des règles Firestore (voir README, section Firebase).
 export const firebaseConfig = {
   apiKey: 'AIzaSyAgQ-PzGDcR7Y9CblvgJGRrj5hgUTEwzfA',
   authDomain: 'l3-physic.firebaseapp.com',

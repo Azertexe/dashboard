@@ -230,12 +230,6 @@ select {
   border-color: transparent;
 }
 
-.pill-disabled {
-  border-style: dashed;
-  color: var(--text-dimmer);
-  cursor: not-allowed;
-}
-
 /* ---- header ---- */
 
 .header-bar {
@@ -632,24 +626,6 @@ select {
   gap: 14px;
   border-left: 3px solid var(--course-accent-border, var(--glass-border));
   background-image: linear-gradient(165deg, var(--course-accent-soft, transparent), transparent 55%);
-}
-
-/* Point d'exclamation : au moins un badge orange/jaune pas encore traité sur cette matière/côté. */
-.group-alert {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: var(--rouge-bg);
-  color: var(--rouge-ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font: 700 12px var(--font-ui);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
 }
 
 .badge-with-undo {
@@ -1050,6 +1026,30 @@ select {
   gap: 12px;
 }
 
+.features-list {
+  max-height: 260px;
+  overflow-y: auto;
+  gap: 10px;
+}
+
+.feature-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.feature-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.feature-desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
 .settings-note {
   font-size: 11.5px;
   color: var(--text-dimmer);
@@ -1105,6 +1105,16 @@ select {
   color: var(--text-dim);
   cursor: pointer;
   font-size: 12px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.14);
+  background: var(--glass-2);
+}
+
+.icon-btn:active {
+  transform: scale(1.02);
 }
 
 .settings-fab {
@@ -1312,18 +1322,6 @@ select {
 .stat-course-name {
   flex: 1;
   font-size: 13px;
-}
-
-.stat-course-alert {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: var(--rouge-bg);
-  color: var(--rouge-ink);
-  font: 700 10px var(--font-ui);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .stat-course-count {

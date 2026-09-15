@@ -3,7 +3,7 @@ import { useStore } from '../state/store.jsx'
 import { downloadJSON, downloadMarkdown } from '../logic/exportData.js'
 import { THEMES } from '../data/themes.js'
 import { COURSES } from '../data/courses.js'
-import { badgeStatus, BADGE_LEVELS } from '../logic/badges.js'
+import { badgeStatus, BADGE_LEVELS, BADGE_COLOR_NAME } from '../logic/badges.js'
 import {
   notificationsEnabled,
   setNotificationsEnabled,
@@ -13,7 +13,6 @@ import {
 const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
 
 const FORCE_LEVELS = [BADGE_LEVELS.ROUGE, BADGE_LEVELS.ORANGE, BADGE_LEVELS.JAUNE, BADGE_LEVELS.VERT]
-const LEVEL_NAME = { rouge: 'Rouge', orange: 'Orange', jaune: 'Jaune', vert: 'Vert turquoise' }
 
 function levelPillStyle(level, active) {
   if (!active) return {}
@@ -32,11 +31,73 @@ const SYNC_LABEL = {
   off: 'Non configuré',
 }
 
+// Résumé de toutes les fonctionnalités du site, affiché dans Réglages > "Fonctionnalités"
+// — utile pour se souvenir de ce qui existe sans avoir à tout retrouver en cliquant partout.
+const FEATURES = [
+  {
+    title: 'Cours / TD indépendants',
+    desc: "Chaque matière a une liste de chapitres séparée côté Cours et côté TD — créer un chapitre d'un côté ne l'ajoute pas de l'autre.",
+  },
+  {
+    title: 'Cycle des badges',
+    desc: 'Rouge → Orange → Jaune → Vert turquoise, chaque couleur validée (clic) déclenche une attente avant la suivante. Sans clic, la couleur active reste affichée indéfiniment.',
+  },
+  {
+    title: 'Annuler (↺)',
+    desc: 'Le petit bouton ↺ à côté d\'un badge annule sa toute dernière action (Activer, une couleur cliquée, ou un forçage debug) — un seul cran en arrière.',
+  },
+  {
+    title: 'Point d\'exclamation (!)',
+    desc: "Apparaît sur un badge Orange ou Jaune actif pas encore validé, directement sur le badge concerné (chapitre ou sous-partie).",
+  },
+  {
+    title: 'Sous-parties',
+    desc: 'Un chapitre peut être découpé en plusieurs parties (exercices, sections…), chacune avec son propre badge, au lieu d\'un badge unique pour tout le chapitre.',
+  },
+  {
+    title: 'Agenda',
+    desc: "Vue regroupant ce qui presse maintenant (badges en retard) et les devoirs/partiels à venir, triés par date.",
+  },
+  {
+    title: "Vue d'ensemble",
+    desc: 'Statistiques globales : chapitres par matière, nombre de badges en retard, etc.',
+  },
+  {
+    title: 'Ressources par matière',
+    desc: 'Fiche de révision, fiche méthode et polys/annexes (liens externes ou fichiers) éditables pour chaque matière.',
+  },
+  {
+    title: 'Devoirs & partiels',
+    desc: 'Échéances avec compte à rebours, affichées sur l\'accueil et dans l\'Agenda.',
+  },
+  {
+    title: 'Notifications',
+    desc: "Rappel navigateur, une fois par jour maximum, quand un badge prend du retard.",
+  },
+  {
+    title: 'Synchronisation',
+    desc: 'Les mêmes données apparaissent en temps réel sur tous tes appareils via Firebase, sans compte à créer.',
+  },
+  {
+    title: 'Export & sauvegarde',
+    desc: 'Export JSON (sauvegarde complète, réimportable) ou Markdown (résumé lisible, pour coller ailleurs).',
+  },
+  {
+    title: 'Thèmes & disposition',
+    desc: '3 thèmes de couleur (Glacier, Volcanique, Détente) et 3 dispositions d\'écran (PC, Mac, iPhone).',
+  },
+  {
+    title: 'Mode debug',
+    desc: 'Forcer un badge à une couleur ou un "!" précis, pour tester ou corriger sans attendre le cycle normal.',
+  },
+]
+
 export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now }) {
   const { state, dispatch, syncStatus } = useStore()
   const fileInput = useRef(null)
   const [notifOn, setNotifOn] = useState(notificationsEnabled)
   const [debugMode, setDebugMode] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
   const [debugCourseId, setDebugCourseId] = useState(COURSES[0]?.id ?? '')
   const [debugChapitreId, setDebugChapitreId] = useState('')
 
@@ -112,6 +173,31 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
           <button className="icon-btn" onClick={onClose}>
             ×
           </button>
+        </div>
+
+        <div className="glass-tight settings-section">
+          <div className="settings-row">
+            <div className="settings-section-title" style={{ marginBottom: 0 }}>
+              Fonctionnalités
+            </div>
+            <div className="pill" onClick={() => setAboutOpen((v) => !v)}>
+              {aboutOpen ? 'Fermer' : 'Voir tout'}
+            </div>
+          </div>
+          <div className="settings-row-desc" style={{ minWidth: 0 }}>
+            Tout ce que propose le site, en un coup d'œil.
+          </div>
+
+          {aboutOpen && (
+            <div className="settings-subpanel features-list">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="feature-row">
+                  <div className="feature-title">{f.title}</div>
+                  <div className="feature-desc">{f.desc}</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="glass-tight settings-section">
@@ -213,8 +299,8 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                         {status.phase === 'inactive'
                           ? 'standby'
                           : status.phase === 'wait'
-                            ? `attente (${LEVEL_NAME[status.level]})`
-                            : LEVEL_NAME[status.level]}
+                            ? `attente (${BADGE_COLOR_NAME[status.level]})`
+                            : BADGE_COLOR_NAME[status.level]}
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                         {FORCE_LEVELS.map((level) => (
@@ -224,7 +310,7 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                             style={levelPillStyle(level, active === level)}
                             onClick={() => forceBadge(side, level)}
                           >
-                            {LEVEL_NAME[level]}
+                            {BADGE_COLOR_NAME[level]}
                           </div>
                         ))}
                         <div className="pill" onClick={() => forceBadge(side, null)}>
