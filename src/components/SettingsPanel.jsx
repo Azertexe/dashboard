@@ -27,6 +27,7 @@ function alertPillStyle(active) {
 const SYNC_LABEL = {
   synced: 'Synchronisé',
   syncing: 'Synchronisation…',
+  stalled: 'Connexion bloquée',
   error: 'Erreur de synchronisation',
   off: 'Non configuré',
 }
@@ -391,9 +392,14 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
             <div className={`sync-pill sync-${syncStatus}`}>{SYNC_LABEL[syncStatus]}</div>
           </div>
           <div className="settings-row-desc" style={{ minWidth: 0 }}>
-            {syncStatus === 'off'
-              ? "Firebase n'est pas encore configuré (src/firebase/config.js) — les données restent locales à cet appareil."
-              : 'Les mêmes données apparaissent automatiquement sur tous tes appareils, sans compte à créer.'}
+            {syncStatus === 'off' &&
+              "Firebase n'est pas encore configuré (src/firebase/config.js) — les données restent locales à cet appareil."}
+            {syncStatus === 'stalled' &&
+              "La connexion à Firestore ne s'établit pas depuis plus de 10 secondes — vérifie ta connexion, essaie de passer du Wi-Fi aux données mobiles (ou l'inverse), et désactive un éventuel bloqueur de pub qui bloquerait google.com/firestore.googleapis.com. Tes données restent en sécurité localement en attendant."}
+            {syncStatus === 'error' &&
+              "La synchronisation a échoué — vérifie les règles Firestore dans la console Firebase (voir README). Tes données restent en sécurité localement."}
+            {(syncStatus === 'synced' || syncStatus === 'syncing') &&
+              'Les mêmes données apparaissent automatiquement sur tous tes appareils, sans compte à créer.'}
           </div>
         </div>
 

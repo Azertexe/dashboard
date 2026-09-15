@@ -294,8 +294,20 @@ export function StoreProvider({ children }) {
   const lastLocalPushedJSONRef = useRef(null)
 
   useEffect(() => {
+    if (!firebaseConfigured()) return
+    // Si aucune confirmation (snapshot ou erreur) n'arrive dans ce délai, la
+    // connexion est probablement bloquée (réseau restrictif, bloqueur de
+    // pub…) plutôt que juste lente — sans ce filet, le statut resterait
+    // coincé sur "Synchronisation…" indéfiniment sans jamais prévenir.
+    let settled = false
+    const stallTimer = setTimeout(() => {
+      if (!settled) setSyncStatus('stalled')
+    }, 10_000)
+
     const unsub = subscribeRemoteState(
       (remoteState) => {
+        settled = true
+        clearTimeout(stallTimer)
         setSyncStatus('synced')
         if (!remoteState) return
         const json = JSON.stringify(remoteState)
@@ -309,9 +321,16 @@ export function StoreProvider({ children }) {
         lastRemoteJSONRef.current = json
         dispatch({ type: 'IMPORT_STATE', state: remoteState })
       },
-      () => setSyncStatus('error'),
+      () => {
+        settled = true
+        clearTimeout(stallTimer)
+        setSyncStatus('error')
+      },
     )
-    return unsub
+    return () => {
+      clearTimeout(stallTimer)
+      unsub()
+    }
   }, [])
 
   useEffect(() => {
