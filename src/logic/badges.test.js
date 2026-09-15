@@ -198,15 +198,21 @@ describe('undoBadge / canUndoBadge', () => {
     expect(badgeStatus(c, 'cours', NOW)).toMatchObject({ phase: before.phase, level: before.level })
   })
 
-  it('can undo an "Activer" clicked by mistake, going all the way back to standby', () => {
+  it('a simple "Activer" click is NOT undoable — only a validated color is', () => {
     const c = makeChapitre() // standby des deux côtés
     const activated = activateChapitre(c, 'cours', NOW)
-    expect(canUndoBadge(activated, 'cours')).toBe(true)
+    expect(canUndoBadge(activated, 'cours')).toBe(false)
+    expect(undoBadge(activated, 'cours')).toBe(activated) // no-op
+  })
 
-    const reverted = undoBadge(activated, 'cours')
-    expect(reverted.badgeCours).toEqual(c.badgeCours)
-    expect(badgeStatus(reverted, 'cours', NOW)).toMatchObject({ phase: 'inactive' })
-    expect(canUndoBadge(reverted, 'cours')).toBe(false)
+  it('undoing a validated color on a sous-partie works exactly like on a chapter', () => {
+    const p = makePartie({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+    const before = badgeStatus(p, 'cours', NOW)
+    const validated = markBadgeNow(p, 'cours', NOW)
+    expect(canUndoBadge(validated, 'cours')).toBe(true)
+
+    const reverted = undoBadge(validated, 'cours')
+    expect(badgeStatus(reverted, 'cours', NOW)).toMatchObject({ phase: before.phase, level: before.level })
   })
 
   it('only undoes the most recent action: undo after activate+validate goes back to just-activated, not standby', () => {

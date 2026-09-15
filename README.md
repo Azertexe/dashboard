@@ -74,10 +74,15 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   est orange ou jaune **actif** — pas pendant une attente, pas au rouge (trop
   tôt), plus au vert turquoise (le pulse suffit déjà). Chaque clic sur un
   badge garde un instantané de l'état précédent ; un bouton ↺ dans le
-  panneau d'édition du chapitre permet d'annuler la dernière action sur ce
-  badge — une validation de couleur, un forçage debug, **ou même un clic sur
-  "Activer" fait par erreur** — et restaure exactement l'état d'avant (pas
-  juste le statut "auto" par défaut). Un **mode debug**
+  panneau d'édition du chapitre permet d'annuler la dernière **couleur**
+  validée par erreur (clic ou forçage debug) et restaure exactement l'état
+  d'avant, pas juste le statut "auto" par défaut. Un simple clic sur
+  "Activer" n'est volontairement pas annulable par ↺ (rien n'a encore été
+  "fait" à ce stade, juste démarré). Le panneau d'édition d'un chapitre (ou
+  d'une sous-partie) n'affiche jamais que le badge du côté qu'on est en
+  train de consulter (Cours ou TD) — jamais les deux ensemble, pour que les
+  deux restent visuellement aussi indépendants qu'ils le sont réellement.
+  Un **mode debug**
   dans Réglages permet de forcer le badge Cours ou TD d'un chapitre choisi à
   n'importe quelle couleur (ou de revenir en "Auto") ; ce forçage règle
   réellement l'horloge du badge (comme un vrai clic dans le passé), donc il
