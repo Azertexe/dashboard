@@ -134,11 +134,16 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
  * ou jaune ACTIFS : "vous prenez du retard"). Une attente en cours (grisée)
  * n'alerte pas — ce n'est pas encore le moment d'agir — et le vert (avec son
  * pulse bleu) se signale déjà tout seul.
+ *
+ * Le forçage debug (forcedAlert) ne peut jouer que sur un badge EN COULEUR
+ * (phase 'active') — jamais pendant une attente grisée ni en standby, sinon
+ * un forçage laissé actif par erreur reste collé indéfiniment sur un badge
+ * qui n'a pourtant pas encore atteint sa couleur.
  */
 export function needsAttention(chapitre, side, now = Date.now()) {
   const badge = badgeOf(chapitre, side)
-  if (badge.forcedAlert != null) return badge.forcedAlert
   const { phase, level } = badgeStatus(chapitre, side, now)
+  if (badge.forcedAlert != null) return phase === 'active' && badge.forcedAlert
   return phase === 'active' && (level === BADGE_LEVELS.ORANGE || level === BADGE_LEVELS.JAUNE)
 }
 
