@@ -11,6 +11,7 @@ import StatsScreen from './components/StatsScreen.jsx'
 import AgendaScreen from './components/AgendaScreen.jsx'
 import PartiesScreen from './components/PartiesScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
+import ExamDetailModal from './components/ExamDetailModal.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
 import { checkAndNotify } from './logic/notifications.js'
 import { lastExportAt } from './logic/exportData.js'
@@ -30,6 +31,7 @@ export default function App() {
   const [courseId, setCourseId] = useState(null)
   const [partiesChapitreId, setPartiesChapitreId] = useState(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [openExamId, setOpenExamId] = useState(null)
   const [toast, setToast] = useState(null)
 
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem(LAYOUT_KEY) || 'mac')
@@ -144,6 +146,7 @@ export default function App() {
                 onGoDevoirs={goDevoirs}
                 onGoStats={goStats}
                 onGoAgenda={goAgenda}
+                onOpenExam={setOpenExamId}
               />
             )}
 
@@ -185,7 +188,9 @@ export default function App() {
                 )
               })()}
 
-            {screen === 'partiels' && <PartielsScreen now={now} onGoHome={goHome} />}
+            {screen === 'partiels' && (
+              <PartielsScreen now={now} onGoHome={goHome} onOpenExam={setOpenExamId} />
+            )}
 
             {screen === 'devoirs' && <DevoirsScreen now={now} onGoHome={goHome} />}
 
@@ -230,6 +235,12 @@ export default function App() {
           }}
         />
       )}
+      {openExamId &&
+        (() => {
+          const exam = state.exams.find((e) => e.id === openExamId)
+          return exam && <ExamDetailModal exam={exam} now={now} onClose={() => setOpenExamId(null)} />
+        })()}
+
       {toast && <div className="toast">{toast}</div>}
     </div>
   )

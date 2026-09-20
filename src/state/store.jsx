@@ -9,7 +9,7 @@ function emptyState() {
   return {
     version: STORAGE_VERSION,
     theme: 'glacier',
-    exams: [], // { id, matiere, date, createdAt } — les partiels
+    exams: [], // { id, matiere, date, notes, prepStatut, createdAt } — les partiels
     devoirs: [], // { id, nom, dateEcheance, createdAt }
     chapitres: [], // voir src/logic/badges.js pour la forme d'un chapitre
     resources: {}, // { [courseId]: { revision: {url,label}|null, methode: {url,label}|null, polys: [{id,url,label}] } }
@@ -54,6 +54,12 @@ function migrateChapitre(c) {
   }
 }
 
+// Anciens partiels sans `notes`/`prepStatut` (ajoutés pour la fiche détaillée) —
+// on les complète plutôt que de perdre les partiels déjà enregistrés.
+function migrateExam(e) {
+  return { ...e, notes: e.notes ?? '', prepStatut: e.prepStatut ?? null }
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -61,7 +67,11 @@ function loadState() {
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return emptyState()
     const merged = { ...emptyState(), ...parsed }
-    return { ...merged, chapitres: merged.chapitres.map(migrateChapitre) }
+    return {
+      ...merged,
+      chapitres: merged.chapitres.map(migrateChapitre),
+      exams: merged.exams.map(migrateExam),
+    }
   } catch {
     return emptyState()
   }
@@ -79,6 +89,7 @@ function newId(prefix) {
 // horloges de badges ni la date d'activation (voir spec, Partie 5).
 const EDITABLE_CHAPITRE_FIELDS = ['nom', 'description', 'etat', 'commentaires']
 const EDITABLE_PARTIE_FIELDS = ['nom', 'description', 'commentaires']
+const EDITABLE_EXAM_FIELDS = ['notes', 'prepStatut']
 
 function emptyBadge() {
   return {
@@ -221,9 +232,21 @@ function reducer(state, action) {
         id: newId('exam'),
         matiere: action.matiere,
         date: action.date,
+        notes: '',
+        prepStatut: null, // null (à faire) | 'urgent' | 'fait'
         createdAt: Date.now(),
       }
       return { ...state, exams: [...state.exams, exam] }
+    }
+    case 'EDIT_EXAM': {
+      const patch = {}
+      for (const k of EDITABLE_EXAM_FIELDS) {
+        if (k in action.patch) patch[k] = action.patch[k]
+      }
+      return {
+        ...state,
+        exams: state.exams.map((e) => (e.id === action.id ? { ...e, ...patch } : e)),
+      }
     }
     case 'DELETE_EXAM':
       return { ...state, exams: state.exams.filter((e) => e.id !== action.id) }
@@ -269,7 +292,11 @@ function reducer(state, action) {
       return { ...state, theme: action.theme }
     case 'IMPORT_STATE': {
       const merged = { ...emptyState(), ...action.state, version: STORAGE_VERSION }
-      return { ...merged, chapitres: merged.chapitres.map(migrateChapitre) }
+      return {
+        ...merged,
+        chapitres: merged.chapitres.map(migrateChapitre),
+        exams: merged.exams.map(migrateExam),
+      }
     }
     default:
       return state
