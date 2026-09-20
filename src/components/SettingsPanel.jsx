@@ -49,11 +49,11 @@ const FEATURES = [
   },
   {
     title: 'Point d\'exclamation (!)',
-    desc: "Apparaît sur un badge Orange ou Jaune actif pas encore validé, directement sur le badge concerné (chapitre ou sous-partie).",
+    desc: "Apparaît sur un badge Orange ou Jaune actif pas encore validé, directement sur le badge du chapitre concerné.",
   },
   {
-    title: 'Sous-parties',
-    desc: 'Un chapitre peut être découpé en plusieurs parties (exercices, sections…), chacune avec son propre badge, au lieu d\'un badge unique pour tout le chapitre.',
+    title: 'Sommaire',
+    desc: "Sur chaque chapitre, un plan indépendant du badge (parties, puis sous-parties en dépliant une partie) pour noter ce qu'il y a dedans — le badge de révision reste toujours unique pour tout le chapitre.",
   },
   {
     title: 'Agenda',

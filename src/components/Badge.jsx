@@ -45,10 +45,10 @@ export default function Badge({ chapitre, side, onMark, small, now }) {
 /** Badge + un mini bouton ↺ juste à côté, visible partout (pas seulement
  * dans un panneau d'édition) — pour rattraper un clic sur une couleur fait
  * par erreur là où on le remarque, sans devoir ouvrir l'édition. */
-export function BadgeWithUndo({ chapitre, side, small, now, chapitreId, partieId }) {
+export function BadgeWithUndo({ chapitre, side, small, now, chapitreId }) {
   const { dispatch } = useStore()
-  const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id: chapitreId, partieId, side: s })
-  const onUndo = () => dispatch({ type: 'UNDO_BADGE', id: chapitreId, partieId, side })
+  const onMark = (id, s) => dispatch({ type: 'MARK_BADGE', id: chapitreId, side: s })
+  const onUndo = () => dispatch({ type: 'UNDO_BADGE', id: chapitreId, side })
 
   return (
     <div className="badge-with-undo">

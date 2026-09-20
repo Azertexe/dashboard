@@ -22,6 +22,16 @@ function summarizeBadge(chapitre, side, now) {
   return { ...status, alerte: needsAttention(chapitre, side, now) }
 }
 
+// Le sommaire (parties/sous-parties) n'est qu'un plan texte, sans rapport
+// avec le badge — qui reste unique par chapitre, cf. reducer.js.
+function summarizeSommaire(c) {
+  return (c.parties ?? []).map((p) => ({
+    id: p.id,
+    nom: p.nom,
+    sousParties: (p.sousParties ?? []).map((sp) => ({ id: sp.id, nom: sp.nom })),
+  }))
+}
+
 function summarizeChapitre(c, now) {
   return {
     id: c.id,
@@ -33,16 +43,8 @@ function summarizeChapitre(c, now) {
     etatLabel: etatLabel(c.etat),
     description: c.description,
     commentaires: c.commentaires,
-    partitionMode: c.partitionMode,
     badge: summarizeBadge(c, c.side, now),
-    parties:
-      c.partitionMode === 'parties'
-        ? c.parties.map((p) => ({
-            id: p.id,
-            nom: p.nom,
-            badge: summarizeBadge(p, c.side, now),
-          }))
-        : [],
+    sommaire: summarizeSommaire(c),
   }
 }
 
@@ -92,7 +94,7 @@ export const TOOLS = [
   {
     name: 'get_state',
     description:
-      "Lit l'état complet et à jour du dashboard L3 Physique : chapitres (Cours et TD) avec le statut de leur badge de révision (phase, couleur, jours restants avant que la couleur active change), partiels et devoirs (avec jours restants). Toujours appeler cet outil avant de modifier quoi que ce soit, pour avoir les bons id.",
+      "Lit l'état complet et à jour du dashboard L3 Physique : chapitres (Cours et TD) avec le statut de leur badge de révision (phase, couleur, jours restants avant que la couleur active change) et leur sommaire (parties/sous-parties, un plan texte sans rapport avec le badge), plus partiels et devoirs (avec jours restants). Toujours appeler cet outil avant de modifier quoi que ce soit, pour avoir les bons id.",
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     handler: async () => getStateSummary(),
   },
@@ -205,7 +207,7 @@ export const TOOLS = [
   },
   {
     name: 'delete_chapitre',
-    description: 'Supprime un chapitre (et ses éventuelles sous-parties).',
+    description: 'Supprime un chapitre (et son sommaire).',
     inputSchema: {
       type: 'object',
       properties: { id: idProp('id du chapitre (voir get_state)') },
@@ -223,12 +225,11 @@ export const TOOLS = [
       properties: {
         id: idProp('id du chapitre (voir get_state)'),
         side: { type: 'string', enum: SIDE_ENUM },
-        partieId: { type: 'string', description: 'id de la sous-partie visée, si le chapitre est découpé en parties' },
       },
       required: ['id', 'side'],
       additionalProperties: false,
     },
-    handler: (args) => applyAction({ type: 'ACTIVATE_CHAPITRE', id: args.id, side: args.side, partieId: args.partieId }),
+    handler: (args) => applyAction({ type: 'ACTIVATE_CHAPITRE', id: args.id, side: args.side }),
   },
   {
     name: 'mark_badge',
@@ -239,12 +240,11 @@ export const TOOLS = [
       properties: {
         id: idProp('id du chapitre (voir get_state)'),
         side: { type: 'string', enum: SIDE_ENUM },
-        partieId: { type: 'string', description: 'id de la sous-partie visée, si le chapitre est découpé en parties' },
       },
       required: ['id', 'side'],
       additionalProperties: false,
     },
-    handler: (args) => applyAction({ type: 'MARK_BADGE', id: args.id, side: args.side, partieId: args.partieId }),
+    handler: (args) => applyAction({ type: 'MARK_BADGE', id: args.id, side: args.side }),
   },
   {
     name: 'undo_badge',
@@ -254,11 +254,75 @@ export const TOOLS = [
       properties: {
         id: idProp('id du chapitre (voir get_state)'),
         side: { type: 'string', enum: SIDE_ENUM },
-        partieId: { type: 'string', description: 'id de la sous-partie visée, si le chapitre est découpé en parties' },
       },
       required: ['id', 'side'],
       additionalProperties: false,
     },
-    handler: (args) => applyAction({ type: 'UNDO_BADGE', id: args.id, side: args.side, partieId: args.partieId }),
+    handler: (args) => applyAction({ type: 'UNDO_BADGE', id: args.id, side: args.side }),
+  },
+  {
+    name: 'add_partie',
+    description: "Ajoute une partie au sommaire d'un chapitre (un plan de ce qu'il y a dedans — aucun rapport avec le badge de révision).",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chapitreId: idProp('id du chapitre (voir get_state)'),
+        nom: { type: 'string' },
+      },
+      required: ['chapitreId', 'nom'],
+      additionalProperties: false,
+    },
+    handler: (args) => applyAction({ type: 'ADD_PARTIE', chapitreId: args.chapitreId, nom: args.nom }),
+  },
+  {
+    name: 'delete_partie',
+    description: 'Supprime une partie du sommaire (et ses sous-parties).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chapitreId: idProp('id du chapitre (voir get_state)'),
+        partieId: idProp('id de la partie (voir get_state → chapitres[].sommaire)'),
+      },
+      required: ['chapitreId', 'partieId'],
+      additionalProperties: false,
+    },
+    handler: (args) => applyAction({ type: 'DELETE_PARTIE', chapitreId: args.chapitreId, partieId: args.partieId }),
+  },
+  {
+    name: 'add_sous_partie',
+    description: "Ajoute une sous-partie sous une partie du sommaire.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chapitreId: idProp('id du chapitre (voir get_state)'),
+        partieId: idProp('id de la partie (voir get_state → chapitres[].sommaire)'),
+        nom: { type: 'string' },
+      },
+      required: ['chapitreId', 'partieId', 'nom'],
+      additionalProperties: false,
+    },
+    handler: (args) =>
+      applyAction({ type: 'ADD_SOUS_PARTIE', chapitreId: args.chapitreId, partieId: args.partieId, nom: args.nom }),
+  },
+  {
+    name: 'delete_sous_partie',
+    description: 'Supprime une sous-partie du sommaire.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        chapitreId: idProp('id du chapitre (voir get_state)'),
+        partieId: idProp('id de la partie'),
+        sousPartieId: idProp('id de la sous-partie'),
+      },
+      required: ['chapitreId', 'partieId', 'sousPartieId'],
+      additionalProperties: false,
+    },
+    handler: (args) =>
+      applyAction({
+        type: 'DELETE_SOUS_PARTIE',
+        chapitreId: args.chapitreId,
+        partieId: args.partieId,
+        sousPartieId: args.sousPartieId,
+      }),
   },
 ]

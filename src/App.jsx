@@ -9,7 +9,7 @@ import PartielsScreen from './components/PartielsScreen.jsx'
 import DevoirsScreen from './components/DevoirsScreen.jsx'
 import StatsScreen from './components/StatsScreen.jsx'
 import AgendaScreen from './components/AgendaScreen.jsx'
-import PartiesScreen from './components/PartiesScreen.jsx'
+import SommaireScreen from './components/SommaireScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import ExamDetailModal from './components/ExamDetailModal.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
@@ -177,10 +177,9 @@ export default function App() {
                 const partiesChapitre = state.chapitres.find((c) => c.id === partiesChapitreId)
                 return (
                   partiesChapitre && (
-                    <PartiesScreen
+                    <SommaireScreen
                       chapitre={partiesChapitre}
                       side={side}
-                      now={now}
                       onBack={backFromParties}
                       onGoHome={goHome}
                     />
@@ -199,12 +198,7 @@ export default function App() {
             )}
 
             {screen === 'agenda' && (
-              <AgendaScreen
-                now={now}
-                onGoHome={goHome}
-                onOpenCourse={openCourseFromAgenda}
-                onOpenParties={openParties}
-              />
+              <AgendaScreen now={now} onGoHome={goHome} onOpenCourse={openCourseFromAgenda} />
             )}
           </div>
         </div>

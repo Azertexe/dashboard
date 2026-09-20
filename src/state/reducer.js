@@ -37,6 +37,24 @@ function migrateBadgeSide(badge, legacyActif, legacyActivatedAt) {
   }
 }
 
+// Anciennes parties (avant qu'elles ne deviennent un simple sommaire) avaient
+// chacune leur propre badgeCours/badgeTD — cette notion a disparu (le badge
+// ne vit plus qu'au niveau du chapitre) ; on garde juste ce qui a été tapé
+// (nom), rien d'autre à migrer puisque badges/description/commentaires
+// n'ont plus d'équivalent.
+function migratePartie(p) {
+  return {
+    id: p.id,
+    nom: p.nom,
+    createdAt: p.createdAt ?? Date.now(),
+    sousParties: (p.sousParties ?? []).map((sp) => ({
+      id: sp.id,
+      nom: sp.nom,
+      createdAt: sp.createdAt ?? Date.now(),
+    })),
+  }
+}
+
 export function migrateChapitre(c) {
   const legacyActif = c.statut === 'actif'
   return {
@@ -48,12 +66,11 @@ export function migrateChapitre(c) {
     side: c.side ?? 'cours',
     badgeCours: migrateBadgeSide(c.badgeCours, legacyActif, c.activatedAt),
     badgeTD: migrateBadgeSide(c.badgeTD, legacyActif, c.activatedAt),
-    partitionMode: c.partitionMode ?? 'chapitre',
-    parties: (c.parties ?? []).map((p) => ({
-      ...p,
-      badgeCours: migrateBadgeSide(p.badgeCours, false, null),
-      badgeTD: migrateBadgeSide(p.badgeTD, false, null),
-    })),
+    // `parties` est maintenant un simple sommaire (parties → sous-parties,
+    // juste des noms, aucun badge) — voir migratePartie. `partitionMode`
+    // (ancien choix "un badge par partie") n'existe plus : un chapitre n'a
+    // toujours qu'un seul badge, quel que soit son sommaire.
+    parties: (c.parties ?? []).map(migratePartie),
   }
 }
 
@@ -85,7 +102,11 @@ export function newId(prefix) {
 // Champs qu'une édition "nom/description" a le droit de toucher — jamais les
 // horloges de badges ni la date d'activation (voir spec, Partie 5).
 export const EDITABLE_CHAPITRE_FIELDS = ['nom', 'description', 'etat', 'commentaires']
-export const EDITABLE_PARTIE_FIELDS = ['nom', 'description', 'commentaires']
+// Une partie/sous-partie du sommaire n'est plus qu'un nom (plus de badge, plus
+// de description/commentaires séparés — c'est juste un plan de ce qu'il y a
+// dans le chapitre).
+export const EDITABLE_PARTIE_FIELDS = ['nom']
+export const EDITABLE_SOUS_PARTIE_FIELDS = ['nom']
 export const EDITABLE_EXAM_FIELDS = ['notes', 'prepStatut']
 
 export function emptyBadge() {
@@ -100,19 +121,32 @@ export function emptyBadge() {
 }
 
 // Les actions de badge (MARK_BADGE, UNDO_BADGE, FORCE_BADGE, SET_FORCED_ALERT,
-// ACTIVATE_CHAPITRE) visent soit le chapitre lui-même (action.partieId absent),
-// soit une de ses sous-parties (action.partieId présent) — `fn` (une des
+// ACTIVATE_CHAPITRE) visent toujours le chapitre lui-même — `fn` (une des
 // fonctions de badges.js, déjà génériques sur {badgeCours,badgeTD}) s'applique
-// au bon objet et le résultat est réinjecté au bon endroit.
-function updateChapitreOrPartie(state, id, partieId, fn) {
+// au chapitre trouvé par id.
+function updateChapitre(state, id, fn) {
+  return { ...state, chapitres: state.chapitres.map((c) => (c.id === id ? fn(c) : c)) }
+}
+
+// Les actions sur une partie/sous-partie du sommaire visent une partie du
+// chapitre `chapitreId` (fn s'applique à cette partie) ou, si `sousPartieId`
+// est fourni, une sous-partie précise à l'intérieur de cette partie.
+function updatePartie(state, chapitreId, partieId, fn) {
   return {
     ...state,
-    chapitres: state.chapitres.map((c) => {
-      if (c.id !== id) return c
-      if (!partieId) return fn(c)
-      return { ...c, parties: c.parties.map((p) => (p.id === partieId ? fn(p) : p)) }
-    }),
+    chapitres: state.chapitres.map((c) =>
+      c.id === chapitreId
+        ? { ...c, parties: c.parties.map((p) => (p.id === partieId ? fn(p) : p)) }
+        : c,
+    ),
   }
+}
+
+function updateSousPartie(state, chapitreId, partieId, sousPartieId, fn) {
+  return updatePartie(state, chapitreId, partieId, (p) => ({
+    ...p,
+    sousParties: p.sousParties.map((sp) => (sp.id === sousPartieId ? fn(sp) : sp)),
+  }))
 }
 
 export function reducer(state, action) {
@@ -129,8 +163,7 @@ export function reducer(state, action) {
         badgeCours: emptyBadge(),
         commentaires: '',
         createdAt: Date.now(),
-        partitionMode: 'chapitre', // 'chapitre' (un badge pour tout) | 'parties' (un badge par sous-partie)
-        parties: [],
+        parties: [], // sommaire (plan) du chapitre — voir ADD_PARTIE/ADD_SOUS_PARTIE, sans rapport avec le badge
       }
       return { ...state, chapitres: [...state.chapitres, chapitre] }
     }
@@ -147,42 +180,17 @@ export function reducer(state, action) {
     case 'DELETE_CHAPITRE':
       return { ...state, chapitres: state.chapitres.filter((c) => c.id !== action.id) }
     case 'ACTIVATE_CHAPITRE':
-      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
-        activateChapitre(target, action.side),
-      )
+      return updateChapitre(state, action.id, (c) => activateChapitre(c, action.side))
     case 'MARK_BADGE':
-      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
-        markBadgeNow(target, action.side),
-      )
+      return updateChapitre(state, action.id, (c) => markBadgeNow(c, action.side))
     case 'UNDO_BADGE':
-      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
-        undoBadge(target, action.side),
-      )
+      return updateChapitre(state, action.id, (c) => undoBadge(c, action.side))
     case 'FORCE_BADGE':
-      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
-        forceBadgeLevel(target, action.side, action.level),
-      )
+      return updateChapitre(state, action.id, (c) => forceBadgeLevel(c, action.side, action.level))
     case 'SET_FORCED_ALERT':
-      return updateChapitreOrPartie(state, action.id, action.partieId, (target) =>
-        setForcedAlert(target, action.side, action.value),
-      )
-    case 'SET_PARTITION_MODE':
-      return {
-        ...state,
-        chapitres: state.chapitres.map((c) =>
-          c.id === action.id ? { ...c, partitionMode: action.mode } : c,
-        ),
-      }
+      return updateChapitre(state, action.id, (c) => setForcedAlert(c, action.side, action.value))
     case 'ADD_PARTIE': {
-      const partie = {
-        id: newId('pt'),
-        nom: action.nom,
-        description: '',
-        commentaires: '',
-        badgeCours: emptyBadge(),
-        badgeTD: emptyBadge(),
-        createdAt: Date.now(),
-      }
+      const partie = { id: newId('pt'), nom: action.nom, createdAt: Date.now(), sousParties: [] }
       return {
         ...state,
         chapitres: state.chapitres.map((c) =>
@@ -195,14 +203,7 @@ export function reducer(state, action) {
       for (const k of EDITABLE_PARTIE_FIELDS) {
         if (k in action.patch) patch[k] = action.patch[k]
       }
-      return {
-        ...state,
-        chapitres: state.chapitres.map((c) =>
-          c.id === action.chapitreId
-            ? { ...c, parties: c.parties.map((p) => (p.id === action.partieId ? { ...p, ...patch } : p)) }
-            : c,
-        ),
-      }
+      return updatePartie(state, action.chapitreId, action.partieId, (p) => ({ ...p, ...patch }))
     }
     case 'DELETE_PARTIE':
       return {
@@ -213,6 +214,28 @@ export function reducer(state, action) {
             : c,
         ),
       }
+    case 'ADD_SOUS_PARTIE': {
+      const sousPartie = { id: newId('sp'), nom: action.nom, createdAt: Date.now() }
+      return updatePartie(state, action.chapitreId, action.partieId, (p) => ({
+        ...p,
+        sousParties: [...p.sousParties, sousPartie],
+      }))
+    }
+    case 'EDIT_SOUS_PARTIE': {
+      const patch = {}
+      for (const k of EDITABLE_SOUS_PARTIE_FIELDS) {
+        if (k in action.patch) patch[k] = action.patch[k]
+      }
+      return updateSousPartie(state, action.chapitreId, action.partieId, action.sousPartieId, (sp) => ({
+        ...sp,
+        ...patch,
+      }))
+    }
+    case 'DELETE_SOUS_PARTIE':
+      return updatePartie(state, action.chapitreId, action.partieId, (p) => ({
+        ...p,
+        sousParties: p.sousParties.filter((sp) => sp.id !== action.sousPartieId),
+      }))
     case 'ADD_DEVOIR': {
       const devoir = {
         id: newId('dev'),

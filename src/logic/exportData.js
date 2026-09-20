@@ -21,16 +21,15 @@ export function toMarkdown(state, now = Date.now()) {
       if (sideCh.length === 0) continue
       lines.push(`### ${side === 'td' ? 'TD' : 'Cours'}`, '')
       for (const c of sideCh) {
-        lines.push(`- **${c.nom}** — ${etatLabel(c.etat)}`)
-        if (c.partitionMode === 'parties' && c.parties?.length) {
-          for (const p of c.parties) {
-            lines.push(`  - **${p.nom}** : ${badgeLabel(badgeStatus(p, side, now))}`)
-          }
-        } else {
-          lines.push(`  - ${badgeLabel(badgeStatus(c, side, now))}`)
-        }
+        lines.push(`- **${c.nom}** — ${etatLabel(c.etat)} — ${badgeLabel(badgeStatus(c, side, now))}`)
         if (c.description) lines.push(`  - Description : ${c.description}`)
         if (c.commentaires) lines.push(`  - Commentaires : ${c.commentaires}`)
+        for (const p of c.parties ?? []) {
+          lines.push(`  - ${p.nom}`)
+          for (const sp of p.sousParties ?? []) {
+            lines.push(`    - ${sp.nom}`)
+          }
+        }
       }
       lines.push('')
     }

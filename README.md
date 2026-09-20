@@ -150,9 +150,8 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   exactement l'état d'avant, pas juste le statut "auto" par défaut. Un
   simple clic sur "Activer" n'est volontairement pas annulable par ↺ (rien
   n'a encore été "fait" à ce stade, juste démarré). Le panneau d'édition
-  d'un chapitre (ou d'une sous-partie) n'affiche jamais que le badge du
-  côté qu'on est en train de consulter (Cours ou TD) — jamais les deux
-  ensemble. Un **mode debug**
+  d'un chapitre n'affiche jamais que le badge du côté qu'on est en train de
+  consulter (Cours ou TD) — jamais les deux ensemble. Un **mode debug**
   dans Réglages permet de forcer le badge Cours ou TD d'un chapitre choisi à
   n'importe quelle couleur (ou de revenir en "Auto") ; ce forçage règle
   réellement l'horloge du badge (comme un vrai clic dans le passé), donc il
@@ -187,21 +186,16 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   dans la liste des chapitres d'un cours dès qu'il y en a plus de 3. Chaque
   matière a sa propre teinte (`src/data/courses.js`, `courseAccentStyle`),
   reprise en bordure/pastille dans les listes et le détail d'un cours.
-- ✅ **Sous-parties** : chaque chapitre choisit, dans son panneau d'édition,
-  entre "un badge pour le chapitre" (défaut) et "un badge par partie". En
-  mode partie, la ligne du chapitre dans Cours/TD n'affiche plus de badge —
-  juste "N parties →", qui ouvre un sous-écran dédié (`PartiesScreen.jsx`)
-  listant les sous-parties (ex-exercices), chacune avec ses propres badges
-  Cours/TD, totalement indépendants entre eux, du chapitre et des autres
-  parties. Les fonctions de `src/logic/badges.js` sont déjà génériques sur
-  tout objet `{badgeCours, badgeTD}` — elles marchent donc sans changement
-  sur une sous-partie comme sur un chapitre. Le "!" sur le badge, le
-  nombre de "badges en retard" (Vue d'ensemble), les
-  notifications et l'export Markdown tiennent tous compte des sous-parties
-  (`badgeUnits`/`chapitreNeedsAttention` dans badges.js). Dans l'Agenda, une
-  entrée venant d'une sous-partie précise toujours d'où elle vient
-  (« Matière — Chapitre — Partie ») pour ne jamais se perdre quand plusieurs
-  chapitres sont mélangés dans la même liste.
+- ✅ **Sommaire** : un chapitre n'a toujours qu'un seul badge (Cours ou TD,
+  selon son côté) — mais sa ligne dans le détail d'un cours affiche aussi un
+  lien "Sommaire" (ou "N partie(s) →"), toujours disponible, qui ouvre un
+  sous-écran dédié (`SommaireScreen.jsx`) sans rapport avec le badge :
+  juste un plan (parties, ex. "Exercice 1"), dépliable en accordéon pour
+  y ajouter des sous-parties, chacune éditable en place (crayon) ou
+  supprimable (×). Sert à noter ce qu'il y a dans un chapitre sans avoir à
+  activer son suivi de révision pour ça. (Avant, les "parties" portaient
+  chacune leur propre badge indépendant — retiré : un seul badge par
+  chapitre, plus simple, le sommaire ne fait plus que lister le contenu.)
 - ✅ **Partie 6 — Ressources** : fiche de révision, fiche méthode et polys
   sont éditables par matière (`ResourceLinkCard` / `ResourcePolysCard`) —
   lien vers une URL externe ou un fichier hébergé dans le repo (ex. PDF dans

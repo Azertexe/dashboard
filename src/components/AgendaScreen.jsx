@@ -1,24 +1,16 @@
 import { useStore } from '../state/store.jsx'
 import { courseName, courseAccentStyle } from '../data/courses.js'
-import { badgeUnits, needsAttention } from '../logic/badges.js'
+import { needsAttention } from '../logic/badges.js'
 import { daysBetween } from '../logic/dates.js'
 import { BadgeWithUndo } from './Badge.jsx'
 
-/** Vue "Agenda" : ce qui presse, réuni en un seul endroit — les badges qui
- * ont besoin d'une révision maintenant (orange/jaune actifs, que ce soit le
- * badge d'un chapitre entier ou celui d'une de ses sous-parties), puis les
- * devoirs et partiels à venir triés par date. */
-export default function AgendaScreen({ now, onGoHome, onOpenCourse, onOpenParties }) {
+/** Vue "Agenda" : ce qui presse, réuni en un seul endroit — les chapitres
+ * dont le badge a besoin d'une révision maintenant (orange/jaune actif),
+ * puis les devoirs et partiels à venir triés par date. */
+export default function AgendaScreen({ now, onGoHome, onOpenCourse }) {
   const { state } = useStore()
 
-  const aReviser = []
-  for (const c of state.chapitres) {
-    for (const unit of badgeUnits(c)) {
-      if (needsAttention(unit.target, c.side, now)) {
-        aReviser.push({ chapitre: c, unit })
-      }
-    }
-  }
+  const aReviser = state.chapitres.filter((c) => needsAttention(c, c.side, now))
 
   const avenir = [
     ...state.devoirs.map((d) => ({ type: 'devoir', id: d.id, nom: d.nom, date: d.dateEcheance })),
@@ -39,33 +31,18 @@ export default function AgendaScreen({ now, onGoHome, onOpenCourse, onOpenPartie
         {aReviser.length === 0 && (
           <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Rien en retard — tu es à jour.</div>
         )}
-        {aReviser.map(({ chapitre, unit }) => {
-          const side = chapitre.side
-          const label = unit.label
-            ? `${courseName(chapitre.courseId)} — ${chapitre.nom} — ${unit.label}`
-            : `${courseName(chapitre.courseId)} — ${chapitre.nom}`
-          const openTarget = () =>
-            unit.partieId ? onOpenParties(chapitre.id, side) : onOpenCourse(chapitre.courseId, side)
-          return (
+        {aReviser.map((chapitre) => (
+          <div key={chapitre.id} className="chapitre-row card" style={courseAccentStyle(chapitre.courseId)}>
             <div
-              key={`${chapitre.id}-${unit.partieId ?? 'chapitre'}`}
-              className="chapitre-row card"
-              style={courseAccentStyle(chapitre.courseId)}
+              className="chapitre-name"
+              style={{ cursor: 'pointer' }}
+              onClick={() => onOpenCourse(chapitre.courseId, chapitre.side)}
             >
-              <div className="chapitre-name" style={{ cursor: 'pointer' }} onClick={openTarget}>
-                {label}
-              </div>
-              <BadgeWithUndo
-                chapitre={unit.target}
-                side={side}
-                small
-                now={now}
-                chapitreId={chapitre.id}
-                partieId={unit.partieId}
-              />
+              {courseName(chapitre.courseId)} — {chapitre.nom}
             </div>
-          )
-        })}
+            <BadgeWithUndo chapitre={chapitre} side={chapitre.side} small now={now} chapitreId={chapitre.id} />
+          </div>
+        ))}
       </div>
 
       <div className="glass devoirs-card">
