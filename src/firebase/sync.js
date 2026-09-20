@@ -59,8 +59,27 @@ export function subscribeRemoteState(onRemoteState, onError) {
   }
 }
 
-/** Pousse l'état complet vers Firestore (remplace le document). No-op si
- * Firebase n'est pas configuré. */
+/** Lit l'état distant actuel une fois (sans s'abonner). `null` si le document
+ * n'existe pas encore, si Firebase n'est pas configuré, ou en cas d'erreur
+ * (l'appelant retombe alors sur l'état local seul). */
+export async function fetchRemoteState() {
+  if (!firebaseConfigured()) return null
+  try {
+    const { doc, getDoc } = await import('firebase/firestore')
+    const db = await getDb()
+    const ref = doc(db, ...DOC_PATH)
+    const snap = await getDoc(ref)
+    return snap.exists() ? snap.data() : null
+  } catch {
+    return null
+  }
+}
+
+/** Pousse l'état complet vers Firestore (remplace le document — l'appelant
+ * est responsable d'avoir déjà fusionné avec l'état distant via
+ * fetchRemoteState, cf. state/store.jsx, pour ne pas écraser en aveugle ce
+ * qu'un autre appareil vient d'ajouter). No-op si Firebase n'est pas
+ * configuré. */
 export async function pushRemoteState(state, onError) {
   if (!firebaseConfigured()) return
   try {
