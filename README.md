@@ -158,12 +158,16 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   devoir se fait sur leur écran dédié (`PartielsScreen` / `DevoirsScreen`),
   via un vrai calendrier (`<input type="date">`, borné à l'année scolaire
   2026-2027 — `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` dans `src/logic/dates.js`)
-  plutôt qu'un nombre de jours à calculer soi-même. La jauge de l'accueil
-  affiche un repère "aujourd'hui" fixe (toujours au tout début — pas de barre
-  de remplissage dont la largeur induisait en erreur) et le trait de chaque
-  partiel dans l'étendue affichée ; un réglage Vue (30j/60j/90j/Tout,
-  `ExamGauge.jsx`) permet de zoomer/dézoomer, les partiels hors de cette
-  étendue sont simplement masqués (pas tassés au bord). Survoler le trait
+  plutôt qu'un nombre de jours à calculer soi-même. L'axe de la jauge de
+  l'accueil est fixe, ancré sur la rentrée (`GAUGE_START` = 1er septembre
+  2026, `src/logic/dates.js`) — le repère "aujourd'hui" avance donc
+  visiblement le long de la barre au fil de l'année (plutôt que de toujours
+  rester au même endroit, ou une barre de remplissage dont la largeur
+  induisait en erreur), et chaque partiel a son trait dans l'étendue
+  affichée. La date de fin de cette étendue se choisit librement ("Voir
+  jusqu'au", `ExamGauge.jsx`, par défaut le partiel/devoir le plus lointain) ;
+  les partiels au-delà sont simplement masqués (pas tassés au bord). Survoler
+  le trait
   d'un partiel bascule l'en-tête (en fondu) sur son nom/sa date. Cliquer sur
   l'en-tête, un trait de partiel, ou sa ligne dans
   `PartielsScreen` ouvre sa fiche détail — une pop-up par-dessus la page

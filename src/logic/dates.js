@@ -8,6 +8,25 @@ export function daysBetween(now, iso) {
 export const SCHOOL_YEAR_START = '2026-08-01'
 export const SCHOOL_YEAR_END = '2027-07-31'
 
+// Origine fixe de la jauge d'accueil (rentrée) — indépendante de "aujourd'hui",
+// pour que le repère du jour avance visiblement le long de l'année plutôt que
+// de toujours rester au tout début.
+export const GAUGE_START = '2026-09-01'
+
+/** Nombre de jours (peut être négatif) entre deux dates ISO. */
+export function isoDaysBetween(fromIso, toIso) {
+  const from = new Date(fromIso + 'T00:00:00').getTime()
+  const to = new Date(toIso + 'T00:00:00').getTime()
+  return Math.round((to - from) / 86_400_000)
+}
+
+/** Ajoute (ou retire, si négatif) des jours à une date ISO. */
+export function addDaysIso(iso, days) {
+  const d = new Date(iso + 'T00:00:00')
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 /** Date du jour (ou la borne la plus proche) au format ISO, pour ouvrir le
  * calendrier d'ajout d'un devoir/partiel sur une date déjà valide. */
 export function todayWithinSchoolYear(now) {
