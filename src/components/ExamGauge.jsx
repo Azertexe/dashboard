@@ -1,29 +1,37 @@
 import { useState } from 'react'
-import { daysBetween, nextExam } from '../logic/dates.js'
+import {
+  daysBetween,
+  nextExam,
+  GAUGE_START,
+  SCHOOL_YEAR_END,
+  isoDaysBetween,
+  addDaysIso,
+  todayWithinSchoolYear,
+} from '../logic/dates.js'
 
-// Présets de la vue (en jours) + "Tout" (s'étend automatiquement jusqu'au
-// partiel/devoir le plus lointain). Ajustable à la volée sans jamais changer
-// la position réelle de "aujourd'hui" (toujours fixe, au tout début).
-const VIEW_PRESETS = [30, 60, 90]
-const DEFAULT_VIEW_DAYS = 60
+// Étendue minimale de la vue, pour éviter un affichage dégénéré si la date
+// de fin choisie est trop proche de la rentrée.
+const MIN_VIEW_DAYS = 14
+const DEFAULT_VIEW_SPAN_DAYS = 90
 
-function positionOn(now, iso, horizonDays) {
-  const j = daysBetween(now, iso)
-  return { j, pos: Math.max(2, Math.min(98, (Math.max(j, 0) / horizonDays) * 100)) }
+function clampPos(v) {
+  return Math.max(2, Math.min(98, v))
 }
 
-/** Résumé lecture seule sur l'accueil. "Aujourd'hui" est toujours fixe au
- * début de la jauge — l'étendue affichée (30j / 60j / 90j / Tout) ne fait
- * que dézoomer/zoomer les traits, jamais bouger le repère du jour même. Un
- * partiel plus loin que l'étendue choisie n'est simplement pas affiché (au
- * lieu d'être tassé au bord, trompeur). Affiche le prochain partiel par
- * défaut ; survoler le trait d'un autre partiel bascule l'en-tête sur
- * celui-là (en fondu). Cliquer l'en-tête ou un trait de partiel ouvre sa
- * fiche détail (pop-up) ; le lien du bas navigue vers l'écran "Partiels". */
+/** Résumé lecture seule sur l'accueil. L'axe de la jauge est fixe, ancré sur
+ * la rentrée (GAUGE_START) — "aujourd'hui" avance donc visiblement le long
+ * de la barre au fil de l'année, au lieu de toujours rester au même endroit.
+ * La date de fin de la vue est choisie librement (par défaut : le plus
+ * lointain partiel/devoir, ou +90j si rien n'est encore prévu) ; un partiel
+ * plus loin que la date choisie n'est simplement pas affiché (masqué, pas
+ * tassé au bord). Affiche le prochain partiel par défaut ; survoler le
+ * trait d'un autre partiel bascule l'en-tête sur celui-là (en fondu).
+ * Cliquer l'en-tête ou un trait de partiel ouvre sa fiche détail (pop-up) ;
+ * le lien du bas navigue vers l'écran "Partiels". */
 export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
   const [hoverDevoirId, setHoverDevoirId] = useState(null)
   const [hoverExamId, setHoverExamId] = useState(null)
-  const [viewDays, setViewDays] = useState(DEFAULT_VIEW_DAYS) // null = "Tout"
+  const [viewEndOverride, setViewEndOverride] = useState(null)
   const exam = nextExam(exams, now)
 
   if (!exam) {
@@ -39,22 +47,24 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
   const displayExam = (hoverExamId && exams.find((e) => e.id === hoverExamId)) || exam
   const displayDaysLeft = daysBetween(now, displayExam.date)
 
-  const farthestDays = Math.max(
-    30,
-    1,
-    ...exams.map((e) => daysBetween(now, e.date)),
-    ...devoirs.map((d) => daysBetween(now, d.dateEcheance)),
+  const farthestIso = [...exams.map((e) => e.date), ...devoirs.map((d) => d.dateEcheance)].reduce(
+    (max, iso) => (iso > max ? iso : max),
+    addDaysIso(todayWithinSchoolYear(now), DEFAULT_VIEW_SPAN_DAYS),
   )
-  const horizonDays = viewDays ?? farthestDays
+  const viewEnd = viewEndOverride ?? (farthestIso > SCHOOL_YEAR_END ? SCHOOL_YEAR_END : farthestIso)
+  const totalDays = Math.max(MIN_VIEW_DAYS, isoDaysBetween(GAUGE_START, viewEnd))
 
-  const inView = (j) => j >= 0 && j <= horizonDays
-  const examTicks = exams
-    .filter((e) => inView(daysBetween(now, e.date)))
-    .map((e) => ({ ...e, ...positionOn(now, e.date, horizonDays) }))
+  const positionOn = (iso) => clampPos((Math.max(isoDaysBetween(GAUGE_START, iso), 0) / totalDays) * 100)
+  const inView = (iso) => isoDaysBetween(GAUGE_START, iso) <= totalDays
+
+  const examTicks = exams.filter((e) => inView(e.date)).map((e) => ({ ...e, pos: positionOn(e.date) }))
   const devoirTicks = devoirs
-    .filter((d) => inView(daysBetween(now, d.dateEcheance)))
-    .map((d) => ({ ...d, ...positionOn(now, d.dateEcheance, horizonDays) }))
+    .filter((d) => inView(d.dateEcheance))
+    .map((d) => ({ ...d, pos: positionOn(d.dateEcheance), j: daysBetween(now, d.dateEcheance) }))
   const hiddenExamsCount = exams.length - examTicks.length
+
+  const todayIso = new Date(now).toISOString().slice(0, 10)
+  const todayPos = Math.max(0, Math.min(100, (isoDaysBetween(GAUGE_START, todayIso) / totalDays) * 100))
 
   return (
     <div className="glass exam-card summary-card">
@@ -82,7 +92,7 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
         </div>
       </div>
       <div className="gauge">
-        <div className="gauge-today" title="Aujourd'hui" />
+        <div className="gauge-today" style={{ left: `${todayPos}%` }} title="Aujourd'hui" />
         {examTicks.map((e) => (
           <div
             key={e.id}
@@ -120,22 +130,15 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
         ))}
       </div>
       <div className="gauge-view-controls" onClick={(ev) => ev.stopPropagation()}>
-        <span className="label-mono">Vue</span>
-        {VIEW_PRESETS.map((d) => (
-          <div
-            key={d}
-            className={`pill gauge-view-pill${viewDays === d ? ' active' : ''}`}
-            onClick={() => setViewDays(d)}
-          >
-            {d}j
-          </div>
-        ))}
-        <div
-          className={`pill gauge-view-pill${viewDays === null ? ' active' : ''}`}
-          onClick={() => setViewDays(null)}
-        >
-          Tout
-        </div>
+        <span className="label-mono">Voir jusqu'au</span>
+        <input
+          type="date"
+          className="gauge-view-date"
+          min={GAUGE_START}
+          max={SCHOOL_YEAR_END}
+          value={viewEnd}
+          onChange={(ev) => ev.target.value && setViewEndOverride(ev.target.value)}
+        />
       </div>
       {hiddenExamsCount > 0 && (
         <div className="summary-hint" style={{ cursor: 'pointer' }} onClick={onOpen}>

@@ -316,14 +316,14 @@ select {
   margin: 14px 0 24px;
 }
 
-/* Repère "aujourd'hui" — fixe au tout début de la jauge (position 0, puisque
-   c'est la référence de tous les calculs de J-N) plutôt qu'une barre de
-   remplissage dont la largeur n'avait pas de rapport réel avec la position
-   des traits sur ce même axe (ça donnait l'impression trompeuse d'avoir déjà
-   "dépassé" des partiels qui sont pourtant encore à venir). */
+/* Repère "aujourd'hui" — sa position (left, en %) est calculée depuis la
+   rentrée (GAUGE_START, axe fixe de la jauge) plutôt que d'être fixe au
+   début : il avance donc visiblement le long de la barre au fil de l'année,
+   là où l'ancienne barre de remplissage n'avait pas de rapport réel avec la
+   position des traits sur ce même axe (fausse impression d'avoir déjà
+   "dépassé" des partiels pourtant encore à venir). */
 .gauge-today {
   position: absolute;
-  left: -1px;
   top: -9px;
   width: 3px;
   height: 24px;
@@ -395,19 +395,18 @@ select {
 .gauge-view-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
-.gauge-view-pill {
+.gauge-view-date {
   padding: 4px 10px;
-  font-size: 11px;
-}
-
-.gauge-view-pill.active {
-  background: var(--accent);
-  color: var(--accent-ink);
-  border-color: transparent;
+  border-radius: 8px;
+  background: var(--glass-1);
+  border: 1px solid var(--glass-border);
+  outline: none;
+  font: 400 11px var(--font-mono);
+  color-scheme: dark;
 }
 
 @keyframes examHeadFade {
