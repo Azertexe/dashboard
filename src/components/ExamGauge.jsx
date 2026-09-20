@@ -92,7 +92,9 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
         </div>
       </div>
       <div className="gauge">
-        <div className="gauge-today" style={{ left: `${todayPos}%` }} title="Aujourd'hui" />
+        <div className="gauge-fill" style={{ width: `${todayPos}%` }} title="Aujourd'hui">
+          <div className="gauge-cursor" />
+        </div>
         {examTicks.map((e) => (
           <div
             key={e.id}

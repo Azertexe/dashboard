@@ -316,19 +316,52 @@ select {
   margin: 14px 0 24px;
 }
 
-/* Repère "aujourd'hui" — sa position (left, en %) est calculée depuis la
-   rentrée (GAUGE_START, axe fixe de la jauge) plutôt que d'être fixe au
-   début : il avance donc visiblement le long de la barre au fil de l'année,
-   là où l'ancienne barre de remplissage n'avait pas de rapport réel avec la
-   position des traits sur ce même axe (fausse impression d'avoir déjà
-   "dépassé" des partiels pourtant encore à venir). */
-.gauge-today {
+/* Barre de progression jusqu'à "aujourd'hui" — sa largeur (en %) est
+   calculée depuis la rentrée (GAUGE_START, axe fixe de la jauge), donc elle
+   avance visiblement au fil de l'année plutôt que de rester au même endroit
+   ou de laisser croire qu'un partiel encore à venir serait déjà "dépassé"
+   (l'ancien bug que ce nouvel axe fixe corrige). Le reflet qui balaie la
+   barre (::after) est purement décoratif, contenu par l'overflow: hidden. */
+.gauge-fill {
   position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in oklch, var(--accent) 55%, transparent), var(--accent));
+  overflow: hidden;
+  transition: width 0.3s ease;
+}
+
+.gauge-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  animation: gaugePulse 2.4s ease-in-out infinite;
+}
+
+@keyframes gaugePulse {
+  0% {
+    left: -60%;
+  }
+  100% {
+    left: 140%;
+  }
+}
+
+.gauge-cursor {
+  position: absolute;
+  right: -1px;
   top: -9px;
   width: 3px;
   height: 24px;
   border-radius: 2px;
   background: var(--accent);
+  box-shadow: 0 0 8px 1px color-mix(in oklch, var(--accent) 70%, transparent);
 }
 
 .gauge-tick {
