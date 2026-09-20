@@ -1,27 +1,29 @@
 import { useState } from 'react'
 import { daysBetween, nextExam } from '../logic/dates.js'
 
-// Fenêtre minimale de la jauge (30j) — s'agrandit automatiquement si un
-// partiel/devoir est plus loin que ça, pour que chaque trait garde une
-// position distincte au lieu de s'empiler tous au même endroit (94%) une
-// fois hors de la fenêtre. Avec une seule échéance proche ça reste compact ;
-// avec plusieurs mois de partiels déjà planifiés (cas réel), la jauge
-// s'étire pour tous les distinguer.
-const MIN_HORIZON_DAYS = 30
+// Présets de la vue (en jours) + "Tout" (s'étend automatiquement jusqu'au
+// partiel/devoir le plus lointain). Ajustable à la volée sans jamais changer
+// la position réelle de "aujourd'hui" (toujours fixe, au tout début).
+const VIEW_PRESETS = [30, 60, 90]
+const DEFAULT_VIEW_DAYS = 60
 
 function positionOn(now, iso, horizonDays) {
   const j = daysBetween(now, iso)
-  return { j, pos: Math.max(2, Math.min(94, (Math.max(j, 0) / horizonDays) * 100)) }
+  return { j, pos: Math.max(2, Math.min(98, (Math.max(j, 0) / horizonDays) * 100)) }
 }
 
-/** Résumé lecture seule sur l'accueil. Affiche le prochain partiel par
- * défaut ; survoler le trait d'un autre partiel sur la jauge bascule
- * l'en-tête sur celui-là (en fondu). Cliquer l'en-tête ou un trait de
- * partiel ouvre sa fiche détail (pop-up) ; le lien du bas navigue vers
- * l'écran "Partiels". */
+/** Résumé lecture seule sur l'accueil. "Aujourd'hui" est toujours fixe au
+ * début de la jauge — l'étendue affichée (30j / 60j / 90j / Tout) ne fait
+ * que dézoomer/zoomer les traits, jamais bouger le repère du jour même. Un
+ * partiel plus loin que l'étendue choisie n'est simplement pas affiché (au
+ * lieu d'être tassé au bord, trompeur). Affiche le prochain partiel par
+ * défaut ; survoler le trait d'un autre partiel bascule l'en-tête sur
+ * celui-là (en fondu). Cliquer l'en-tête ou un trait de partiel ouvre sa
+ * fiche détail (pop-up) ; le lien du bas navigue vers l'écran "Partiels". */
 export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
   const [hoverDevoirId, setHoverDevoirId] = useState(null)
   const [hoverExamId, setHoverExamId] = useState(null)
+  const [viewDays, setViewDays] = useState(DEFAULT_VIEW_DAYS) // null = "Tout"
   const exam = nextExam(exams, now)
 
   if (!exam) {
@@ -37,17 +39,22 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
   const displayExam = (hoverExamId && exams.find((e) => e.id === hoverExamId)) || exam
   const displayDaysLeft = daysBetween(now, displayExam.date)
 
-  const horizonDays = Math.max(
-    MIN_HORIZON_DAYS,
+  const farthestDays = Math.max(
+    30,
+    1,
     ...exams.map((e) => daysBetween(now, e.date)),
     ...devoirs.map((d) => daysBetween(now, d.dateEcheance)),
   )
+  const horizonDays = viewDays ?? farthestDays
 
-  const { j: fillDaysLeft } = positionOn(now, exam.date, horizonDays)
-  const fillPct = Math.max(0, Math.min(100, (1 - fillDaysLeft / horizonDays) * 100))
-
-  const devoirTicks = devoirs.map((d) => ({ ...d, ...positionOn(now, d.dateEcheance, horizonDays) }))
-  const examTicks = exams.map((e) => ({ ...e, ...positionOn(now, e.date, horizonDays) }))
+  const inView = (j) => j >= 0 && j <= horizonDays
+  const examTicks = exams
+    .filter((e) => inView(daysBetween(now, e.date)))
+    .map((e) => ({ ...e, ...positionOn(now, e.date, horizonDays) }))
+  const devoirTicks = devoirs
+    .filter((d) => inView(daysBetween(now, d.dateEcheance)))
+    .map((d) => ({ ...d, ...positionOn(now, d.dateEcheance, horizonDays) }))
+  const hiddenExamsCount = exams.length - examTicks.length
 
   return (
     <div className="glass exam-card summary-card">
@@ -75,7 +82,7 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
         </div>
       </div>
       <div className="gauge">
-        <div className="gauge-fill" style={{ right: `${100 - fillPct}%` }} />
+        <div className="gauge-today" title="Aujourd'hui" />
         {examTicks.map((e) => (
           <div
             key={e.id}
@@ -111,11 +118,28 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
             </div>
           </div>
         ))}
-        <div className="gauge-cursor" />
       </div>
-      {exams.length > 1 && (
+      <div className="gauge-view-controls" onClick={(ev) => ev.stopPropagation()}>
+        <span className="label-mono">Vue</span>
+        {VIEW_PRESETS.map((d) => (
+          <div
+            key={d}
+            className={`pill gauge-view-pill${viewDays === d ? ' active' : ''}`}
+            onClick={() => setViewDays(d)}
+          >
+            {d}j
+          </div>
+        ))}
+        <div
+          className={`pill gauge-view-pill${viewDays === null ? ' active' : ''}`}
+          onClick={() => setViewDays(null)}
+        >
+          Tout
+        </div>
+      </div>
+      {hiddenExamsCount > 0 && (
         <div className="summary-hint" style={{ cursor: 'pointer' }} onClick={onOpen}>
-          +{exams.length - 1} autre(s) partiel(s)
+          +{hiddenExamsCount} partiel(s) hors de la vue actuelle →
         </div>
       )}
       <div className="summary-hint" style={{ cursor: 'pointer' }} onClick={onOpen}>
