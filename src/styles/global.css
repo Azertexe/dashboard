@@ -316,21 +316,19 @@ select {
   margin: 14px 0 24px;
 }
 
-.gauge-fill {
+/* Repère "aujourd'hui" — fixe au tout début de la jauge (position 0, puisque
+   c'est la référence de tous les calculs de J-N) plutôt qu'une barre de
+   remplissage dont la largeur n'avait pas de rapport réel avec la position
+   des traits sur ce même axe (ça donnait l'impression trompeuse d'avoir déjà
+   "dépassé" des partiels qui sont pourtant encore à venir). */
+.gauge-today {
   position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-.gauge-cursor {
-  position: absolute;
-  right: -1px;
+  left: -1px;
   top: -9px;
   width: 3px;
   height: 24px;
   border-radius: 2px;
-  background: var(--text);
+  background: var(--accent);
 }
 
 .gauge-tick {
@@ -392,6 +390,24 @@ select {
 /* En-tête de la jauge : remplacé en fondu par le partiel survolé. */
 .exam-head-info {
   animation: examHeadFade 0.18s ease;
+}
+
+.gauge-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.gauge-view-pill {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.gauge-view-pill.active {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
 }
 
 @keyframes examHeadFade {

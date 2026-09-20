@@ -159,10 +159,13 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   via un vrai calendrier (`<input type="date">`, borné à l'année scolaire
   2026-2027 — `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` dans `src/logic/dates.js`)
   plutôt qu'un nombre de jours à calculer soi-même. La jauge de l'accueil
-  affiche le trait de chaque partiel (pas seulement le prochain) ; survoler
-  celui d'un partiel bascule l'en-tête (en fondu) sur son nom/sa date, sans
-  changer le remplissage de la jauge lui-même (toujours celui du prochain).
-  Cliquer sur l'en-tête, un trait de partiel, ou sa ligne dans
+  affiche un repère "aujourd'hui" fixe (toujours au tout début — pas de barre
+  de remplissage dont la largeur induisait en erreur) et le trait de chaque
+  partiel dans l'étendue affichée ; un réglage Vue (30j/60j/90j/Tout,
+  `ExamGauge.jsx`) permet de zoomer/dézoomer, les partiels hors de cette
+  étendue sont simplement masqués (pas tassés au bord). Survoler le trait
+  d'un partiel bascule l'en-tête (en fondu) sur son nom/sa date. Cliquer sur
+  l'en-tête, un trait de partiel, ou sa ligne dans
   `PartielsScreen` ouvre sa fiche détail — une pop-up par-dessus la page
   (`ExamDetailModal`, jamais une navigation) avec un champ libre éditable
   ("ce qu'il y aura", bouton Modifier) et un badge d'avancement dédié
