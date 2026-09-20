@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
-import { daysBetween, isoDatePlusDays } from '../logic/dates.js'
+import { daysBetween, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
 
 export default function PartielsScreen({ now, onGoHome }) {
   const { state, dispatch } = useStore()
   const [matiere, setMatiere] = useState('')
-  const [jours, setJours] = useState('')
+  const [date, setDate] = useState(() => todayWithinSchoolYear(now))
 
   const sorted = [...state.exams].sort((a, b) => new Date(a.date) - new Date(b.date))
 
   const add = () => {
-    const n = parseInt(jours, 10)
-    if (!matiere.trim() || Number.isNaN(n)) return
-    dispatch({ type: 'ADD_EXAM', matiere: matiere.trim(), date: isoDatePlusDays(now, n) })
+    if (!matiere.trim() || !date) return
+    dispatch({ type: 'ADD_EXAM', matiere: matiere.trim(), date })
     setMatiere('')
-    setJours('')
+    setDate(todayWithinSchoolYear(now))
   }
 
   return (
@@ -69,11 +68,12 @@ export default function PartielsScreen({ now, onGoHome }) {
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           <input
-            name="jours"
-            type="number"
-            placeholder="J-…"
-            value={jours}
-            onChange={(e) => setJours(e.target.value)}
+            name="date"
+            type="date"
+            min={SCHOOL_YEAR_START}
+            max={SCHOOL_YEAR_END}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           <div className="pill pill-accent" onClick={add}>

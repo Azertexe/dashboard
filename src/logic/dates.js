@@ -3,10 +3,18 @@ export function daysBetween(now, iso) {
   return Math.ceil((target.getTime() - now) / 86_400_000)
 }
 
-export function isoDatePlusDays(now, days) {
-  const d = new Date(now)
-  d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+// L'app ne suit qu'une année scolaire à la fois (2026-2027) — ça évite de
+// gérer un calendrier illimité pour un simple champ date de devoir/partiel.
+export const SCHOOL_YEAR_START = '2026-08-01'
+export const SCHOOL_YEAR_END = '2027-07-31'
+
+/** Date du jour (ou la borne la plus proche) au format ISO, pour ouvrir le
+ * calendrier d'ajout d'un devoir/partiel sur une date déjà valide. */
+export function todayWithinSchoolYear(now) {
+  const today = new Date(now).toISOString().slice(0, 10)
+  if (today < SCHOOL_YEAR_START) return SCHOOL_YEAR_START
+  if (today > SCHOOL_YEAR_END) return SCHOOL_YEAR_END
+  return today
 }
 
 /** Le prochain partiel : le plus proche à venir, sinon le plus proche passé. */
