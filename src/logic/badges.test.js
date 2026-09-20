@@ -10,7 +10,6 @@ import {
   activateChapitre,
   forceBadgeLevel,
   setForcedAlert,
-  badgeUnits,
 } from './badges.js'
 
 function emptyBadge() {
@@ -35,8 +34,6 @@ function makeChapitre(overrides = {}) {
     nom: 'Test',
     badgeTD: emptyBadge(),
     badgeCours: emptyBadge(),
-    partitionMode: 'chapitre',
-    parties: [],
     ...overrides,
   }
 }
@@ -206,7 +203,7 @@ describe('undoBadge / canUndoBadge', () => {
     expect(canUndoBadge(reverted, 'cours')).toBe(false) // un seul cran
   })
 
-  it('undoing a validated color on a sous-partie works exactly like on a chapter', () => {
+  it('undoing a validated color works the same on any {badgeCours,badgeTD}-shaped object, not just a chapter', () => {
     const p = makePartie({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     const before = badgeStatus(p, 'cours', NOW)
     const validated = markBadgeNow(p, 'cours', NOW)
@@ -332,33 +329,11 @@ describe('activateChapitre', () => {
   })
 })
 
-describe('sous-parties', () => {
-  it('badgeUnits returns the chapter itself in "chapitre" mode', () => {
-    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
-    const units = badgeUnits(c)
-    expect(units).toHaveLength(1)
-    expect(units[0]).toMatchObject({ target: c, partieId: null, label: null })
-  })
-
-  it('badgeUnits returns each sous-partie in "parties" mode, with a label', () => {
-    const p1 = makePartie({ id: 'pt-1', nom: 'Exercice 1' })
-    const p2 = makePartie({ id: 'pt-2', nom: 'Exercice 2' })
-    const c = makeChapitre({ partitionMode: 'parties', parties: [p1, p2] })
-    const units = badgeUnits(c)
-    expect(units).toHaveLength(2)
-    expect(units[0]).toMatchObject({ target: p1, partieId: 'pt-1', label: 'Exercice 1' })
-    expect(units[1]).toMatchObject({ target: p2, partieId: 'pt-2', label: 'Exercice 2' })
-  })
-
-  it('badgeUnits falls back to the chapter itself if "parties" mode has no parts yet', () => {
-    const c = makeChapitre({ partitionMode: 'parties', parties: [] })
-    expect(badgeUnits(c)).toEqual([{ target: c, partieId: null, label: null }])
-  })
-
-  it('a real click on a sous-partie only affects that partie, not the chapter or other parties', () => {
+describe('généricité sur un objet {badgeCours,badgeTD} quelconque', () => {
+  it('marquer une couleur sur un objet ne touche jamais un autre objet indépendant', () => {
     const p1 = makePartie({ id: 'pt-1', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
     const p2 = makePartie({ id: 'pt-2', badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
-    const c = makeChapitre({ partitionMode: 'parties', parties: [p1, p2], badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
 
     const updatedP1 = markBadgeNow(p1, 'cours', NOW)
     expect(badgeStatus(updatedP1, 'cours', NOW).phase).toBe('wait')

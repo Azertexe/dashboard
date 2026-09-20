@@ -15,17 +15,20 @@ réécrite ici.
 ## Outils exposés
 
 - `get_state` — lecture complète : chapitres avec statut de badge
-  (phase/couleur/jours restants), partiels et devoirs (avec jours restants).
-  Toujours appelé en premier pour récupérer les bons `id`.
+  (phase/couleur/jours restants) et sommaire (parties/sous-parties, un plan
+  texte sans rapport avec le badge), partiels et devoirs (avec jours
+  restants). Toujours appelé en premier pour récupérer les bons `id`.
 - `add_partiel` / `edit_partiel` / `delete_partiel`
 - `add_devoir` / `delete_devoir`
 - `add_chapitre` / `edit_chapitre` / `delete_chapitre`
 - `activate_chapitre` — démarre l'horloge de révision (Cours ou TD)
 - `mark_badge` — valide la couleur active, relance l'attente vers la suivante
 - `undo_badge` — annule la dernière action sur un badge
+- `add_partie` / `delete_partie` — sommaire du chapitre (un plan, pas de badge)
+- `add_sous_partie` / `delete_sous_partie` — sous-parties d'une partie du sommaire
 
-(Les sous-parties et les liens de ressources ne sont pas encore exposés —
-prévenir si besoin, l'ajout suit exactement le même schéma.)
+(Les liens de ressources par matière ne sont pas encore exposés — prévenir
+si besoin, l'ajout suit exactement le même schéma.)
 
 Chaque outil d'écriture relit l'état distant juste avant d'écrire (même
 garde-fou que l'app, `src/state/store.jsx`) pour limiter le risque d'écraser
