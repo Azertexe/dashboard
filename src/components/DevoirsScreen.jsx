@@ -1,20 +1,19 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
-import { daysBetween, isoDatePlusDays, deadlineStyle } from '../logic/dates.js'
+import { daysBetween, deadlineStyle, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
 
 export default function DevoirsScreen({ now, onGoHome }) {
   const { state, dispatch } = useStore()
   const [nom, setNom] = useState('')
-  const [jours, setJours] = useState('')
+  const [dateEcheance, setDateEcheance] = useState(() => todayWithinSchoolYear(now))
 
   const sorted = [...state.devoirs].sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance))
 
   const add = () => {
-    const n = parseInt(jours, 10)
-    if (!nom.trim() || Number.isNaN(n)) return
-    dispatch({ type: 'ADD_DEVOIR', nom: nom.trim(), dateEcheance: isoDatePlusDays(now, n) })
+    if (!nom.trim() || !dateEcheance) return
+    dispatch({ type: 'ADD_DEVOIR', nom: nom.trim(), dateEcheance })
     setNom('')
-    setJours('')
+    setDateEcheance(todayWithinSchoolYear(now))
   }
 
   return (
@@ -63,11 +62,12 @@ export default function DevoirsScreen({ now, onGoHome }) {
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           <input
-            name="jours"
-            type="number"
-            placeholder="J-…"
-            value={jours}
-            onChange={(e) => setJours(e.target.value)}
+            name="date"
+            type="date"
+            min={SCHOOL_YEAR_START}
+            max={SCHOOL_YEAR_END}
+            value={dateEcheance}
+            onChange={(e) => setDateEcheance(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           <div className="pill pill-accent" onClick={add}>

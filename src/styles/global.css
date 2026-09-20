@@ -569,21 +569,10 @@ select {
   font: 400 13.5px var(--font-ui);
 }
 
-.devoir-form input[name='jours'] {
-  width: 76px;
-  font: 400 12px var(--font-mono);
-  text-align: center;
-}
-
-/* neutralise le chrome natif des <input type=number> pour rester proche du wireframe */
-.devoir-form input[type='number']::-webkit-outer-spin-button,
-.devoir-form input[type='number']::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-.devoir-form input[type='number'] {
-  appearance: textfield;
-  -moz-appearance: textfield;
+.devoir-form input[name='date'] {
+  width: 152px;
+  font: 400 12.5px var(--font-mono);
+  color-scheme: dark;
 }
 
 /* ---- lists / groups ---- */
@@ -1148,8 +1137,8 @@ select {
     min-width: 90px;
   }
 
-  .devoir-form input[name='jours'] {
-    width: 56px;
+  .devoir-form input[name='date'] {
+    width: 128px;
   }
 
   .devoir-form .pill {
@@ -1195,8 +1184,8 @@ select {
   min-width: 90px;
 }
 
-[data-layout='iphone'] .devoir-form input[name='jours'] {
-  width: 56px;
+[data-layout='iphone'] .devoir-form input[name='date'] {
+  width: 128px;
 }
 
 [data-layout='iphone'] .devoir-form .pill {
