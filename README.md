@@ -95,6 +95,14 @@ Ces valeurs de config ne sont pas des secrets (Firebase les rend publiques
 par design, y compris dans le code source d'un site statique) — c'est
 normal qu'elles se retrouvent dans le bundle JS déployé sur GitHub Pages.
 
+## Serveur MCP (connecter Claude au dashboard)
+
+Le site est une page statique : il ne peut pas être ajouté comme "connecteur
+personnalisé" dans Claude (ça demande un vrai serveur). `mcp-server/` fournit
+ce serveur séparément (à déployer sur Cloudflare Workers, gratuit) — il
+réutilise directement `src/state/reducer.js`/`src/logic/` pour parler au
+même document Firestore, sans dupliquer la logique. Voir `mcp-server/README.md`.
+
 ## Où en est l'implémentation
 
 Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.md`) :
