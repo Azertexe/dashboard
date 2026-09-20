@@ -1,11 +1,17 @@
 import { useState } from 'react'
 import { daysBetween, nextExam } from '../logic/dates.js'
 
-const HORIZON_DAYS = 30 // fenêtre de visualisation de la jauge (pas de sens fonctionnel fort)
+// Fenêtre minimale de la jauge (30j) — s'agrandit automatiquement si un
+// partiel/devoir est plus loin que ça, pour que chaque trait garde une
+// position distincte au lieu de s'empiler tous au même endroit (94%) une
+// fois hors de la fenêtre. Avec une seule échéance proche ça reste compact ;
+// avec plusieurs mois de partiels déjà planifiés (cas réel), la jauge
+// s'étire pour tous les distinguer.
+const MIN_HORIZON_DAYS = 30
 
-function positionOn(now, iso) {
+function positionOn(now, iso, horizonDays) {
   const j = daysBetween(now, iso)
-  return { j, pos: Math.max(2, Math.min(94, (Math.max(j, 0) / HORIZON_DAYS) * 100)) }
+  return { j, pos: Math.max(2, Math.min(94, (Math.max(j, 0) / horizonDays) * 100)) }
 }
 
 /** Résumé lecture seule sur l'accueil. Affiche le prochain partiel par
@@ -30,11 +36,18 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
 
   const displayExam = (hoverExamId && exams.find((e) => e.id === hoverExamId)) || exam
   const displayDaysLeft = daysBetween(now, displayExam.date)
-  const { j: fillDaysLeft } = positionOn(now, exam.date)
-  const fillPct = Math.max(0, Math.min(100, (1 - fillDaysLeft / HORIZON_DAYS) * 100))
 
-  const devoirTicks = devoirs.map((d) => ({ ...d, ...positionOn(now, d.dateEcheance) }))
-  const examTicks = exams.map((e) => ({ ...e, ...positionOn(now, e.date) }))
+  const horizonDays = Math.max(
+    MIN_HORIZON_DAYS,
+    ...exams.map((e) => daysBetween(now, e.date)),
+    ...devoirs.map((d) => daysBetween(now, d.dateEcheance)),
+  )
+
+  const { j: fillDaysLeft } = positionOn(now, exam.date, horizonDays)
+  const fillPct = Math.max(0, Math.min(100, (1 - fillDaysLeft / horizonDays) * 100))
+
+  const devoirTicks = devoirs.map((d) => ({ ...d, ...positionOn(now, d.dateEcheance, horizonDays) }))
+  const examTicks = exams.map((e) => ({ ...e, ...positionOn(now, e.date, horizonDays) }))
 
   return (
     <div className="glass exam-card summary-card">
