@@ -154,9 +154,19 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   pour tester l'alerte sans attendre. La logique du cycle (`src/logic/badges.js`)
   est couverte par des tests automatisés (`npm test`, via Vitest).
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
-  devoirs réelle avec échéance en J-X. L'accueil n'affiche que des résumés en
-  lecture seule ; ajouter/supprimer un partiel ou un devoir se fait sur leur
-  écran dédié (clic sur la carte → `PartielsScreen` / `DevoirsScreen`).
+  devoirs réelle avec échéance en J-X. Ajouter/supprimer un partiel ou un
+  devoir se fait sur leur écran dédié (`PartielsScreen` / `DevoirsScreen`),
+  via un vrai calendrier (`<input type="date">`, borné à l'année scolaire
+  2026-2027 — `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` dans `src/logic/dates.js`)
+  plutôt qu'un nombre de jours à calculer soi-même. La jauge de l'accueil
+  affiche le trait de chaque partiel (pas seulement le prochain) ; survoler
+  celui d'un partiel bascule l'en-tête (en fondu) sur son nom/sa date, sans
+  changer le remplissage de la jauge lui-même (toujours celui du prochain).
+  Cliquer sur l'en-tête, un trait de partiel, ou sa ligne dans
+  `PartielsScreen` ouvre sa fiche détail — une pop-up par-dessus la page
+  (`ExamDetailModal`, jamais une navigation) avec un champ libre éditable
+  ("ce qu'il y aura", bouton Modifier) et un badge d'avancement dédié
+  ("Urgent"/"Fait", complètement séparé des badges de révision Cours/TD).
 - ✅ **Partie 5 — Mode édition** : édition nom/description/état/commentaires
   sans toucher aux badges ; ajout de chapitres au fil de l'année ; recherche
   dans la liste des chapitres d'un cours dès qu'il y en a plus de 3. Chaque

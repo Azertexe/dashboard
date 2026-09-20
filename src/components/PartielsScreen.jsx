@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { daysBetween, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
 
-export default function PartielsScreen({ now, onGoHome }) {
+const PREP_LABEL = { urgent: 'Urgent', fait: 'Fait' }
+
+export default function PartielsScreen({ now, onGoHome, onOpenExam }) {
   const { state, dispatch } = useStore()
   const [matiere, setMatiere] = useState('')
   const [date, setDate] = useState(() => todayWithinSchoolYear(now))
@@ -34,13 +36,16 @@ export default function PartielsScreen({ now, onGoHome }) {
           const j = daysBetween(now, e.date)
           return (
             <div key={e.id} className="devoir-row glass-tight">
-              <div className="devoir-name">
+              <div className="devoir-name" style={{ cursor: 'pointer' }} onClick={() => onOpenExam(e.id)}>
                 {e.matiere} —{' '}
                 {new Date(e.date + 'T00:00:00').toLocaleDateString('fr-FR', {
                   day: 'numeric',
                   month: 'short',
                 })}
               </div>
+              {e.prepStatut && (
+                <div className={`exam-prep-tag prep-${e.prepStatut}`}>{PREP_LABEL[e.prepStatut]}</div>
+              )}
               <div className="devoir-j">
                 J{j >= 0 ? '-' : '+'}
                 {Math.abs(j)}
