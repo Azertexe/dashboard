@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { activateChapitre, markBadgeNow, undoBadge, forceBadgeLevel, setForcedAlert } from '../logic/badges'
-import { subscribeRemoteState, pushRemoteState, firebaseConfigured } from '../firebase/sync.js'
+import { subscribeRemoteState, pushRemoteState, fetchRemoteState, firebaseConfigured } from '../firebase/sync.js'
 
 const STORAGE_KEY = 'l3-physique-dashboard'
 const STORAGE_VERSION = 1
@@ -303,6 +303,33 @@ function reducer(state, action) {
   }
 }
 
+// Fusionne un tableau distant dans le tableau local en n'ajoutant QUE ce qui
+// manque localement (union par id) — jamais de suppression, jamais d'écrasement
+// d'un élément qu'on a déjà. Utilisé des deux côtés de la sync (envoi ET
+// réception) pour qu'un appareil ne puisse jamais effacer silencieusement ce
+// qu'un autre vient d'ajouter, même en cas d'événement mal chronométré (ex. un
+// partiel tapé pile pendant qu'une mise à jour distante arrive). Contrepartie
+// assumée : une suppression faite sur un appareil peut être "ressuscitée" si
+// l'autre appareil pousse encore l'ancienne version avant d'avoir vu la
+// suppression — accepté, perdre une donnée tapée est pire qu'un doublon à
+// re-supprimer.
+export function mergeById(localArr, remoteArr) {
+  if (!remoteArr?.length) return localArr
+  const localIds = new Set(localArr.map((x) => x.id))
+  const onlyRemote = remoteArr.filter((x) => !localIds.has(x.id))
+  return onlyRemote.length ? [...localArr, ...onlyRemote] : localArr
+}
+
+export function mergeStates(local, remote) {
+  if (!remote) return local
+  return {
+    ...local,
+    exams: mergeById(local.exams, remote.exams),
+    devoirs: mergeById(local.devoirs, remote.devoirs),
+    chapitres: mergeById(local.chapitres, remote.chapitres),
+  }
+}
+
 const StoreContext = createContext(null)
 
 export function StoreProvider({ children }) {
@@ -319,6 +346,13 @@ export function StoreProvider({ children }) {
   // qu'on vient de recevoir" — voir les commentaires ci-dessous.
   const lastRemoteJSONRef = useRef(null)
   const lastLocalPushedJSONRef = useRef(null)
+  // L'abonnement ne se (ré)installe qu'au montage (deps []) ; ce ref donne à
+  // son callback accès à l'état LOCAL courant (pas celui, figé, du montage)
+  // pour pouvoir fusionner correctement à la réception.
+  const stateRef = useRef(state)
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
 
   useEffect(() => {
     if (!firebaseConfigured()) return
@@ -337,16 +371,22 @@ export function StoreProvider({ children }) {
         clearTimeout(stallTimer)
         setSyncStatus('synced')
         if (!remoteState) return
-        const json = JSON.stringify(remoteState)
+        const remoteJSON = JSON.stringify(remoteState)
         // Soit un doublon d'événement, soit l'écho de notre propre écriture
         // (Firestore renvoie toujours un snapshot après un push) : dans les
         // deux cas, rien à réappliquer.
-        if (json === lastRemoteJSONRef.current || json === lastLocalPushedJSONRef.current) {
-          lastRemoteJSONRef.current = json
+        if (remoteJSON === lastRemoteJSONRef.current || remoteJSON === lastLocalPushedJSONRef.current) {
+          lastRemoteJSONRef.current = remoteJSON
           return
         }
-        lastRemoteJSONRef.current = json
-        dispatch({ type: 'IMPORT_STATE', state: remoteState })
+        lastRemoteJSONRef.current = remoteJSON
+        // Fusion additive plutôt que remplacement : si ce device avait déjà
+        // ajouté quelque chose localement (pas encore poussé) au moment où
+        // cette mise à jour distante arrive, on ne l'écrase pas.
+        const merged = mergeStates(stateRef.current, remoteState)
+        if (JSON.stringify(merged) !== JSON.stringify(stateRef.current)) {
+          dispatch({ type: 'IMPORT_STATE', state: merged })
+        }
       },
       () => {
         settled = true
@@ -366,10 +406,18 @@ export function StoreProvider({ children }) {
     // Cet état EST ce qu'on vient de recevoir d'un autre appareil : ne pas
     // le republier (sinon boucle inutile, même si sans risque).
     if (json === lastRemoteJSONRef.current) return
-    const t = setTimeout(() => {
-      lastLocalPushedJSONRef.current = json
+    const t = setTimeout(async () => {
       setSyncStatus('syncing')
-      pushRemoteState(state, () => setSyncStatus('error'))
+      // Relit l'état distant juste avant d'écrire et fusionne dedans plutôt
+      // que d'écraser en aveugle — protège un ajout fait sur un autre
+      // appareil entre-temps et pas encore reçu par celui-ci.
+      const remote = await fetchRemoteState()
+      const merged = mergeStates(state, remote)
+      const mergedJSON = JSON.stringify(merged)
+      lastLocalPushedJSONRef.current = mergedJSON
+      lastRemoteJSONRef.current = mergedJSON
+      await pushRemoteState(merged, () => setSyncStatus('error'))
+      if (mergedJSON !== json) dispatch({ type: 'IMPORT_STATE', state: merged })
     }, 800)
     return () => clearTimeout(t)
   }, [state])
