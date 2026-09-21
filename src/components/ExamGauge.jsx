@@ -25,13 +25,19 @@ function clampPos(v) {
  * lointain partiel/devoir, ou +90j si rien n'est encore prévu) ; un partiel
  * plus loin que la date choisie n'est simplement pas affiché (masqué, pas
  * tassé au bord). Affiche le prochain partiel par défaut ; survoler le
- * trait d'un autre partiel bascule l'en-tête sur celui-là (en fondu).
+ * trait d'un autre partiel bascule l'en-tête sur celui-là (en fondu) — sur
+ * PC/Mac uniquement : au doigt (vue iPhone), il n'y a pas de vrai survol,
+ * juste un tap, et Safari iOS simule un mouseenter sans jamais envoyer le
+ * mouseleave qui suit derrière → l'en-tête restait bloqué sur le dernier
+ * partiel touché et clignotait au tap suivant. Sur iPhone, les traits ne
+ * réagissent donc qu'au clic (ouvre directement la fiche), sans survol.
  * Cliquer l'en-tête ou un trait de partiel ouvre sa fiche détail (pop-up) ;
  * le lien du bas navigue vers l'écran "Partiels". */
-export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
+export default function ExamGauge({ exams, devoirs, now, layoutMode, onOpen, onOpenExam }) {
   const [hoverDevoirId, setHoverDevoirId] = useState(null)
   const [hoverExamId, setHoverExamId] = useState(null)
   const [viewEndOverride, setViewEndOverride] = useState(null)
+  const hoverEnabled = layoutMode !== 'iphone'
   const exam = nextExam(exams, now)
 
   if (!exam) {
@@ -100,11 +106,15 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
             key={e.id}
             className="gauge-tick gauge-tick-exam"
             style={{ left: `${e.pos}%` }}
-            onMouseEnter={(ev) => {
-              ev.stopPropagation()
-              setHoverExamId(e.id)
-            }}
-            onMouseLeave={() => setHoverExamId(null)}
+            onMouseEnter={
+              hoverEnabled
+                ? (ev) => {
+                    ev.stopPropagation()
+                    setHoverExamId(e.id)
+                  }
+                : undefined
+            }
+            onMouseLeave={hoverEnabled ? () => setHoverExamId(null) : undefined}
             onClick={(ev) => {
               ev.stopPropagation()
               onOpenExam(e.id)
@@ -118,16 +128,22 @@ export default function ExamGauge({ exams, devoirs, now, onOpen, onOpenExam }) {
             key={d.id}
             className="gauge-tick"
             style={{ left: `${d.pos}%` }}
-            onMouseEnter={(ev) => {
-              ev.stopPropagation()
-              setHoverDevoirId(d.id)
-            }}
-            onMouseLeave={() => setHoverDevoirId(null)}
+            onMouseEnter={
+              hoverEnabled
+                ? (ev) => {
+                    ev.stopPropagation()
+                    setHoverDevoirId(d.id)
+                  }
+                : undefined
+            }
+            onMouseLeave={hoverEnabled ? () => setHoverDevoirId(null) : undefined}
           >
             <div className="gauge-tick-line" />
-            <div className="gauge-tip" style={hoverDevoirId === d.id ? { opacity: 1 } : undefined}>
-              {d.nom} · J-{d.j}
-            </div>
+            {hoverEnabled && (
+              <div className="gauge-tip" style={hoverDevoirId === d.id ? { opacity: 1 } : undefined}>
+                {d.nom} · J-{d.j}
+              </div>
+            )}
           </div>
         ))}
       </div>
