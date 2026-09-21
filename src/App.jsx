@@ -140,6 +140,7 @@ export default function App() {
             {screen === 'home' && (
               <Home
                 now={now}
+                layoutMode={layoutMode}
                 onGoCours={() => goListe('cours')}
                 onGoTd={() => goListe('td')}
                 onGoPartiels={goPartiels}

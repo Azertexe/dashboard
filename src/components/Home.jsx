@@ -4,7 +4,7 @@ import DevoirsCard from './DevoirsCard.jsx'
 import MountainLogo from './MountainLogo.jsx'
 import { useStore } from '../state/store.jsx'
 
-export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs, onGoStats, onGoAgenda, onOpenExam }) {
+export default function Home({ now, layoutMode, onGoCours, onGoTd, onGoPartiels, onGoDevoirs, onGoStats, onGoAgenda, onOpenExam }) {
   const { state, dispatch } = useStore()
   const nbChapitres = state.chapitres.length
 
@@ -14,7 +14,14 @@ export default function Home({ now, onGoCours, onGoTd, onGoPartiels, onGoDevoirs
 
   return (
     <div className="home-shell">
-      <ExamGauge exams={state.exams} devoirs={state.devoirs} now={now} onOpen={onGoPartiels} onOpenExam={onOpenExam} />
+      <ExamGauge
+        exams={state.exams}
+        devoirs={state.devoirs}
+        now={now}
+        layoutMode={layoutMode}
+        onOpen={onGoPartiels}
+        onOpenExam={onOpenExam}
+      />
 
       <div className="home-hero" onClick={toggleTheme} title="Changer de thème">
         <MountainLogo />
