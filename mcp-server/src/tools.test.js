@@ -43,6 +43,18 @@ describe('outils MCP — écriture (aucun appel réseau réel, firestore.js mock
     expect(edited.matiere).toBe('Optique') // inchangé
   })
 
+  it('add_devoir accepte une matière optionnelle et toggle_devoir_fait bascule bien le bon devoir', async () => {
+    fetchState.mockResolvedValue({ devoirs: [] })
+    await tool('add_devoir').handler({ nom: 'TP1', dateEcheance: '2026-10-01', courseId: 'optique-coherente' })
+    const written1 = writeState.mock.calls[0][0]
+    expect(written1.devoirs[0]).toMatchObject({ nom: 'TP1', courseId: 'optique-coherente', fait: false })
+
+    fetchState.mockResolvedValue(written1)
+    await tool('toggle_devoir_fait').handler({ id: written1.devoirs[0].id })
+    const written2 = writeState.mock.calls[1][0]
+    expect(written2.devoirs[0].fait).toBe(true)
+  })
+
   it('delete_partiel retire bien le partiel visé et garde les autres', async () => {
     fetchState.mockResolvedValue({
       exams: [

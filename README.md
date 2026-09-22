@@ -161,7 +161,10 @@ Suivi par rapport aux "Parties" de la spec (`uploads/dashboard-l3-physique-spec.
   pour tester l'alerte sans attendre. La logique du cycle (`src/logic/badges.js`)
   est couverte par des tests automatisés (`npm test`, via Vitest).
 - ✅ **Partie 4 — Header** : countdown réel vers le prochain partiel, liste de
-  devoirs réelle avec échéance en J-X. Ajouter/supprimer un partiel ou un
+  devoirs réelle avec échéance en J-X. Un devoir peut être coché comme fait
+  (case à cocher, `TOGGLE_DEVOIR_FAIT`) — il sort alors des listes "à faire"
+  (accueil, Agenda) sans être supprimé — et rattaché en option à une matière
+  (tag affiché sur sa ligne). Ajouter/supprimer un partiel ou un
   devoir se fait sur leur écran dédié (`PartielsScreen` / `DevoirsScreen`),
   via un vrai calendrier (`<input type="date">`, borné à l'année scolaire
   2026-2027 — `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` dans `src/logic/dates.js`)
@@ -245,7 +248,10 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
 
 Un lien "Vue d'ensemble →" sous les onglets Cours/TD de l'accueil ouvre un
 écran récapitulatif (`StatsScreen.jsx`) : nombre de chapitres, actifs vs
-standby, badges en retard, répartition par état, et par matière.
+standby, badges en retard, répartition par état, et par matière. Inclut un
+**classement par matière** : les matières triées par part de leurs chapitres
+actifs actuellement au vert (à jour) — celles sans aucun chapitre actif
+apparaissent à part ("pas commencé"), pas dernières par défaut.
 
 ### Agenda
 

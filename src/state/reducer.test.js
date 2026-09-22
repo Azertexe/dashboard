@@ -1,5 +1,39 @@
 import { describe, it, expect } from 'vitest'
-import { reducer, migrateChapitre, emptyState } from './reducer.js'
+import { reducer, migrateChapitre, migrateDevoir, emptyState } from './reducer.js'
+
+describe('devoirs — fait / rattachement à une matière', () => {
+  it('ADD_DEVOIR crée un devoir non fait, sans matière par défaut', () => {
+    const state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
+    expect(state.devoirs[0]).toMatchObject({ nom: 'TP1', fait: false, courseId: null })
+  })
+
+  it('ADD_DEVOIR accepte une matière optionnelle', () => {
+    const state = reducer(emptyState(), {
+      type: 'ADD_DEVOIR',
+      nom: 'TP1',
+      dateEcheance: '2026-10-01',
+      courseId: 'optique-coherente',
+    })
+    expect(state.devoirs[0].courseId).toBe('optique-coherente')
+  })
+
+  it('TOGGLE_DEVOIR_FAIT bascule uniquement le devoir visé', () => {
+    let state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
+    state = reducer(state, { type: 'ADD_DEVOIR', nom: 'TP2', dateEcheance: '2026-10-02' })
+    const [d1, d2] = state.devoirs
+    state = reducer(state, { type: 'TOGGLE_DEVOIR_FAIT', id: d1.id })
+    expect(state.devoirs.find((d) => d.id === d1.id).fait).toBe(true)
+    expect(state.devoirs.find((d) => d.id === d2.id).fait).toBe(false)
+
+    state = reducer(state, { type: 'TOGGLE_DEVOIR_FAIT', id: d1.id })
+    expect(state.devoirs.find((d) => d.id === d1.id).fait).toBe(false)
+  })
+
+  it('migrateDevoir complète les anciens devoirs sans casser leurs champs existants', () => {
+    const legacy = { id: 'dev-1', nom: 'TP1', dateEcheance: '2026-10-01', createdAt: 1 }
+    expect(migrateDevoir(legacy)).toEqual({ ...legacy, fait: false, courseId: null })
+  })
+})
 
 describe('sommaire (parties/sous-parties) — sans rapport avec le badge, qui reste unique par chapitre', () => {
   it('ADD_CHAPITRE crée un chapitre avec un sommaire vide et un seul badge', () => {

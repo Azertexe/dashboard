@@ -13,7 +13,7 @@ export default function AgendaScreen({ now, onGoHome, onOpenCourse }) {
   const aReviser = state.chapitres.filter((c) => needsAttention(c, c.side, now))
 
   const avenir = [
-    ...state.devoirs.map((d) => ({ type: 'devoir', id: d.id, nom: d.nom, date: d.dateEcheance })),
+    ...state.devoirs.filter((d) => !d.fait).map((d) => ({ type: 'devoir', id: d.id, nom: d.nom, date: d.dateEcheance })),
     ...state.exams.map((e) => ({ type: 'exam', id: e.id, nom: e.matiere, date: e.date })),
   ].sort((a, b) => new Date(a.date) - new Date(b.date))
 

@@ -65,6 +65,9 @@ function summarizeDevoir(d, now) {
     nom: d.nom,
     dateEcheance: d.dateEcheance,
     joursRestants: daysBetween(now, d.dateEcheance),
+    fait: d.fait,
+    courseId: d.courseId,
+    matiere: d.courseId ? courseName(d.courseId) : null,
   }
 }
 
@@ -146,17 +149,30 @@ export const TOOLS = [
   },
   {
     name: 'add_devoir',
-    description: 'Ajoute un nouveau devoir avec sa date limite.',
+    description: 'Ajoute un nouveau devoir avec sa date limite, optionnellement rattaché à une matière.',
     inputSchema: {
       type: 'object',
       properties: {
         nom: { type: 'string' },
         dateEcheance: { type: 'string', description: "Date au format YYYY-MM-DD, dans l'année scolaire 2026-2027" },
+        courseId: { type: 'string', enum: COURSE_ID_ENUM, description: 'optionnel — voir get_state → matieres' },
       },
       required: ['nom', 'dateEcheance'],
       additionalProperties: false,
     },
-    handler: (args) => applyAction({ type: 'ADD_DEVOIR', nom: args.nom, dateEcheance: args.dateEcheance }),
+    handler: (args) =>
+      applyAction({ type: 'ADD_DEVOIR', nom: args.nom, dateEcheance: args.dateEcheance, courseId: args.courseId }),
+  },
+  {
+    name: 'toggle_devoir_fait',
+    description: "Bascule un devoir entre fait et pas fait.",
+    inputSchema: {
+      type: 'object',
+      properties: { id: idProp('id du devoir (voir get_state)') },
+      required: ['id'],
+      additionalProperties: false,
+    },
+    handler: (args) => applyAction({ type: 'TOGGLE_DEVOIR_FAIT', id: args.id }),
   },
   {
     name: 'delete_devoir',

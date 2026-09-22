@@ -2,7 +2,9 @@ import { daysBetween, deadlineStyle } from '../logic/dates.js'
 
 /** Résumé lecture seule sur l'accueil — clic pour aller gérer les devoirs. */
 export default function DevoirsCard({ devoirs, now, onOpen }) {
-  const sorted = [...devoirs].sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance))
+  const sorted = [...devoirs]
+    .filter((d) => !d.fait)
+    .sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance))
   const shown = sorted.slice(0, 3)
   const rest = sorted.length - shown.length
 

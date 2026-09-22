@@ -61,7 +61,7 @@ const FEATURES = [
   },
   {
     title: "Vue d'ensemble",
-    desc: 'Statistiques globales : chapitres par matière, nombre de badges en retard, etc.',
+    desc: "Statistiques globales : chapitres par matière, badges en retard, et un classement par matière (part des chapitres actifs actuellement au vert).",
   },
   {
     title: 'Ressources par matière',
@@ -69,7 +69,7 @@ const FEATURES = [
   },
   {
     title: 'Devoirs & partiels',
-    desc: 'Échéances avec compte à rebours, affichées sur l\'accueil et dans l\'Agenda.',
+    desc: "Échéances avec compte à rebours, affichées sur l'accueil et dans l'Agenda. Un devoir peut être coché comme fait (il sort alors des listes \"à faire\") et rattaché à une matière.",
   },
   {
     title: 'Notifications',

@@ -603,6 +603,43 @@ select {
   font-size: 13.5px;
 }
 
+.devoir-row.devoir-fait .devoir-name {
+  color: var(--text-dimmer);
+  text-decoration: line-through;
+}
+
+.devoir-check {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--glass-1);
+  border: 1px solid var(--glass-border);
+  color: transparent;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.devoir-check.checked {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+
+.devoir-course-tag {
+  font: 400 10px var(--font-mono);
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  background: var(--glass-1);
+  color: var(--text-dim);
+  border: 1px solid var(--glass-border);
+}
+
 .devoir-j {
   font: 400 11px var(--font-mono);
 }
@@ -645,6 +682,16 @@ select {
 .devoir-form input[name='date'] {
   width: 152px;
   font: 400 12.5px var(--font-mono);
+  color-scheme: dark;
+}
+
+.devoir-form select {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--glass-1);
+  border: 1px solid var(--glass-border);
+  outline: none;
+  font: 400 12.5px var(--font-ui);
   color-scheme: dark;
 }
 
@@ -1513,6 +1560,13 @@ select {
 .stat-course-name {
   flex: 1;
   font-size: 13px;
+}
+
+.stat-rank {
+  width: 26px;
+  flex-shrink: 0;
+  font: 400 11.5px var(--font-mono);
+  color: var(--text-dim);
 }
 
 .stat-course-count {

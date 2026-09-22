@@ -1,4 +1,4 @@
-import { COURSES } from '../data/courses.js'
+import { COURSES, courseName } from '../data/courses.js'
 import { etatLabel } from '../data/etats.js'
 import { badgeStatus, BADGE_COLOR_NAME, BADGE_ACTIVE_LABEL } from './badges.js'
 
@@ -46,7 +46,8 @@ export function toMarkdown(state, now = Date.now()) {
   if (state.devoirs.length) {
     lines.push('## Devoirs', '')
     for (const d of state.devoirs) {
-      lines.push(`- ${d.nom} — échéance ${d.dateEcheance}`)
+      const matiere = d.courseId ? ` (${courseName(d.courseId)})` : ''
+      lines.push(`- ${d.fait ? '[fait] ' : ''}${d.nom}${matiere} — échéance ${d.dateEcheance}`)
     }
     lines.push('')
   }

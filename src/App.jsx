@@ -35,7 +35,10 @@ export default function App() {
   const [toast, setToast] = useState(null)
 
   const [layoutMode, setLayoutMode] = useState(() => localStorage.getItem(LAYOUT_KEY) || 'mac')
-  const [pickerOpen, setPickerOpen] = useState(true)
+  // Le picker ne s'affiche qu'une fois, au tout premier lancement (pas de
+  // choix enregistré) — avant, il réapparaissait à chaque rechargement même
+  // après un choix déjà fait, faute de vérifier localStorage ici aussi.
+  const [pickerOpen, setPickerOpen] = useState(() => !localStorage.getItem(LAYOUT_KEY))
 
   useEffect(() => {
     document.documentElement.dataset.theme = state.theme
