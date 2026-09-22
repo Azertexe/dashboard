@@ -1,4 +1,11 @@
-import { activateChapitre, markBadgeNow, undoBadge, forceBadgeLevel, setForcedAlert } from '../logic/badges.js'
+import {
+  activateChapitre,
+  markBadgeNow,
+  undoBadge,
+  forceBadgeLevel,
+  setForcedAlert,
+  badgeStatus,
+} from '../logic/badges.js'
 
 // Logique d'état pure (reducer + migrations + fusion de sync) — aucune
 // dépendance à React ni à Firebase, pour pouvoir être réutilisée telle
@@ -16,7 +23,17 @@ export function emptyState() {
     devoirs: [], // { id, nom, dateEcheance, createdAt }
     chapitres: [], // voir src/logic/badges.js pour la forme d'un chapitre
     resources: {}, // { [courseId]: { revision: {url,label}|null, methode: {url,label}|null, polys: [{id,url,label}] } }
+    history: [], // { id, at, chapitreId, courseId, side, level } — un événement par couleur VALIDÉE (clic réel), pour le graphe de progression
   }
+}
+
+// Le journal ne garde que les N derniers événements, pour ne pas laisser le
+// document Firestore grossir indéfiniment au fil des années.
+const MAX_HISTORY = 300
+
+function appendHistory(state, event) {
+  const history = [...state.history, event]
+  return history.length > MAX_HISTORY ? history.slice(history.length - MAX_HISTORY) : history
 }
 
 // Ancien format : `statut`/`activatedAt` vivaient sur le chapitre (partagés
@@ -188,8 +205,27 @@ export function reducer(state, action) {
       return { ...state, chapitres: state.chapitres.filter((c) => c.id !== action.id) }
     case 'ACTIVATE_CHAPITRE':
       return updateChapitre(state, action.id, (c) => activateChapitre(c, action.side))
-    case 'MARK_BADGE':
-      return updateChapitre(state, action.id, (c) => markBadgeNow(c, action.side))
+    case 'MARK_BADGE': {
+      const chapitre = state.chapitres.find((c) => c.id === action.id)
+      if (!chapitre) return state
+      const status = badgeStatus(chapitre, action.side, Date.now())
+      const next = updateChapitre(state, action.id, (c) => markBadgeNow(c, action.side))
+      // Un seul événement par clic réel (badge encore en attente = pas de
+      // clic possible, markBadgeNow n'aurait rien changé) — c'est la
+      // couleur qu'on vient de valider, pas celle qu'on atteint après.
+      if (status.phase !== 'active') return next
+      return {
+        ...next,
+        history: appendHistory(next, {
+          id: newId('hist'),
+          at: Date.now(),
+          chapitreId: chapitre.id,
+          courseId: chapitre.courseId,
+          side: action.side,
+          level: status.level,
+        }),
+      }
+    }
     case 'UNDO_BADGE':
       return updateChapitre(state, action.id, (c) => undoBadge(c, action.side))
     case 'FORCE_BADGE':

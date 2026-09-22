@@ -18,9 +18,49 @@ function scoreForCourse(courseId, chapitres, now) {
   return auVert / actifs.length
 }
 
+/** Petit graphe (SVG à la main, pas de librairie) du nombre cumulé de
+ * couleurs validées au fil du temps — une entrée du journal par clic réel
+ * de validation (MARK_BADGE), voir reducer.js. Vide tant qu'aucun clic n'a
+ * eu lieu depuis l'ajout de cette fonctionnalité (le journal ne remonte pas
+ * dans le passé). */
+function ProgressionChart({ history, now }) {
+  if (history.length === 0) {
+    return (
+      <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>
+        Pas encore de données — ce graphe se remplit à chaque fois qu'une couleur de badge est validée.
+      </div>
+    )
+  }
+  const sorted = [...history].sort((a, b) => a.at - b.at)
+  const first = sorted[0].at
+  const span = Math.max(now - first, 1)
+  const W = 100
+  const H = 32
+  const points = sorted
+    .map((e, i) => {
+      const x = (Math.min(e.at - first, span) / span) * W
+      const y = H - ((i + 1) / sorted.length) * H
+      return `${x.toFixed(2)},${y.toFixed(2)}`
+    })
+    .join(' ')
+  const start = new Date(first).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="progression-svg">
+        <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      </svg>
+      <div className="settings-note" style={{ padding: 0 }}>
+Depuis le {start} : {sorted.length} couleur{sorted.length > 1 ? 's' : ''} validée{sorted.length > 1 ? 's' : ''}
+      </div>
+    </div>
+  )
+}
+
 export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
   const { state } = useStore()
   const chapitres = state.chapitres
+  const history = state.history ?? []
 
   const nbChapitres = chapitres.length
   const nbActifs = chapitres.filter(
@@ -95,6 +135,11 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
             <div className="stat-etat-count">{e.count}</div>
           </div>
         ))}
+      </div>
+
+      <div className="glass" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="label-mono">Progression dans le temps</div>
+        <ProgressionChart history={history} now={now} />
       </div>
 
       <div className="glass" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
