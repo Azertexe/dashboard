@@ -19,7 +19,7 @@ réécrite ici.
   texte sans rapport avec le badge), partiels et devoirs (avec jours
   restants). Toujours appelé en premier pour récupérer les bons `id`.
 - `add_partiel` / `edit_partiel` / `delete_partiel`
-- `add_devoir` / `delete_devoir`
+- `add_devoir` (matière optionnelle) / `toggle_devoir_fait` / `delete_devoir`
 - `add_chapitre` / `edit_chapitre` / `delete_chapitre`
 - `activate_chapitre` — démarre l'horloge de révision (Cours ou TD)
 - `mark_badge` — valide la couleur active, relance l'attente vers la suivante

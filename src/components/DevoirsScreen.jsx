@@ -1,19 +1,28 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
+import { COURSES, courseName } from '../data/courses.js'
 import { daysBetween, deadlineStyle, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
 
 export default function DevoirsScreen({ now, onGoHome }) {
   const { state, dispatch } = useStore()
   const [nom, setNom] = useState('')
   const [dateEcheance, setDateEcheance] = useState(() => todayWithinSchoolYear(now))
+  const [courseId, setCourseId] = useState('')
 
-  const sorted = [...state.devoirs].sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance))
+  // Pas faits d'abord (triés par échéance), faits relégués en bas — les voir
+  // encore permet de décocher par erreur, sans qu'ils gênent la lecture du
+  // "reste à faire".
+  const sorted = [...state.devoirs].sort((a, b) => {
+    if (a.fait !== b.fait) return a.fait ? 1 : -1
+    return new Date(a.dateEcheance) - new Date(b.dateEcheance)
+  })
 
   const add = () => {
     if (!nom.trim() || !dateEcheance) return
-    dispatch({ type: 'ADD_DEVOIR', nom: nom.trim(), dateEcheance })
+    dispatch({ type: 'ADD_DEVOIR', nom: nom.trim(), dateEcheance, courseId: courseId || null })
     setNom('')
     setDateEcheance(todayWithinSchoolYear(now))
+    setCourseId('')
   }
 
   return (
@@ -33,12 +42,23 @@ export default function DevoirsScreen({ now, onGoHome }) {
         {sorted.map((d) => {
           const j = daysBetween(now, d.dateEcheance)
           return (
-            <div key={d.id} className="devoir-row glass-tight">
+            <div key={d.id} className={`devoir-row glass-tight${d.fait ? ' devoir-fait' : ''}`}>
+              <button
+                className={`devoir-check${d.fait ? ' checked' : ''}`}
+                onClick={() => dispatch({ type: 'TOGGLE_DEVOIR_FAIT', id: d.id })}
+                aria-label={d.fait ? 'Marquer non fait' : 'Marquer fait'}
+                title={d.fait ? 'Marquer non fait' : 'Marquer fait'}
+              >
+                ✓
+              </button>
               <div className="devoir-name">{d.nom}</div>
-              <div className="devoir-j" style={deadlineStyle(j)}>
-                J{j >= 0 ? '-' : '+'}
-                {Math.abs(j)}
-              </div>
+              {d.courseId && <div className="devoir-course-tag">{courseName(d.courseId)}</div>}
+              {!d.fait && (
+                <div className="devoir-j" style={deadlineStyle(j)}>
+                  J{j >= 0 ? '-' : '+'}
+                  {Math.abs(j)}
+                </div>
+              )}
               <button
                 className="devoir-del"
                 onClick={() => {
@@ -70,6 +90,14 @@ export default function DevoirsScreen({ now, onGoHome }) {
             onChange={(e) => setDateEcheance(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
+          <select value={courseId} onChange={(e) => setCourseId(e.target.value)}>
+            <option value="">Matière (optionnel)</option>
+            {COURSES.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nom}
+              </option>
+            ))}
+          </select>
           <div className="pill pill-accent" onClick={add}>
             Ajouter
           </div>

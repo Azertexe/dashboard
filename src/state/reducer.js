@@ -80,6 +80,12 @@ export function migrateExam(e) {
   return { ...e, notes: e.notes ?? '', prepStatut: e.prepStatut ?? null }
 }
 
+// Anciens devoirs sans `fait`/`courseId` (ajoutés pour pouvoir les clore et
+// les rattacher à une matière) — complétés plutôt que perdus.
+export function migrateDevoir(d) {
+  return { ...d, fait: d.fait ?? false, courseId: d.courseId ?? null }
+}
+
 /** Reconstruit un état complet et migré à partir de données brutes (venant
  * de localStorage ou de Firestore) — mêmes règles des deux côtés. */
 export function normalizeState(raw) {
@@ -88,6 +94,7 @@ export function normalizeState(raw) {
     ...merged,
     chapitres: merged.chapitres.map(migrateChapitre),
     exams: merged.exams.map(migrateExam),
+    devoirs: merged.devoirs.map(migrateDevoir),
   }
 }
 
@@ -241,10 +248,17 @@ export function reducer(state, action) {
         id: newId('dev'),
         nom: action.nom,
         dateEcheance: action.dateEcheance,
+        courseId: action.courseId ?? null,
+        fait: false,
         createdAt: Date.now(),
       }
       return { ...state, devoirs: [...state.devoirs, devoir] }
     }
+    case 'TOGGLE_DEVOIR_FAIT':
+      return {
+        ...state,
+        devoirs: state.devoirs.map((d) => (d.id === action.id ? { ...d, fait: !d.fait } : d)),
+      }
     case 'DELETE_DEVOIR':
       return { ...state, devoirs: state.devoirs.filter((d) => d.id !== action.id) }
     case 'ADD_EXAM': {
