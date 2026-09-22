@@ -251,7 +251,13 @@ Un lien "Vue d'ensemble →" sous les onglets Cours/TD de l'accueil ouvre un
 standby, badges en retard, répartition par état, et par matière. Inclut un
 **classement par matière** : les matières triées par part de leurs chapitres
 actifs actuellement au vert (à jour) — celles sans aucun chapitre actif
-apparaissent à part ("pas commencé"), pas dernières par défaut.
+apparaissent à part ("pas commencé"), pas dernières par défaut. Un graphe
+**"Progression dans le temps"** (SVG fait main, aucune librairie) trace le
+nombre cumulé de couleurs réellement validées (un clic sur un badge actif)
+au fil du temps — journal `state.history` (300 événements max, les plus
+anciens tombent), alimenté uniquement par de vrais clics de validation
+(jamais par un forçage debug). Vide tant qu'aucun clic n'a eu lieu depuis
+l'ajout de cette fonctionnalité (le journal ne remonte pas dans le passé).
 
 ### Agenda
 

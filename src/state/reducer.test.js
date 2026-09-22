@@ -1,6 +1,61 @@
 import { describe, it, expect } from 'vitest'
 import { reducer, migrateChapitre, migrateDevoir, emptyState } from './reducer.js'
 
+describe('journal de progression (history) — un événement par couleur réellement validée', () => {
+  const DAY_MS = 24 * 60 * 60 * 1000
+
+  function activatedChapitre(now, waitedDays) {
+    return {
+      id: 'ch-1',
+      courseId: 'optique-coherente',
+      side: 'cours',
+      nom: 'Ch',
+      badgeCours: {
+        statut: 'actif',
+        activatedAt: now - waitedDays * DAY_MS,
+        validatedStage: null,
+        validatedAt: null,
+        previousSnapshot: null,
+        forcedAlert: null,
+      },
+      badgeTD: { statut: 'standby', activatedAt: null, validatedStage: null, validatedAt: null, previousSnapshot: null, forcedAlert: null },
+      parties: [],
+    }
+  }
+
+  it('MARK_BADGE sur un badge ACTIF ajoute un événement avec la bonne couleur', () => {
+    const now = Date.now()
+    const state = { ...emptyState(), chapitres: [activatedChapitre(now, 2)] } // 2j écoulés >= 1j (attente initiale) -> rouge actif
+    const next = reducer(state, { type: 'MARK_BADGE', id: 'ch-1', side: 'cours' })
+    expect(next.history).toHaveLength(1)
+    expect(next.history[0]).toMatchObject({ chapitreId: 'ch-1', courseId: 'optique-coherente', side: 'cours', level: 'rouge' })
+  })
+
+  it("MARK_BADGE sur un badge encore en attente (pas cliquable) n'ajoute rien au journal", () => {
+    const now = Date.now()
+    const state = { ...emptyState(), chapitres: [activatedChapitre(now, 0)] } // vient d'être activé, encore en attente
+    const next = reducer(state, { type: 'MARK_BADGE', id: 'ch-1', side: 'cours' })
+    expect(next.history).toEqual([])
+  })
+
+  it('le journal garde au plus 300 événements — le plus ancien tombe', () => {
+    const now = Date.now()
+    const old = Array.from({ length: 300 }, (_, i) => ({
+      id: `hist-${i}`,
+      at: i,
+      chapitreId: 'x',
+      courseId: 'x',
+      side: 'cours',
+      level: 'rouge',
+    }))
+    const state = { ...emptyState(), history: old, chapitres: [activatedChapitre(now, 2)] }
+    const next = reducer(state, { type: 'MARK_BADGE', id: 'ch-1', side: 'cours' })
+    expect(next.history).toHaveLength(300)
+    expect(next.history[0].id).toBe('hist-1')
+    expect(next.history[next.history.length - 1].chapitreId).toBe('ch-1')
+  })
+})
+
 describe('devoirs — fait / rattachement à une matière', () => {
   it('ADD_DEVOIR crée un devoir non fait, sans matière par défaut', () => {
     const state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
