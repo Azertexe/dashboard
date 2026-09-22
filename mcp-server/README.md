@@ -16,8 +16,11 @@ réécrite ici.
 
 - `get_state` — lecture complète : chapitres avec statut de badge
   (phase/couleur/jours restants) et sommaire (parties/sous-parties, un plan
-  texte sans rapport avec le badge), partiels et devoirs (avec jours
-  restants). Toujours appelé en premier pour récupérer les bons `id`.
+  texte sans rapport avec le badge), partiels, devoirs (avec jours
+  restants) et ressources par matière. Toujours appelé en premier pour
+  récupérer les bons `id`.
+- `get_digest` — résumé condensé de ce qui presse (badges en retard, devoirs
+  <7j, partiels <14j), pour répondre directement sans relire tout `get_state`.
 - `add_partiel` / `edit_partiel` / `delete_partiel`
 - `add_devoir` (matière optionnelle) / `toggle_devoir_fait` / `delete_devoir`
 - `add_chapitre` / `edit_chapitre` / `delete_chapitre`
@@ -26,9 +29,8 @@ réécrite ici.
 - `undo_badge` — annule la dernière action sur un badge
 - `add_partie` / `delete_partie` — sommaire du chapitre (un plan, pas de badge)
 - `add_sous_partie` / `delete_sous_partie` — sous-parties d'une partie du sommaire
-
-(Les liens de ressources par matière ne sont pas encore exposés — prévenir
-si besoin, l'ajout suit exactement le même schéma.)
+- `set_resource_link` / `delete_resource_link` — fiche de révision/méthode d'une matière
+- `add_poly` / `delete_poly` — polys/annexes d'une matière
 
 Chaque outil d'écriture relit l'état distant juste avant d'écrire (même
 garde-fou que l'app, `src/state/store.jsx`) pour limiter le risque d'écraser

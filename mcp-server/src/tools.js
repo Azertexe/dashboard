@@ -71,6 +71,18 @@ function summarizeDevoir(d, now) {
   }
 }
 
+function summarizeResources(resources) {
+  const out = {}
+  for (const [courseId, bucket] of Object.entries(resources ?? {})) {
+    out[courseName(courseId)] = {
+      revision: bucket.revision,
+      methode: bucket.methode,
+      polys: bucket.polys ?? [],
+    }
+  }
+  return out
+}
+
 async function getStateSummary() {
   const remote = await fetchState()
   const state = normalizeState(remote ?? {})
@@ -83,7 +95,32 @@ async function getStateSummary() {
     devoirs: [...state.devoirs]
       .sort((a, b) => a.dateEcheance.localeCompare(b.dateEcheance))
       .map((d) => summarizeDevoir(d, now)),
+    ressources: summarizeResources(state.resources),
   }
+}
+
+// Vue condensée "qu'est-ce qui presse" — pensée pour être appelée seule,
+// sans avoir à relire tout get_state pour répondre à "qu'est-ce qui est en
+// retard/approche ?". Mêmes seuils que l'Agenda de l'app pour les badges
+// (orange/jaune actifs) ; 7 jours pour les devoirs, 14 pour les partiels
+// (fenêtres un peu plus larges puisqu'un partiel se prépare à l'avance).
+const DIGEST_DEVOIR_WINDOW_DAYS = 7
+const DIGEST_PARTIEL_WINDOW_DAYS = 14
+
+async function getDigest() {
+  const remote = await fetchState()
+  const state = normalizeState(remote ?? {})
+  const now = Date.now()
+  const enRetard = state.chapitres.filter((c) => needsAttention(c, c.side, now)).map((c) => summarizeChapitre(c, now))
+  const devoirsProches = state.devoirs
+    .filter((d) => !d.fait && daysBetween(now, d.dateEcheance) <= DIGEST_DEVOIR_WINDOW_DAYS)
+    .sort((a, b) => a.dateEcheance.localeCompare(b.dateEcheance))
+    .map((d) => summarizeDevoir(d, now))
+  const partielsProches = state.exams
+    .filter((e) => daysBetween(now, e.date) >= 0 && daysBetween(now, e.date) <= DIGEST_PARTIEL_WINDOW_DAYS)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((e) => summarizeExam(e, now))
+  return { enRetard, devoirsProches, partielsProches }
 }
 
 const SIDE_ENUM = ['cours', 'td']
@@ -100,6 +137,13 @@ export const TOOLS = [
       "Lit l'état complet et à jour du dashboard L3 Physique : chapitres (Cours et TD) avec le statut de leur badge de révision (phase, couleur, jours restants avant que la couleur active change) et leur sommaire (parties/sous-parties, un plan texte sans rapport avec le badge), plus partiels et devoirs (avec jours restants). Toujours appeler cet outil avant de modifier quoi que ce soit, pour avoir les bons id.",
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     handler: async () => getStateSummary(),
+  },
+  {
+    name: 'get_digest',
+    description:
+      "Résumé condensé de ce qui presse maintenant, sans avoir à relire tout get_state : chapitres avec un badge en retard (orange/jaune actif), devoirs pas faits dans les 7 prochains jours, partiels dans les 14 prochains jours. À utiliser pour répondre directement à \"qu'est-ce qu'il y a à faire ?\".",
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    handler: async () => getDigest(),
   },
   {
     name: 'add_partiel',
@@ -340,5 +384,65 @@ export const TOOLS = [
         partieId: args.partieId,
         sousPartieId: args.sousPartieId,
       }),
+  },
+  {
+    name: 'set_resource_link',
+    description: "Définit (ou remplace) la fiche de révision ou la fiche méthode d'une matière.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        courseId: { type: 'string', enum: COURSE_ID_ENUM, description: 'voir get_state → matieres' },
+        kind: { type: 'string', enum: ['revision', 'methode'] },
+        url: { type: 'string' },
+        label: { type: 'string' },
+      },
+      required: ['courseId', 'kind', 'url', 'label'],
+      additionalProperties: false,
+    },
+    handler: (args) =>
+      applyAction({ type: 'SET_RESOURCE_LINK', courseId: args.courseId, kind: args.kind, url: args.url, label: args.label }),
+  },
+  {
+    name: 'delete_resource_link',
+    description: "Retire la fiche de révision ou la fiche méthode d'une matière.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        courseId: { type: 'string', enum: COURSE_ID_ENUM },
+        kind: { type: 'string', enum: ['revision', 'methode'] },
+      },
+      required: ['courseId', 'kind'],
+      additionalProperties: false,
+    },
+    handler: (args) => applyAction({ type: 'DELETE_RESOURCE_LINK', courseId: args.courseId, kind: args.kind }),
+  },
+  {
+    name: 'add_poly',
+    description: "Ajoute un lien de poly/annexe à une matière (il peut y en avoir plusieurs).",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        courseId: { type: 'string', enum: COURSE_ID_ENUM },
+        url: { type: 'string' },
+        label: { type: 'string' },
+      },
+      required: ['courseId', 'url', 'label'],
+      additionalProperties: false,
+    },
+    handler: (args) => applyAction({ type: 'ADD_POLY', courseId: args.courseId, url: args.url, label: args.label }),
+  },
+  {
+    name: 'delete_poly',
+    description: "Supprime un poly/annexe d'une matière.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        courseId: { type: 'string', enum: COURSE_ID_ENUM },
+        polyId: idProp('id du poly (voir get_state → ressources)'),
+      },
+      required: ['courseId', 'polyId'],
+      additionalProperties: false,
+    },
+    handler: (args) => applyAction({ type: 'DELETE_POLY', courseId: args.courseId, polyId: args.polyId }),
   },
 ]

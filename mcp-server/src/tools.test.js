@@ -117,4 +117,82 @@ describe('get_state (lecture seule)', () => {
     expect(result.devoirs[0]).toMatchObject({ id: 'dev-1', nom: 'TP1' })
     expect(result.matieres.length).toBe(7)
   })
+
+  it("résume aussi les ressources, indexées par nom de matière", async () => {
+    fetchState.mockResolvedValue({
+      resources: {
+        'optique-coherente': {
+          revision: { url: 'https://x.test/rev', label: 'Fiche' },
+          methode: null,
+          polys: [{ id: 'poly-1', url: 'https://x.test/poly', label: 'Annexe 1' }],
+        },
+      },
+    })
+    const result = await tool('get_state').handler({})
+    expect(result.ressources['Optique cohérente']).toMatchObject({
+      revision: { url: 'https://x.test/rev' },
+      polys: [{ id: 'poly-1' }],
+    })
+  })
+})
+
+describe('get_digest (lecture seule)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("ne remonte que ce qui est vraiment urgent (badge en retard, devoir <7j, partiel <14j)", async () => {
+    const now = Date.now()
+    const soon = new Date(now + 3 * 86400000).toISOString().slice(0, 10)
+    const far = new Date(now + 60 * 86400000).toISOString().slice(0, 10)
+    fetchState.mockResolvedValue({
+      chapitres: [
+        {
+          id: 'ch-1',
+          courseId: 'optique-coherente',
+          side: 'cours',
+          nom: 'En retard',
+          badgeCours: { statut: 'actif', activatedAt: now - 10 * 86400000, validatedStage: 'rouge', validatedAt: now - 5 * 86400000 },
+        },
+      ],
+      devoirs: [
+        { id: 'dev-proche', nom: 'Proche', dateEcheance: soon, fait: false },
+        { id: 'dev-loin', nom: 'Loin', dateEcheance: far, fait: false },
+        { id: 'dev-fait', nom: 'Fait mais proche', dateEcheance: soon, fait: true },
+      ],
+      exams: [
+        { id: 'exam-proche', matiere: 'Proche', date: soon },
+        { id: 'exam-loin', matiere: 'Loin', date: far },
+      ],
+    })
+    const result = await tool('get_digest').handler({})
+
+    expect(result.enRetard.map((c) => c.id)).toEqual(['ch-1'])
+    expect(result.devoirsProches.map((d) => d.id)).toEqual(['dev-proche'])
+    expect(result.partielsProches.map((e) => e.id)).toEqual(['exam-proche'])
+    expect(writeState).not.toHaveBeenCalled()
+  })
+})
+
+describe('ressources — écriture', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('set_resource_link puis add_poly opèrent bien sur la bonne matière', async () => {
+    fetchState.mockResolvedValue({ resources: {} })
+    await tool('set_resource_link').handler({
+      courseId: 'optique-coherente',
+      kind: 'revision',
+      url: 'https://x.test/rev',
+      label: 'Fiche',
+    })
+    const written1 = writeState.mock.calls[0][0]
+    expect(written1.resources['optique-coherente'].revision).toMatchObject({ url: 'https://x.test/rev' })
+
+    fetchState.mockResolvedValue(written1)
+    await tool('add_poly').handler({ courseId: 'optique-coherente', url: 'https://x.test/poly', label: 'Annexe' })
+    const written2 = writeState.mock.calls[1][0]
+    expect(written2.resources['optique-coherente'].polys).toHaveLength(1)
+  })
 })
