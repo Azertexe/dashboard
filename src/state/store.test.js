@@ -67,4 +67,34 @@ describe('mergeStates', () => {
     expect(merged.exams).toContainEqual({ id: 'tout-juste-tape', matiere: 'Optique' })
     expect(merged.exams).toHaveLength(2)
   })
+
+  it('fusionne pushSubscriptions par endpoint (pas d\'id) sans rien perdre', () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      pushSubscriptions: [{ endpoint: 'https://push.test/a' }],
+    }
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      pushSubscriptions: [{ endpoint: 'https://push.test/a' }, { endpoint: 'https://push.test/b' }],
+    }
+    const merged = mergeStates(local, remote)
+    expect(merged.pushSubscriptions.map((s) => s.endpoint).sort()).toEqual([
+      'https://push.test/a',
+      'https://push.test/b',
+    ])
+  })
+
+  it("lastPushSentDate : prend toujours la valeur distante (seul le serveur l'écrit) plutôt qu'une copie locale périmée", () => {
+    const local = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-20' }
+    const remote = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-22' }
+    expect(mergeStates(local, remote).lastPushSentDate).toBe('2026-09-22')
+
+    // Si le distant n'a rien (jamais envoyé), on garde ce que le local avait déjà reçu.
+    const remoteEmpty = { exams: [], devoirs: [], chapitres: [] }
+    expect(mergeStates(local, remoteEmpty).lastPushSentDate).toBe('2026-09-20')
+  })
 })

@@ -107,10 +107,10 @@ async function getStateSummary() {
 const DIGEST_DEVOIR_WINDOW_DAYS = 7
 const DIGEST_PARTIEL_WINDOW_DAYS = 14
 
-async function getDigest() {
-  const remote = await fetchState()
-  const state = normalizeState(remote ?? {})
-  const now = Date.now()
+// Version pure (état déjà chargé) — réutilisée par le cron de notifications
+// push (digestPush.js) pour éviter un deuxième aller-retour Firestore en
+// plus de celui déjà fait pour lire pushSubscriptions/lastPushSentDate.
+export function computeDigest(state, now) {
   const enRetard = state.chapitres.filter((c) => needsAttention(c, c.side, now)).map((c) => summarizeChapitre(c, now))
   const devoirsProches = state.devoirs
     .filter((d) => !d.fait && daysBetween(now, d.dateEcheance) <= DIGEST_DEVOIR_WINDOW_DAYS)
@@ -121,6 +121,12 @@ async function getDigest() {
     .sort((a, b) => a.date.localeCompare(b.date))
     .map((e) => summarizeExam(e, now))
   return { enRetard, devoirsProches, partielsProches }
+}
+
+async function getDigest() {
+  const remote = await fetchState()
+  const state = normalizeState(remote ?? {})
+  return computeDigest(state, Date.now())
 }
 
 const SIDE_ENUM = ['cours', 'td']

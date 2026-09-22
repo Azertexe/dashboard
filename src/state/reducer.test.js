@@ -1,6 +1,24 @@
 import { describe, it, expect } from 'vitest'
 import { reducer, migrateChapitre, migrateDevoir, emptyState } from './reducer.js'
 
+describe('abonnements push', () => {
+  it('SUBSCRIBE_PUSH ajoute un abonnement, ignore un doublon (même endpoint)', () => {
+    const sub = { endpoint: 'https://push.test/a', keys: { p256dh: 'x', auth: 'y' } }
+    let state = reducer(emptyState(), { type: 'SUBSCRIBE_PUSH', subscription: sub })
+    expect(state.pushSubscriptions).toEqual([sub])
+
+    state = reducer(state, { type: 'SUBSCRIBE_PUSH', subscription: sub })
+    expect(state.pushSubscriptions).toHaveLength(1)
+  })
+
+  it('UNSUBSCRIBE_PUSH retire uniquement l\'endpoint visé', () => {
+    let state = reducer(emptyState(), { type: 'SUBSCRIBE_PUSH', subscription: { endpoint: 'a' } })
+    state = reducer(state, { type: 'SUBSCRIBE_PUSH', subscription: { endpoint: 'b' } })
+    state = reducer(state, { type: 'UNSUBSCRIBE_PUSH', endpoint: 'a' })
+    expect(state.pushSubscriptions).toEqual([{ endpoint: 'b' }])
+  })
+})
+
 describe('journal de progression (history) — un événement par couleur réellement validée', () => {
   const DAY_MS = 24 * 60 * 60 * 1000
 

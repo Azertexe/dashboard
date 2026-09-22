@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { downloadJSON, downloadMarkdown } from '../logic/exportData.js'
 import { THEMES } from '../data/themes.js'
@@ -9,6 +9,7 @@ import {
   setNotificationsEnabled,
   notificationsSupported,
 } from '../logic/notifications.js'
+import { pushSupported, pushRequiresInstall, subscribeToPush, unsubscribeFromPush } from '../logic/push.js'
 
 const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
 
@@ -73,7 +74,7 @@ const FEATURES = [
   },
   {
     title: 'Notifications',
-    desc: "Rappel navigateur, une fois par jour maximum, quand un badge prend du retard.",
+    desc: "Rappel navigateur (onglet ouvert requis), une fois par jour maximum, quand un badge prend du retard. Une option \"push\" séparée peut aussi prévenir app fermée, si le serveur MCP optionnel est configuré (voir mcp-server/README.md).",
   },
   {
     title: 'Synchronisation',
@@ -120,6 +121,39 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
     if (perm === 'granted') {
       setNotificationsEnabled(true)
       setNotifOn(true)
+    }
+  }
+
+  // Abonnement push de CET appareil (indépendant de state.pushSubscriptions,
+  // qui liste tous les appareils abonnés — utile seulement pour savoir quoi
+  // afficher ici) : lu depuis le navigateur au montage plutôt que déduit du
+  // state, pour rester correct même si le state n'est pas encore synchronisé.
+  const [pushEndpoint, setPushEndpoint] = useState(null)
+  const [pushBusy, setPushBusy] = useState(false)
+  useEffect(() => {
+    if (!pushSupported()) return
+    navigator.serviceWorker.ready
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setPushEndpoint(sub?.endpoint ?? null))
+      .catch(() => {})
+  }, [])
+
+  const togglePush = async () => {
+    setPushBusy(true)
+    try {
+      if (pushEndpoint) {
+        await unsubscribeFromPush()
+        dispatch({ type: 'UNSUBSCRIBE_PUSH', endpoint: pushEndpoint })
+        setPushEndpoint(null)
+      } else {
+        const subscription = await subscribeToPush()
+        if (subscription) {
+          dispatch({ type: 'SUBSCRIBE_PUSH', subscription })
+          setPushEndpoint(subscription.endpoint)
+        }
+      }
+    } finally {
+      setPushBusy(false)
     }
   }
 
@@ -232,12 +266,36 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
             <div className="settings-row">
               <div className="settings-row-desc">
                 {notifOn
-                  ? 'Activées — badges en retard signalés une fois par jour.'
-                  : 'Recevoir une notification quand un badge prend du retard.'}
+                  ? 'Activées — badges en retard signalés une fois par jour, tant que l\'onglet est ouvert.'
+                  : "Recevoir une notification quand un badge prend du retard (nécessite l'onglet ouvert)."}
               </div>
               <div className="pill" onClick={toggleNotifications}>
                 {notifOn ? 'Désactiver' : 'Activer'}
               </div>
+            </div>
+          </div>
+        )}
+
+        {pushSupported() && (
+          <div className="glass-tight settings-section">
+            <div className="settings-section-title">Notifications push</div>
+            <div className="settings-row">
+              <div className="settings-row-desc">
+                {pushRequiresInstall()
+                  ? "Sur iPhone, il faut d'abord ajouter le site à l'écran d'accueil (Partager → \"Sur l'écran d'accueil\") avant de pouvoir les activer."
+                  : pushEndpoint
+                    ? "Activées sur cet appareil — un résumé une fois par jour si quelque chose presse, même app fermée. Nécessite que le serveur MCP soit configuré côté Cloudflare (optionnel, voir mcp-server/README.md) ; sinon rien n'est envoyé."
+                    : "Résumé quotidien même app fermée (contrairement à \"Notifications\" ci-dessus, qui a besoin de l'onglet ouvert). Nécessite le serveur MCP configuré (optionnel)."}
+              </div>
+              {!pushRequiresInstall() && (
+                <div
+                  className="pill"
+                  onClick={pushBusy ? undefined : togglePush}
+                  style={pushBusy ? { opacity: 0.6, pointerEvents: 'none' } : undefined}
+                >
+                  {pushEndpoint ? 'Désactiver' : 'Activer'}
+                </div>
+              )}
             </div>
           </div>
         )}

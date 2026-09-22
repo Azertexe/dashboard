@@ -24,6 +24,8 @@ export function emptyState() {
     chapitres: [], // voir src/logic/badges.js pour la forme d'un chapitre
     resources: {}, // { [courseId]: { revision: {url,label}|null, methode: {url,label}|null, polys: [{id,url,label}] } }
     history: [], // { id, at, chapitreId, courseId, side, level } — un événement par couleur VALIDÉE (clic réel), pour le graphe de progression
+    pushSubscriptions: [], // { endpoint, keys: {p256dh, auth} } — un par appareil abonné aux notifications push (optionnel, voir mcp-server/)
+    lastPushSentDate: null, // 'YYYY-MM-DD' — évite d'envoyer plus d'un résumé push par jour (cf. mcp-server/src/index.js)
   }
 }
 
@@ -360,6 +362,16 @@ export function reducer(state, action) {
     }
     case 'SET_THEME':
       return { ...state, theme: action.theme }
+    case 'SUBSCRIBE_PUSH': {
+      const exists = state.pushSubscriptions.some((s) => s.endpoint === action.subscription.endpoint)
+      if (exists) return state
+      return { ...state, pushSubscriptions: [...state.pushSubscriptions, action.subscription] }
+    }
+    case 'UNSUBSCRIBE_PUSH':
+      return {
+        ...state,
+        pushSubscriptions: state.pushSubscriptions.filter((s) => s.endpoint !== action.endpoint),
+      }
     case 'IMPORT_STATE':
       return normalizeState({ ...action.state, version: STORAGE_VERSION })
     default:
@@ -384,6 +396,16 @@ export function mergeById(localArr, remoteArr) {
   return onlyRemote.length ? [...localArr, ...onlyRemote] : localArr
 }
 
+// Même principe que mergeById, mais par `endpoint` — les abonnements push
+// n'ont pas d'`id`, leur endpoint (l'URL du service de push du navigateur)
+// en tient déjà lieu de clé naturelle.
+function mergeByEndpoint(localArr, remoteArr) {
+  if (!remoteArr?.length) return localArr
+  const localEndpoints = new Set(localArr.map((x) => x.endpoint))
+  const onlyRemote = remoteArr.filter((x) => !localEndpoints.has(x.endpoint))
+  return onlyRemote.length ? [...localArr, ...onlyRemote] : localArr
+}
+
 export function mergeStates(local, remote) {
   if (!remote) return local
   return {
@@ -391,5 +413,12 @@ export function mergeStates(local, remote) {
     exams: mergeById(local.exams, remote.exams),
     devoirs: mergeById(local.devoirs, remote.devoirs),
     chapitres: mergeById(local.chapitres, remote.chapitres),
+    pushSubscriptions: mergeByEndpoint(local.pushSubscriptions, remote.pushSubscriptions),
+    // Écrit uniquement côté serveur (cron de notifications push dans
+    // mcp-server/, jamais par l'app) — on prend toujours la valeur distante
+    // la plus fraîche plutôt que de risquer d'écraser son garde-fou
+    // anti-doublon avec une copie locale périmée (l'app elle-même ne
+    // modifie jamais ce champ).
+    lastPushSentDate: remote.lastPushSentDate ?? local.lastPushSentDate,
   }
 }

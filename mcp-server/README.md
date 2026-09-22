@@ -75,6 +75,37 @@ Pour l'activer :
 Ni le jeton ni l'id ne transitent jamais par Claude — ils se collent
 directement dans Cloudflare.
 
+## Notifications push (optionnelles)
+
+En plus des notifications navigateur existantes dans l'app (Réglages →
+Notifications, qui ont besoin que l'onglet soit ouvert), ce Worker peut
+envoyer un résumé push une fois par jour — même app complètement fermée —
+s'il y a vraiment quelque chose qui presse (badge en retard, devoir dans la
+semaine, partiel dans les 2 semaines). Jamais de push s'il n'y a rien à
+signaler. Chiffré de bout en bout (RFC 8291/8292, implémenté à la main avec
+le seul Web Crypto natif — aucune dépendance).
+
+Désactivé par défaut. Pour l'activer :
+
+1. Dans Cloudflare (Worker → Settings → Variables) : ajouter `VAPID_PRIVATE_KEY_JWK`
+   en **Secret** — la valeur (une paire de clés générée une seule fois pour
+   ce projet) a été donnée directement dans la conversation au moment de la
+   mise en place (jamais commitée dans le dépôt, volontairement).
+2. Même déclencheur Cron que la sauvegarde (`0 3 * * *`) — déjà en place si
+   tu as suivi l'étape de la sauvegarde automatique ; sinon, l'ajouter de la
+   même façon (Worker → Triggers → Cron Triggers).
+3. Dans l'app, Réglages → **Notifications push** → Activer (sur iPhone :
+   d'abord ajouter le site à l'écran d'accueil via Partager → "Sur l'écran
+   d'accueil" — Apple n'autorise le push que pour une PWA installée, pas un
+   onglet Safari classique).
+
+Si la clé privée doit être régénérée un jour (compromission, ou juste pour
+repartir à zéro), une nouvelle paire peut être générée avec n'importe quel
+outil ECDSA P-256 (ex. `openssl ecparam -genkey -name prime256v1`) — il
+faudra alors aussi mettre à jour la clé publique correspondante dans
+`mcp-server/src/webpush.js` et `src/logic/push.js` (ce n'est pas un secret,
+elle peut être commitée).
+
 ## Déploiement (gratuit, sans carte bancaire)
 
 Voir les instructions données par Claude au moment de la mise en place —
