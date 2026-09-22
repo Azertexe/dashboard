@@ -1,5 +1,6 @@
 import { TOOLS } from './tools.js'
 import { runBackup } from './backup.js'
+import { sendDigestPushIfDue } from './digestPush.js'
 
 // Serveur MCP distant (transport "Streamable HTTP") pour le dashboard L3
 // Physique — expose en outils ce que l'app fait déjà (lire/modifier
@@ -125,9 +126,12 @@ export default {
     return json(Array.isArray(body) ? responses : responses[0])
   },
 
-  // Cron Trigger (voir wrangler.toml) — sauvegarde quotidienne, no-op tant
-  // que GIST_TOKEN/GIST_ID ne sont pas configurés (cf. backup.js).
+  // Cron Trigger (voir wrangler.toml) — sauvegarde quotidienne et résumé
+  // push, tous deux no-op tant que leurs variables ne sont pas configurées
+  // (cf. backup.js / digestPush.js). Indépendants l'un de l'autre : un échec
+  // sur l'un ne doit jamais empêcher l'autre.
   async scheduled(event, env, ctx) {
     ctx.waitUntil(runBackup(env))
+    ctx.waitUntil(sendDigestPushIfDue(env))
   },
 }

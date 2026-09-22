@@ -18,6 +18,33 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+// Notification push (résumé quotidien envoyé par mcp-server/, optionnel —
+// voir src/logic/push.js). Le payload est du texte brut (titre + corps),
+// pas du JSON, pour rester simple des deux côtés.
+self.addEventListener('push', (event) => {
+  const text = event.data?.text() ?? 'Il y a du nouveau sur ton suivi de révisions.'
+  const [title, ...rest] = text.split('\n')
+  event.waitUntil(
+    self.registration.showNotification(title || 'L3 Physique', {
+      body: rest.join('\n') || text,
+      icon: `${SCOPE}icons/icon-192.png`,
+      badge: `${SCOPE}icons/icon-192.png`,
+      tag: 'l3-physique-digest', // remplace une notif du même jour plutôt que d'empiler
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      const existing = clients.find((c) => c.url.includes(SCOPE))
+      if (existing) return existing.focus()
+      return self.clients.openWindow(SCOPE)
+    }),
+  )
+})
+
 self.addEventListener('fetch', (event) => {
   const { request } = event
   if (request.method !== 'GET') return

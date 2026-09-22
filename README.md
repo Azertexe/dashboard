@@ -279,7 +279,16 @@ dans `public/manifest.json` et `public/icons/`.
 Depuis Réglages → Notifications, on peut activer des notifications
 navigateur : un badge qui passe orange ou jaune sans être traité déclenche une
 notification (au plus une par badge et par jour), via `src/logic/notifications.js`.
-Nécessite que l'onglet soit ouvert (pas de push serveur).
+Nécessite que l'onglet soit ouvert.
+
+Une option séparée, **Notifications push** (`src/logic/push.js`), fonctionne
+même app fermée — un résumé une fois par jour s'il y a vraiment quelque
+chose qui presse (jamais un push "rien à faire"). Optionnelle et
+désactivée par défaut : nécessite que le serveur MCP soit configuré côté
+Cloudflare (chiffrement RFC 8291/8292 implémenté à la main dans
+`mcp-server/src/webpush.js`, voir son README pour la mise en place). Sur
+iPhone, le site doit d'abord être ajouté à l'écran d'accueil (limite
+d'Apple, pas de ce projet).
 
 ## Structure
 
