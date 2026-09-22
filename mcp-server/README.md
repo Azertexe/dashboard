@@ -49,6 +49,32 @@ Cloudflare : Worker → Settings → Variables → Secret) rend l'en-tête
 `Authorization: Bearer <token>` obligatoire sur chaque requête ; sans ce
 secret défini, le serveur reste ouvert.
 
+## Sauvegarde automatique (optionnelle)
+
+En plus du rappel manuel dans l'app (Réglages → Export), ce Worker peut
+sauvegarder l'état une fois par jour dans un Gist GitHub fixe (toujours le
+même lien, mis à jour chaque jour plutôt que d'en créer un nouveau) —
+contenant un export JSON complet et un résumé Markdown, comme le export
+manuel. Désactivé par défaut (aucun impact si tu ne configures rien).
+
+Pour l'activer :
+
+1. Créer un Gist vide une fois, sur [gist.github.com](https://gist.github.com)
+   (n'importe quel contenu, même un seul mot) → récupérer son id dans l'URL
+   (`gist.github.com/<toi>/<GIST_ID>`).
+2. Créer un jeton d'accès GitHub avec accès **Gists** en écriture seulement :
+   [github.com/settings/personal-access-tokens](https://github.com/settings/personal-access-tokens/new) →
+   "Fine-grained token" → limiter aux Gists.
+3. Dans Cloudflare (Worker → Settings → Variables) : ajouter `GIST_ID` (variable
+   normale) et `GIST_TOKEN` (**Secret**, jamais en clair).
+4. Ajouter le déclencheur : Worker → Triggers → Cron Triggers → `0 3 * * *`
+   (une fois par jour, 3h UTC). Si le Worker a été déployé via
+   `wrangler deploy`, ce déclencheur est déjà dans `wrangler.toml` et se met
+   en place tout seul.
+
+Ni le jeton ni l'id ne transitent jamais par Claude — ils se collent
+directement dans Cloudflare.
+
 ## Déploiement (gratuit, sans carte bancaire)
 
 Voir les instructions données par Claude au moment de la mise en place —

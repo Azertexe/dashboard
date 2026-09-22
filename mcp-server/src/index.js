@@ -1,4 +1,5 @@
 import { TOOLS } from './tools.js'
+import { runBackup } from './backup.js'
 
 // Serveur MCP distant (transport "Streamable HTTP") pour le dashboard L3
 // Physique — expose en outils ce que l'app fait déjà (lire/modifier
@@ -122,5 +123,11 @@ export default {
 
     if (responses.length === 0) return new Response(null, { status: 202, headers: CORS_HEADERS })
     return json(Array.isArray(body) ? responses : responses[0])
+  },
+
+  // Cron Trigger (voir wrangler.toml) — sauvegarde quotidienne, no-op tant
+  // que GIST_TOKEN/GIST_ID ne sont pas configurés (cf. backup.js).
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(runBackup(env))
   },
 }
