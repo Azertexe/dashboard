@@ -1,3 +1,11 @@
 name = "l3-physique-mcp"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
+
+# Sauvegarde automatique quotidienne (backup.js), no-op tant que GIST_TOKEN/
+# GIST_ID ne sont pas configurés. Ne s'applique qu'aux déploiements via
+# `wrangler deploy` — si le Worker a été collé dans l'éditeur en ligne
+# Cloudflare, ce déclencheur doit être ajouté à la main : Worker → Triggers
+# → Cron Triggers → "0 3 * * *" (même README).
+[triggers]
+crons = ["0 3 * * *"]
