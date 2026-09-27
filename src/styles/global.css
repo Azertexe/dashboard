@@ -227,7 +227,6 @@ select {
   background: var(--glass-2);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-radius: 20px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
@@ -240,7 +239,6 @@ select {
   background: var(--glass-1);
   border: 1px solid var(--glass-border);
   backdrop-filter: blur(24px) saturate(1.35);
-  -webkit-backdrop-filter: blur(24px) saturate(1.35);
   border-radius: 14px;
   transition: background-color 0.4s ease, border-color 0.4s ease;
 }
@@ -249,7 +247,6 @@ select {
   background: var(--glass-3);
   border: 1px solid var(--glass-border-strong);
   backdrop-filter: blur(36px) saturate(1.65);
-  -webkit-backdrop-filter: blur(36px) saturate(1.65);
   border-radius: 16px;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.14),
@@ -1026,7 +1023,6 @@ select {
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(140, 190, 230, 0.12));
   border: 1px solid rgba(255, 255, 255, 0.26);
   backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
   color: inherit;
   text-decoration: none;
   cursor: pointer;
@@ -1445,12 +1441,12 @@ select {
   display: none;
   /* Flou renforcé par rapport à .glass-strong : la barre d'onglets reste
      à l'écran en permanence par-dessus le fond photo qui défile (cf.
-     BackgroundSlideshow.jsx), et a besoin de plus de flou + d'un fond plus
-     opaque que les autres panneaux pour que les onglets restent distincts
-     quelle que soit la photo affichée derrière. */
-  background: rgba(10, 14, 19, 0.58);
+     BackgroundSlideshow.jsx), et a besoin de plus de flou que les autres
+     panneaux pour que les onglets restent distincts quelle que soit la
+     photo affichée derrière. Fond blanc translucide (comme le reste du
+     liquid glass) plutôt que sombre, une fois le vrai flou en place. */
+  background: rgba(255, 255, 255, 0.16);
   backdrop-filter: blur(48px) saturate(1.7);
-  -webkit-backdrop-filter: blur(48px) saturate(1.7);
 }
 
 @media (max-width: 640px) {
@@ -1708,7 +1704,6 @@ select {
   background: rgba(11, 15, 20, 0.72);
   border: 1px solid var(--glass-border-strong);
   backdrop-filter: blur(28px);
-  -webkit-backdrop-filter: blur(28px);
   border-radius: 22px;
   padding: 26px;
   width: 100%;
