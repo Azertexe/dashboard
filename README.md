@@ -244,6 +244,33 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
   `--bg-photo: url('/mon-fond.jpg');`. L'effet liquid glass (blur + opacité)
   est déjà en place sur les panneaux et fonctionnera par-dessus.
 
+### Effets visuels et "liquid glass"
+
+Le flou/saturation des panneaux (`--glass-blur`, `.glass`/`.glass-tight`/
+`.glass-strong` dans `src/styles/global.css`) a été nettement amplifié
+(blur 22px → 32-36px selon le panneau, + `saturate()`, + ombres internes en
+plusieurs couches pour donner du relief) par rapport à la version initiale.
+
+Le site est aussi plus "vivant" un peu partout, tout en respectant
+`prefers-reduced-motion` (tout est désactivé si l'utilisateur l'a demandé) :
+
+- Confettis (CSS pur, sans librairie) au moment précis où un badge passe au
+  vert (`Badge.jsx`).
+- Petit effet de pression (`:active`) sur les tuiles/boutons/lignes
+  cliquables, et fondu sur le changement de couleur des badges.
+- Les nombres de la Vue d'ensemble comptent depuis 0 à l'ouverture de
+  l'écran (`hooks/useCountUp.js`), et les barres de progression se
+  remplissent visiblement au montage plutôt que d'apparaître déjà pleines
+  (`hooks/useMountGrow.js`) — même reflet animé que la jauge d'examen sur
+  les barres "Par état"/"Classement par matière".
+- Transition de navigation directionnelle : un écran plus profond glisse
+  depuis la droite, un retour depuis la gauche (`navDir` dans `App.jsx`).
+- Accordéon du sommaire (parties → sous-parties) animé en hauteur (technique
+  CSS grid `0fr → 1fr`, pas de mesure JS).
+- Fond très légèrement animé (dérive lente, imperceptible instant par
+  instant) et états vides illustrés d'un petit doodle SVG
+  (`components/EmptyState.jsx`) plutôt qu'un simple texte gris.
+
 ### Vue d'ensemble
 
 Un lien "Vue d'ensemble →" sous les onglets Cours/TD de l'accueil ouvre un

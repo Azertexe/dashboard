@@ -19,7 +19,8 @@
   --glass-3: rgba(255, 255, 255, 0.07);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-border-strong: rgba(255, 255, 255, 0.18);
-  --glass-blur: 22px;
+  --glass-blur: 32px;
+  --glass-saturate: 1.5;
 
   --rouge-bg: oklch(0.72 0.17 25);
   --rouge-ink: #1a0603;
@@ -123,7 +124,9 @@ body,
 
 body {
   margin: 0;
-  /* Texture diagonale du wireframe ; une vraie photo perso (--bg-photo) passe par-dessus. */
+  /* Texture diagonale du wireframe ; une vraie photo perso (--bg-photo) passe par-dessus.
+     Le fond dérive très lentement (ambianceDrift) — imperceptible instant par
+     instant, juste assez pour que le fond ne soit jamais complètement figé. */
   background:
     var(--bg-photo),
     repeating-linear-gradient(115deg, var(--bg-stripe-1) 0 22px, var(--bg-stripe-2) 22px 44px);
@@ -132,6 +135,17 @@ body {
   color: var(--text);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
+  animation: ambianceDrift 50s ease-in-out infinite;
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+@keyframes ambianceDrift {
+  0%, 100% {
+    background-position: center, 0 0;
+  }
+  50% {
+    background-position: center, 44px 30px;
+  }
 }
 
 a {
@@ -188,25 +202,36 @@ select {
 .glass {
   background: var(--glass-2);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 40px rgba(255, 255, 255, 0.025),
+    0 10px 30px rgba(0, 0, 0, 0.22);
+  transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 
 .glass-tight {
   background: var(--glass-1);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
   border-radius: 14px;
+  transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 
 .glass-strong {
   background: var(--glass-3);
   border: 1px solid var(--glass-border-strong);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  backdrop-filter: blur(36px) saturate(1.65);
+  -webkit-backdrop-filter: blur(36px) saturate(1.65);
   border-radius: 16px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 55px rgba(255, 255, 255, 0.035),
+    0 12px 36px rgba(0, 0, 0, 0.28);
+  transition: background-color 0.4s ease, border-color 0.4s ease;
 }
 
 .pill {
@@ -218,10 +243,15 @@ select {
   border: 1px solid var(--glass-border);
   background: var(--glass-1);
   color: var(--text);
+  transition: background 0.18s ease, transform 0.15s ease;
 }
 
 .pill:hover {
   background: var(--glass-2);
+}
+
+.pill:active {
+  transform: scale(0.96);
 }
 
 .pill-accent {
@@ -472,11 +502,15 @@ select {
 
 .summary-card {
   cursor: pointer;
-  transition: background 0.18s, border-color 0.18s;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s ease;
 }
 
 .summary-card:hover {
   border-color: var(--glass-border-strong);
+}
+
+.summary-card:active {
+  transform: scale(0.985);
 }
 
 .summary-hint {
@@ -501,11 +535,15 @@ select {
   padding: 22px 24px;
   cursor: pointer;
   user-select: none;
-  transition: background 0.18s;
+  transition: background 0.18s, transform 0.15s ease;
 }
 
 .nav-btn:hover {
   background: var(--glass-3);
+}
+
+.nav-btn:active {
+  transform: scale(0.97);
 }
 
 .nav-btn-title {
@@ -539,6 +577,11 @@ select {
   cursor: pointer;
   user-select: none;
   align-self: center;
+  transition: transform 0.15s ease;
+}
+
+.home-hero:active {
+  transform: scale(0.96);
 }
 
 .home-hero-title {
@@ -804,8 +847,13 @@ select {
   letter-spacing: 0.04em;
   cursor: pointer;
   user-select: none;
-  transition: background 0.18s, color 0.18s;
+  transition: background-color 0.45s ease, background-image 0.45s ease, color 0.45s ease, box-shadow 0.3s ease,
+    transform 0.15s ease;
   border: 1px solid transparent;
+}
+
+.badge:not(.badge-inactive):not(.badge-attente):active {
+  transform: scale(0.95);
 }
 
 .badge-small {
@@ -1246,6 +1294,7 @@ select {
   border-top: 1px solid var(--glass-border);
   border-left: 2px solid var(--course-accent-border, transparent);
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .chapitre-list-row:first-child {
@@ -1410,11 +1459,16 @@ select {
     color: var(--text-dim);
     cursor: pointer;
     user-select: none;
+    transition: background 0.18s ease, transform 0.15s ease;
   }
 
   .bottom-tab.active {
     background: var(--glass-border-strong);
     color: var(--text);
+  }
+
+  .bottom-tab:active {
+    transform: scale(0.94);
   }
 }
 
@@ -1457,11 +1511,16 @@ select {
   color: var(--text-dim);
   cursor: pointer;
   user-select: none;
+  transition: background 0.18s ease, transform 0.15s ease;
 }
 
 [data-layout='iphone'] .bottom-tab.active {
   background: var(--glass-border-strong);
   color: var(--text);
+}
+
+[data-layout='iphone'] .bottom-tab:active {
+  transform: scale(0.94);
 }
 
 .toast {
@@ -1526,10 +1585,23 @@ select {
 }
 
 .stat-etat-fill {
+  position: relative;
   height: 100%;
   border-radius: 999px;
   background: var(--accent);
-  transition: width 0.3s;
+  overflow: hidden;
+  transition: width 0.6s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.stat-etat-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+  animation: gaugePulse 2.6s ease-in-out infinite;
 }
 
 .stat-etat-count {
@@ -1551,6 +1623,11 @@ select {
   padding: 10px 4px;
   border-top: 1px solid var(--glass-border);
   cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.stat-course-row:active {
+  transform: scale(0.98);
 }
 
 .stat-course-row:first-child {
@@ -1679,6 +1756,116 @@ select {
   animation: dc-pop 0.4s cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
+/* Transition directionnelle entre écrans : "forward" glisse depuis la droite
+   (on va plus loin dans l'arborescence), "back" depuis la gauche (retour) —
+   remplace dc-pop quand la navigation précise un sens (cf. App.jsx, navDir). */
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(26px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-26px);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+
+.screen-anim-forward {
+  animation: slide-in-right 0.38s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.screen-anim-back {
+  animation: slide-in-left 0.38s cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+/* ---- accordéon du sommaire (hauteur animée, technique grid 0fr → 1fr) ---- */
+
+.sommaire-souspartie-wrap {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.sommaire-souspartie-wrap.open {
+  grid-template-rows: 1fr;
+}
+
+.sommaire-souspartie-wrap > div {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ---- confetti (validation d'une couleur au vert) ---- */
+
+.confetti-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 2px;
+  transform: rotate(var(--angle, 0deg));
+  animation: confetti-fly 0.7s ease-out both;
+  animation-delay: var(--delay, 0ms);
+}
+
+@keyframes confetti-fly {
+  0% {
+    transform: rotate(var(--angle, 0deg)) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(var(--angle, 0deg)) translateY(-28px) scale(0.4);
+    opacity: 0;
+  }
+}
+
+/* ---- états vides illustrés ---- */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 10px;
+  color: var(--text-dimmer);
+  text-align: center;
+}
+
+.empty-state svg {
+  opacity: 0.55;
+}
+
+.empty-state-text {
+  font-size: 12.5px;
+  max-width: 260px;
+  line-height: 1.4;
+}
+
 .group-card,
 .devoir-row,
 .chapitre-list-row,
@@ -1709,13 +1896,45 @@ select {
 .nav-row > .nav-btn:nth-child(2) { animation-delay: 60ms; }
 
 @media (prefers-reduced-motion: reduce) {
+  body,
   .screen-anim,
+  .screen-anim-forward,
+  .screen-anim-back,
   .group-card,
   .devoir-row,
   .chapitre-list-row,
   .nav-btn,
   .resource-card,
-  .layout-picker-overlay {
+  .layout-picker-overlay,
+  .gauge-fill::after,
+  .stat-etat-fill::after,
+  .confetti-piece {
     animation: none;
+  }
+
+  .sommaire-souspartie-wrap {
+    transition: none;
+  }
+
+  .nav-btn,
+  .pill,
+  .badge,
+  .home-hero,
+  .stat-course-row,
+  .summary-card,
+  .bottom-tab,
+  [data-layout='iphone'] .bottom-tab {
+    transition: none;
+  }
+
+  .nav-btn:active,
+  .pill:active,
+  .badge:active,
+  .home-hero:active,
+  .stat-course-row:active,
+  .summary-card:active,
+  .bottom-tab:active,
+  [data-layout='iphone'] .bottom-tab:active {
+    transform: none;
   }
 }

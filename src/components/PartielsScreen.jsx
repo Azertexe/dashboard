@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { daysBetween, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
+import EmptyState from './EmptyState.jsx'
 
 const PREP_LABEL = { urgent: 'Urgent', fait: 'Fait' }
 
@@ -29,9 +30,7 @@ export default function PartielsScreen({ now, onGoHome, onOpenExam }) {
 
       <div className="glass devoirs-card">
         <div className="label-mono">Tous les partiels</div>
-        {sorted.length === 0 && (
-          <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Aucun partiel pour l'instant.</div>
-        )}
+        {sorted.length === 0 && <EmptyState text="Aucun partiel pour l'instant." />}
         {sorted.map((e) => {
           const j = daysBetween(now, e.date)
           return (

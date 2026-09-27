@@ -27,6 +27,9 @@ export default function App() {
 
   // 'home' | 'liste' | 'detail'
   const [screen, setScreen] = useState('home')
+  // Sens de la transition visuelle entre écrans : 'forward' glisse depuis la
+  // droite (on va plus loin), 'back' depuis la gauche (retour) — cf. global.css.
+  const [navDir, setNavDir] = useState('forward')
   const [side, setSide] = useState('cours') // 'cours' | 'td'
   const [courseId, setCourseId] = useState(null)
   const [partiesChapitreId, setPartiesChapitreId] = useState(null)
@@ -82,37 +85,56 @@ export default function App() {
   }
 
   const goHome = () => {
+    setNavDir('back')
     setScreen('home')
     setCourseId(null)
   }
   const goListe = (s) => {
+    setNavDir('forward')
     setSide(s)
     setCourseId(null)
     setScreen('liste')
   }
   const openCourse = (id) => {
+    setNavDir('forward')
     setCourseId(id)
     setScreen('detail')
   }
   const backToListe = () => {
+    setNavDir('back')
     setCourseId(null)
     setScreen('liste')
   }
-  const goPartiels = () => setScreen('partiels')
-  const goDevoirs = () => setScreen('devoirs')
-  const goStats = () => setScreen('stats')
-  const goAgenda = () => setScreen('agenda')
+  const goPartiels = () => {
+    setNavDir('forward')
+    setScreen('partiels')
+  }
+  const goDevoirs = () => {
+    setNavDir('forward')
+    setScreen('devoirs')
+  }
+  const goStats = () => {
+    setNavDir('forward')
+    setScreen('stats')
+  }
+  const goAgenda = () => {
+    setNavDir('forward')
+    setScreen('agenda')
+  }
   const openCourseFromStats = (id) => {
+    setNavDir('forward')
     setSide('cours')
     setCourseId(id)
     setScreen('detail')
   }
   const openCourseFromAgenda = (id, s) => {
+    setNavDir('forward')
     setSide(s)
     setCourseId(id)
     setScreen('detail')
   }
   const openParties = (chapitreId, s) => {
+    setNavDir('forward')
     if (s) setSide(s)
     const chapitre = state.chapitres.find((c) => c.id === chapitreId)
     if (chapitre) setCourseId(chapitre.courseId)
@@ -120,6 +142,7 @@ export default function App() {
     setScreen('parties')
   }
   const backFromParties = () => {
+    setNavDir('back')
     setPartiesChapitreId(null)
     setScreen('detail')
   }
@@ -139,7 +162,7 @@ export default function App() {
             </button>
           )}
 
-          <div key={screen} className="screen-anim">
+          <div key={screen} className={`screen-anim screen-anim-${navDir}`}>
             {screen === 'home' && (
               <Home
                 now={now}

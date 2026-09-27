@@ -1,10 +1,51 @@
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { badgeStatus, needsAttention, canUndoBadge, BADGE_COLOR_NAME, BADGE_ACTIVE_LABEL } from '../logic/badges'
+
+const CONFETTI_COLORS = ['var(--vert-bg)', 'var(--bleu-bg)', 'var(--jaune-bg)', 'var(--accent)']
+const CONFETTI_PIECES = 10
+
+/** Petite salve de confettis CSS (pas de librairie, pas de canvas) déclenchée
+ * une fois quand un badge vient de passer au vert — purement décorative,
+ * auto-supprimée par le parent après son animation (cf. Badge ci-dessous). */
+function ConfettiBurst() {
+  return (
+    <div className="confetti-burst" aria-hidden="true">
+      {Array.from({ length: CONFETTI_PIECES }).map((_, i) => (
+        <span
+          key={i}
+          className="confetti-piece"
+          style={{
+            '--angle': `${(360 / CONFETTI_PIECES) * i}deg`,
+            '--delay': `${(i % 3) * 40}ms`,
+            background: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+          }}
+        />
+      ))}
+    </div>
+  )
+}
 
 export default function Badge({ chapitre, side, onMark, small, now }) {
   const { phase, level, daysLeft, pulse, fromClick } = badgeStatus(chapitre, side, now)
   const tag = side === 'td' ? 'TD' : 'Cours'
   const alert = needsAttention(chapitre, side, now)
+
+  // Confettis une seule fois, au moment précis où ce badge devient vert actif
+  // (pas au montage si déjà vert, pas répété tant qu'il le reste).
+  const isVertActive = phase === 'active' && level === 'vert'
+  const wasVertRef = useRef(isVertActive)
+  const [celebrate, setCelebrate] = useState(false)
+  useEffect(() => {
+    if (isVertActive && !wasVertRef.current) {
+      setCelebrate(true)
+      const id = setTimeout(() => setCelebrate(false), 750)
+      wasVertRef.current = isVertActive
+      return () => clearTimeout(id)
+    }
+    wasVertRef.current = isVertActive
+    return undefined
+  }, [isVertActive])
 
   let inner
   if (phase === 'inactive') {
@@ -30,14 +71,17 @@ export default function Badge({ chapitre, side, onMark, small, now }) {
     )
   }
 
-  if (!alert) return inner
+  if (!alert && !celebrate) return inner
 
   return (
     <div className="badge-alert-wrap">
       {inner}
-      <div className="badge-alert-dot" title="Ce badge prend du retard">
-        !
-      </div>
+      {alert && (
+        <div className="badge-alert-dot" title="Ce badge prend du retard">
+          !
+        </div>
+      )}
+      {celebrate && <ConfettiBurst />}
     </div>
   )
 }

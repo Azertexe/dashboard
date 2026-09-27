@@ -2,6 +2,9 @@ import { COURSES, courseAccentStyle } from '../data/courses.js'
 import { ETATS, etatLabel } from '../data/etats.js'
 import { badgeStatus, needsAttention } from '../logic/badges.js'
 import { useStore } from '../state/store.jsx'
+import { useCountUp } from '../hooks/useCountUp.js'
+import { useMountGrow } from '../hooks/useMountGrow.js'
+import EmptyState from './EmptyState.jsx'
 
 /** Score d'une matière pour le classement : proportion de ses chapitres
  * ACTIFS actuellement au vert (à jour), parmi ses chapitres actifs
@@ -16,6 +19,17 @@ function scoreForCourse(courseId, chapitres, now) {
     return s.phase === 'active' && s.level === 'vert'
   }).length
   return auVert / actifs.length
+}
+
+/** Barre de progression qui se remplit visiblement au montage (0 → cible)
+ * plutôt que d'apparaître déjà pleine — cf. hooks/useMountGrow.js. */
+function AnimatedBar({ percent, barStyle }) {
+  const width = useMountGrow(percent)
+  return (
+    <div className="stat-etat-bar" style={barStyle}>
+      <div className="stat-etat-fill" style={{ width: `${width}%` }} />
+    </div>
+  )
 }
 
 /** Petit graphe (SVG à la main, pas de librairie) du nombre cumulé de
@@ -88,6 +102,11 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
       return b.score - a.score
     })
 
+  const nbChapitresShown = useCountUp(nbChapitres)
+  const nbActifsShown = useCountUp(nbActifs)
+  const nbStandbyShown = useCountUp(nbStandby)
+  const nbAlertesShown = useCountUp(nbAlertes)
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div className="crumb-row">
@@ -99,20 +118,20 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
 
       <div className="stat-grid">
         <div className="glass-strong stat-tile">
-          <div className="stat-number">{nbChapitres}</div>
+          <div className="stat-number">{nbChapitresShown}</div>
           <div className="stat-label">Chapitres</div>
         </div>
         <div className="glass-strong stat-tile">
-          <div className="stat-number">{nbActifs}</div>
+          <div className="stat-number">{nbActifsShown}</div>
           <div className="stat-label">Actifs</div>
         </div>
         <div className="glass-strong stat-tile">
-          <div className="stat-number">{nbStandby}</div>
+          <div className="stat-number">{nbStandbyShown}</div>
           <div className="stat-label">En standby</div>
         </div>
         <div className="glass-strong stat-tile">
           <div className="stat-number" style={{ color: nbAlertes > 0 ? 'var(--orange-bg)' : 'inherit' }}>
-            {nbAlertes}
+            {nbAlertesShown}
           </div>
           <div className="stat-label">Badges en retard</div>
         </div>
@@ -120,18 +139,11 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
 
       <div className="glass" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div className="label-mono">Par état</div>
-        {nbChapitres === 0 && (
-          <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Pas encore de chapitre.</div>
-        )}
+        {nbChapitres === 0 && <EmptyState text="Pas encore de chapitre." />}
         {parEtat.map((e) => (
           <div key={e.id} className="stat-etat-row">
             <div className="stat-etat-label">{etatLabel(e.id)}</div>
-            <div className="stat-etat-bar">
-              <div
-                className="stat-etat-fill"
-                style={{ width: nbChapitres ? `${(e.count / nbChapitres) * 100}%` : 0 }}
-              />
-            </div>
+            <AnimatedBar percent={nbChapitres ? (e.count / nbChapitres) * 100 : 0} />
             <div className="stat-etat-count">{e.count}</div>
           </div>
         ))}
@@ -157,11 +169,7 @@ export default function StatsScreen({ now, onGoHome, onOpenCourse }) {
             >
               <div className="stat-rank">{score === null ? '—' : `#${i + 1}`}</div>
               <div className="stat-course-name">{course.nom}</div>
-              {score !== null && (
-                <div className="stat-etat-bar" style={{ flex: '0 0 70px' }}>
-                  <div className="stat-etat-fill" style={{ width: `${score * 100}%` }} />
-                </div>
-              )}
+              {score !== null && <AnimatedBar percent={score * 100} barStyle={{ flex: '0 0 70px' }} />}
               <div className="stat-course-count">{score === null ? 'pas commencé' : `${Math.round(score * 100)}%`}</div>
             </div>
           ))}
