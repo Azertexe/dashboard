@@ -3,6 +3,7 @@ import { courseName, courseAccentStyle } from '../data/courses.js'
 import { ChapitreRowFull } from './ChapitreRow.jsx'
 import ResourceLinkCard from './ResourceLinkCard.jsx'
 import ResourcePolysCard from './ResourcePolysCard.jsx'
+import EmptyState from './EmptyState.jsx'
 import { useStore } from '../state/store.jsx'
 
 function normalize(s) {
@@ -88,12 +89,8 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
           />
         )}
 
-        {ch.length === 0 && !adding && (
-          <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Aucun chapitre pour l'instant.</div>
-        )}
-        {ch.length > 0 && filtered.length === 0 && (
-          <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Aucun chapitre ne correspond.</div>
-        )}
+        {ch.length === 0 && !adding && <EmptyState text="Aucun chapitre pour l'instant." />}
+        {ch.length > 0 && filtered.length === 0 && <EmptyState text="Aucun chapitre ne correspond." />}
         {filtered.length > 0 && (
           <div className="chapitre-list">
             {filtered.map((c) => (

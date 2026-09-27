@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { COURSES, courseName } from '../data/courses.js'
 import { daysBetween, deadlineStyle, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
+import EmptyState from './EmptyState.jsx'
 
 export default function DevoirsScreen({ now, onGoHome }) {
   const { state, dispatch } = useStore()
@@ -36,9 +37,7 @@ export default function DevoirsScreen({ now, onGoHome }) {
 
       <div className="glass devoirs-card">
         <div className="label-mono">Tous les devoirs</div>
-        {sorted.length === 0 && (
-          <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Aucun devoir pour l'instant.</div>
-        )}
+        {sorted.length === 0 && <EmptyState text="Aucun devoir pour l'instant." />}
         {sorted.map((d) => {
           const j = daysBetween(now, d.dateEcheance)
           return (

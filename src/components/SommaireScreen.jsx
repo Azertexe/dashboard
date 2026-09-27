@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { courseAccentStyle, courseName } from '../data/courses.js'
+import EmptyState from './EmptyState.jsx'
 
 /** Nom éditable en place : texte + crayon, qui se change en input + ✓/× au
  * clic sur le crayon. Partagé par les parties et les sous-parties du
@@ -116,29 +117,31 @@ function PartieRow({ chapitreId, partie, dispatch }) {
           />
         </div>
       </div>
-      {open && (
-        <div className="sommaire-souspartie-list">
-          {sousParties.length === 0 && (
-            <div style={{ fontSize: 12, color: 'var(--text-dimmer)', padding: '4px 0' }}>
-              Aucune sous-partie pour l'instant.
-            </div>
-          )}
-          {sousParties.map((sp) => (
-            <SousPartieRow key={sp.id} chapitreId={chapitreId} partieId={partie.id} sousPartie={sp} dispatch={dispatch} />
-          ))}
-          <div className="devoir-form">
-            <input
-              placeholder="Nom de la sous-partie…"
-              value={nomSousPartie}
-              onChange={(e) => setNomSousPartie(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addSousPartie()}
-            />
-            <div className="pill pill-course-accent" onClick={addSousPartie}>
-              Ajouter
+      <div className={`sommaire-souspartie-wrap${open ? ' open' : ''}`}>
+        <div>
+          <div className="sommaire-souspartie-list">
+            {sousParties.length === 0 && (
+              <div style={{ fontSize: 12, color: 'var(--text-dimmer)', padding: '4px 0' }}>
+                Aucune sous-partie pour l'instant.
+              </div>
+            )}
+            {sousParties.map((sp) => (
+              <SousPartieRow key={sp.id} chapitreId={chapitreId} partieId={partie.id} sousPartie={sp} dispatch={dispatch} />
+            ))}
+            <div className="devoir-form">
+              <input
+                placeholder="Nom de la sous-partie…"
+                value={nomSousPartie}
+                onChange={(e) => setNomSousPartie(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addSousPartie()}
+              />
+              <div className="pill pill-course-accent" onClick={addSousPartie}>
+                Ajouter
+              </div>
             </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -185,9 +188,7 @@ export default function SommaireScreen({ chapitre, side, onBack, onGoHome }) {
           pour tout le chapitre).
         </div>
 
-        {parties.length === 0 && (
-          <div style={{ fontSize: 12.5, color: 'var(--text-dimmer)' }}>Aucune partie pour l'instant.</div>
-        )}
+        {parties.length === 0 && <EmptyState text="Aucune partie pour l'instant." />}
         {parties.length > 0 && (
           <div className="chapitre-list">
             {parties.map((p) => (
