@@ -1,10 +1,28 @@
-// Photos de fond par thème (chemins publics relatifs à public/bg/<thème>/,
-// préfixés par BASE_URL au moment de l'affichage — cf. BackgroundSlideshow.jsx).
-// Un thème sans photo ici retombe simplement sur la texture rayée existante
-// (body, global.css) : rien de spécial à faire pour Volcanique/Détente tant
-// qu'aucune photo n'y est déposée, juste compléter ce tableau.
+// Photos de fond par thème ET par format (cf. public/bg/<thème>/<format>/) —
+// préfixées par BASE_URL au moment de l'affichage, cf. BackgroundSlideshow.jsx.
+// 'desktop' sert PC et Mac (photos paysage), 'iphone' sert la disposition
+// iPhone (photos portrait, cf. layoutMode dans App.jsx — même signal déjà
+// utilisé pour le bug de survol iOS de la jauge d'examen). Un couple
+// thème/format vide retombe simplement sur la texture rayée existante :
+// rien de spécial à faire tant qu'aucune photo n'y est déposée, juste
+// compléter le tableau correspondant.
 export const BACKGROUND_PHOTOS = {
-  glacier: ['bg/glacier/01.webp', 'bg/glacier/02.webp', 'bg/glacier/03.webp', 'bg/glacier/04.webp'],
-  volcanique: [],
-  detente: [],
+  glacier: {
+    desktop: [
+      'bg/glacier/desktop/01.webp',
+      'bg/glacier/desktop/02.webp',
+      'bg/glacier/desktop/03.webp',
+      'bg/glacier/desktop/04.webp',
+    ],
+    iphone: [],
+  },
+  volcanique: { desktop: [], iphone: [] },
+  detente: { desktop: [], iphone: [] },
+}
+
+/** `layoutMode` ('pc'|'mac'|'iphone') → le format assorti ('desktop' pour
+ * PC/Mac, 'iphone' pour iPhone). */
+export function backgroundPhotosFor(theme, layoutMode) {
+  const format = layoutMode === 'iphone' ? 'iphone' : 'desktop'
+  return BACKGROUND_PHOTOS[theme]?.[format] ?? []
 }

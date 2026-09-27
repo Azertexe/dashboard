@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { BACKGROUND_PHOTOS } from '../data/backgroundPhotos.js'
+import { backgroundPhotosFor } from '../data/backgroundPhotos.js'
 
 const ROTATE_MS = 8000
 
@@ -7,18 +7,20 @@ function prefersReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
-/** Fond photo qui défile par fondu enchaîné, propre à chaque thème (cf.
- * data/backgroundPhotos.js) — un thème sans photo ne rend rien, laissant
- * voir la texture rayée habituelle (body, global.css). Deux calques
- * superposés (layerA/layerB) alternent lequel est au-dessus : la transition
- * CSS sur `opacity` suffit pour le fondu, et seules les deux photos
- * affichées à un instant donné sont montées (pas toute la collection à la
- * fois). Sous prefers-reduced-motion, le défilement est simplement arrêté
- * (la première photo du thème reste affichée, sans fondu). Remonté à chaque
- * changement de thème par App.jsx (`key={theme}`) plutôt que de resynchroniser
- * son state via un effet — l'état initial part donc toujours propre. */
-export default function BackgroundSlideshow({ theme }) {
-  const photos = useMemo(() => BACKGROUND_PHOTOS[theme] ?? [], [theme])
+/** Fond photo qui défile par fondu enchaîné, propre à chaque thème ET à la
+ * disposition choisie (cf. data/backgroundPhotos.js — desktop pour PC/Mac,
+ * paysage ; iphone pour iPhone, portrait). Un couple thème/format sans
+ * photo ne rend rien, laissant voir la texture rayée habituelle (body,
+ * global.css). Deux calques superposés (layerA/layerB) alternent lequel
+ * est au-dessus : la transition CSS sur `opacity` suffit pour le fondu, et
+ * seules les deux photos affichées à un instant donné sont montées (pas
+ * toute la collection à la fois). Sous prefers-reduced-motion, le
+ * défilement est simplement arrêté (la première photo reste affichée, sans
+ * fondu). Remonté à chaque changement de thème ou de disposition par
+ * App.jsx (`key`) plutôt que de resynchroniser son state via un effet —
+ * l'état initial part donc toujours propre. */
+export default function BackgroundSlideshow({ theme, layoutMode }) {
+  const photos = useMemo(() => backgroundPhotosFor(theme, layoutMode), [theme, layoutMode])
   const [reduced] = useState(prefersReducedMotion)
   const [state, setState] = useState(() => ({ layerA: 0, layerB: null, topIsA: true }))
 
