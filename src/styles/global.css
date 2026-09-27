@@ -6,7 +6,6 @@
   --bg: #0b0f14;
   --bg-stripe-1: #101820;
   --bg-stripe-2: #0d141b;
-  --bg-photo: none;
   --text: #e8edf2;
   --text-dim: rgba(232, 237, 242, 0.62);
   --text-dimmer: rgba(232, 237, 242, 0.45);
@@ -78,7 +77,6 @@
   --bg: #100705;
   --bg-stripe-1: #1a0f08;
   --bg-stripe-2: #150b06;
-  --bg-photo: none;
   --text: #f5ece7;
   --text-dim: rgba(245, 236, 231, 0.62);
   --text-dimmer: rgba(245, 236, 231, 0.45);
@@ -97,7 +95,6 @@
   --bg: #120f08;
   --bg-stripe-1: #1c160c;
   --bg-stripe-2: #16110a;
-  --bg-photo: none;
   --text: #f0ece2;
   --text-dim: rgba(240, 236, 226, 0.62);
   --text-dimmer: rgba(240, 236, 226, 0.45);
@@ -124,14 +121,12 @@ body,
 
 body {
   margin: 0;
-  /* Texture diagonale du wireframe ; une vraie photo perso (--bg-photo) passe par-dessus.
-     Le fond dérive très lentement (ambianceDrift) — imperceptible instant par
-     instant, juste assez pour que le fond ne soit jamais complètement figé. */
-  background:
-    var(--bg-photo),
-    repeating-linear-gradient(115deg, var(--bg-stripe-1) 0 22px, var(--bg-stripe-2) 22px 44px);
-  background-size: cover, auto;
-  background-position: center, center;
+  /* Texture diagonale du wireframe — visible tant qu'aucune photo de fond
+     n'est définie pour le thème actif (cf. .bg-slideshow, qui la recouvre
+     entièrement quand elle a des photos à montrer). Le fond dérive très
+     lentement (ambianceDrift) — imperceptible instant par instant, juste
+     assez pour que le fond ne soit jamais complètement figé. */
+  background: repeating-linear-gradient(115deg, var(--bg-stripe-1) 0 22px, var(--bg-stripe-2) 22px 44px);
   color: var(--text);
   font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
@@ -141,11 +136,40 @@ body {
 
 @keyframes ambianceDrift {
   0%, 100% {
-    background-position: center, 0 0;
+    background-position: 0 0;
   }
   50% {
-    background-position: center, 44px 30px;
+    background-position: 44px 30px;
   }
+}
+
+/* ---- fond photo qui défile, par thème (cf. data/backgroundPhotos.js) ----
+   Recouvre la texture rayée ci-dessus quand le thème actif a des photos ;
+   sinon BackgroundSlideshow.jsx ne rend rien et la texture reste visible.
+   z-index négatif : passe derrière tout le contenu normal de la page (cf.
+   BackgroundSlideshow.jsx pour le pourquoi de deux calques). */
+.bg-slideshow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.bg-slideshow-layer {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 1.8s ease;
+}
+
+.bg-slideshow::after {
+  /* Voile sombre uniforme par-dessus les photos, pour que le texte et les
+     panneaux liquid glass restent lisibles quelle que soit la photo. */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 10, 14, 0.44);
 }
 
 a {
@@ -1896,6 +1920,10 @@ select {
 .nav-row > .nav-btn:nth-child(2) { animation-delay: 60ms; }
 
 @media (prefers-reduced-motion: reduce) {
+  .bg-slideshow-layer {
+    transition: none;
+  }
+
   body,
   .screen-anim,
   .screen-anim-forward,

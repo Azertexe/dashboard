@@ -239,10 +239,20 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
 - **Glacier** (par défaut) et **Volcanique** sont fonctionnels, choisis
   depuis Réglages → Thème (ou en cliquant le logo de l'accueil).
 - **Détente** (marron/vert) est maintenant fonctionnel comme les deux autres.
-- **Fond photo** : pas de photo perso fournie. Pour en ajouter une, la déposer
-  dans `public/` et régler `--bg-photo` dans `src/styles/global.css`, ex. :
-  `--bg-photo: url('/mon-fond.jpg');`. L'effet liquid glass (blur + opacité)
-  est déjà en place sur les panneaux et fonctionnera par-dessus.
+- **Fond photo qui défile** : chaque thème peut avoir son propre jeu de
+  photos, qui défilent en fondu enchaîné toutes les 8 secondes
+  (`BackgroundSlideshow.jsx`, liste dans `data/backgroundPhotos.js`, fichiers
+  dans `public/bg/<thème>/`). Un thème sans photo dans ce tableau retombe
+  simplement sur la texture rayée d'origine — rien à casser en ajoutant les
+  photos d'un thème à la fois. Actuellement : **Glacier** a 4 photos (tons
+  bleus) ; **Volcanique** (rouge/orange) et **Détente** (vert) n'en ont pas
+  encore. Pour en ajouter : déposer des `.webp` compressés (~1920px de large
+  suffit pour un fond, pas la peine de photos brutes de plusieurs Mo) dans
+  `public/bg/<thème>/`, puis compléter le tableau correspondant dans
+  `data/backgroundPhotos.js`. L'effet liquid glass (blur + saturation) est
+  déjà en place sur les panneaux et fonctionne par-dessus, avec un léger
+  voile sombre sur les photos pour garder le texte lisible quelle que soit
+  la photo affichée.
 
 ### Effets visuels et "liquid glass"
 

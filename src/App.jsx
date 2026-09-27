@@ -13,6 +13,7 @@ import SommaireScreen from './components/SommaireScreen.jsx'
 import SettingsPanel from './components/SettingsPanel.jsx'
 import ExamDetailModal from './components/ExamDetailModal.jsx'
 import LayoutPicker from './components/LayoutPicker.jsx'
+import BackgroundSlideshow from './components/BackgroundSlideshow.jsx'
 import { checkAndNotify } from './logic/notifications.js'
 import { lastExportAt } from './logic/exportData.js'
 
@@ -149,6 +150,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      <BackgroundSlideshow key={state.theme} theme={state.theme} />
       <div className={`app-content${pickerOpen ? ' blurred' : ''}`}>
         <div className="app-card">
           {screen !== 'home' && <Header onOpenSettings={() => setSettingsOpen(true)} />}
