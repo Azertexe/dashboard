@@ -99,10 +99,13 @@ export function migrateExam(e) {
   return { ...e, notes: e.notes ?? '', prepStatut: e.prepStatut ?? null }
 }
 
-// Anciens devoirs sans `fait`/`courseId` (ajoutés pour pouvoir les clore et
-// les rattacher à une matière) — complétés plutôt que perdus.
+// Anciens devoirs sans `fait`/`courseId`/`faitAt` (ajoutés au fil du temps :
+// pouvoir les clore, les rattacher à une matière, savoir depuis quand ils
+// sont faits) — complétés plutôt que perdus. Un devoir déjà fait avant
+// l'ajout de `faitAt` reste affiché (pas de date connue à comparer) plutôt
+// que de risquer de le faire disparaître par surprise.
 export function migrateDevoir(d) {
-  return { ...d, fait: d.fait ?? false, courseId: d.courseId ?? null }
+  return { ...d, fait: d.fait ?? false, courseId: d.courseId ?? null, faitAt: d.faitAt ?? null }
 }
 
 /** Reconstruit un état complet et migré à partir de données brutes (venant
@@ -288,6 +291,7 @@ export function reducer(state, action) {
         dateEcheance: action.dateEcheance,
         courseId: action.courseId ?? null,
         fait: false,
+        faitAt: null,
         createdAt: Date.now(),
       }
       return { ...state, devoirs: [...state.devoirs, devoir] }
@@ -295,7 +299,15 @@ export function reducer(state, action) {
     case 'TOGGLE_DEVOIR_FAIT':
       return {
         ...state,
-        devoirs: state.devoirs.map((d) => (d.id === action.id ? { ...d, fait: !d.fait } : d)),
+        devoirs: state.devoirs.map((d) => {
+          if (d.id !== action.id) return d
+          const fait = !d.fait
+          // faitAt sert uniquement à savoir depuis quand un devoir est fait,
+          // pour le masquer automatiquement le jour suivant (cf.
+          // DevoirsScreen.jsx) plutôt que de compter sur une suppression
+          // manuelle — rien à faire ici si on décoche, juste l'oublier.
+          return { ...d, fait, faitAt: fait ? Date.now() : null }
+        }),
       }
     case 'DELETE_DEVOIR':
       return { ...state, devoirs: state.devoirs.filter((d) => d.id !== action.id) }

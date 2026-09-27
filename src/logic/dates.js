@@ -43,6 +43,21 @@ export function nextExam(exams, now) {
   return sorted.find((e) => daysBetween(now, e.date) >= 0) ?? sorted[sorted.length - 1]
 }
 
+/** Jour civil local (YYYY-MM-DD, fuseau de l'appareil) d'un timestamp —
+ * distinct de daysBetween/isoDaysBetween qui comparent des dates ISO déjà
+ * sans heure ; ici on part d'un vrai instant (Date.now()) et il faut donc
+ * choisir un fuseau pour décider "quel jour" — celui de l'appareil, pour
+ * matcher l'intuition de l'utilisateur. */
+function isoDateLocal(ms) {
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** Deux instants tombent-ils le même jour civil local ? */
+export function isSameLocalDay(msA, msB) {
+  return isoDateLocal(msA) === isoDateLocal(msB)
+}
+
 /** Couleur d'urgence pour un délai en jours (devoirs/partiels) — partagée par
  * DevoirsCard et DevoirsScreen. */
 export function deadlineStyle(j) {
