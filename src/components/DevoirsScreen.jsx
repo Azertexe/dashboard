@@ -1,7 +1,14 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { COURSES, courseName } from '../data/courses.js'
-import { daysBetween, deadlineStyle, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
+import {
+  daysBetween,
+  deadlineStyle,
+  isSameLocalDay,
+  todayWithinSchoolYear,
+  SCHOOL_YEAR_START,
+  SCHOOL_YEAR_END,
+} from '../logic/dates.js'
 import EmptyState from './EmptyState.jsx'
 
 export default function DevoirsScreen({ now, onGoHome }) {
@@ -10,10 +17,15 @@ export default function DevoirsScreen({ now, onGoHome }) {
   const [dateEcheance, setDateEcheance] = useState(() => todayWithinSchoolYear(now))
   const [courseId, setCourseId] = useState('')
 
+  // Un devoir coché reste barré le jour même (pour pouvoir vérifier/décocher
+  // sans qu'il disparaisse aussitôt), puis se retire tout seul de la liste à
+  // partir du lendemain — plus besoin de le supprimer à la main.
+  const visible = state.devoirs.filter((d) => !d.fait || !d.faitAt || isSameLocalDay(d.faitAt, now))
+
   // Pas faits d'abord (triés par échéance), faits relégués en bas — les voir
   // encore permet de décocher par erreur, sans qu'ils gênent la lecture du
   // "reste à faire".
-  const sorted = [...state.devoirs].sort((a, b) => {
+  const sorted = [...visible].sort((a, b) => {
     if (a.fait !== b.fait) return a.fait ? 1 : -1
     return new Date(a.dateEcheance) - new Date(b.dateEcheance)
   })
@@ -58,17 +70,6 @@ export default function DevoirsScreen({ now, onGoHome }) {
                   {Math.abs(j)}
                 </div>
               )}
-              <button
-                className="devoir-del"
-                onClick={() => {
-                  if (confirm(`Supprimer "${d.nom}" ?`)) {
-                    dispatch({ type: 'DELETE_DEVOIR', id: d.id })
-                  }
-                }}
-                aria-label="Supprimer"
-              >
-                ×
-              </button>
             </div>
           )
         })}

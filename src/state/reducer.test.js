@@ -104,7 +104,19 @@ describe('devoirs — fait / rattachement à une matière', () => {
 
   it('migrateDevoir complète les anciens devoirs sans casser leurs champs existants', () => {
     const legacy = { id: 'dev-1', nom: 'TP1', dateEcheance: '2026-10-01', createdAt: 1 }
-    expect(migrateDevoir(legacy)).toEqual({ ...legacy, fait: false, courseId: null })
+    expect(migrateDevoir(legacy)).toEqual({ ...legacy, fait: false, courseId: null, faitAt: null })
+  })
+
+  it('TOGGLE_DEVOIR_FAIT enregistre depuis quand le devoir est fait (faitAt), et l\'oublie si on décoche', () => {
+    let state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
+    const [d1] = state.devoirs
+    expect(d1.faitAt).toBeNull()
+
+    state = reducer(state, { type: 'TOGGLE_DEVOIR_FAIT', id: d1.id })
+    expect(state.devoirs[0].faitAt).toEqual(expect.any(Number))
+
+    state = reducer(state, { type: 'TOGGLE_DEVOIR_FAIT', id: d1.id })
+    expect(state.devoirs[0].faitAt).toBeNull()
   })
 })
 
