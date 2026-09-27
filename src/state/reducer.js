@@ -406,13 +406,48 @@ function mergeByEndpoint(localArr, remoteArr) {
   return onlyRemote.length ? [...localArr, ...onlyRemote] : localArr
 }
 
+// mergeById seul suffit pour un tableau de "feuilles" (exams, devoirs...),
+// mais un chapitre a un sommaire (parties → sous-parties) qui peut être
+// modifié à distance (serveur MCP) sans qu'aucun appareil local n'ait
+// jamais vu ce changement précis — mergeById au niveau du chapitre, lui,
+// ne regarderait que l'id du chapitre : le chapitre existant localement
+// "gagnerait" tel quel, effaçant silencieusement toute partie/sous-partie
+// ajoutée côté serveur au prochain cycle sync→fusion→réécriture de cet
+// appareil (c'est le bug que ça corrige). On refait donc la même fusion
+// additive par id, mais un niveau plus profond : partie par partie, puis
+// sous-partie par sous-partie.
+function mergeSommaire(localParties, remoteParties) {
+  if (!remoteParties?.length) return localParties
+  const localIds = new Set(localParties.map((p) => p.id))
+  const merged = localParties.map((p) => {
+    const remoteP = remoteParties.find((rp) => rp.id === p.id)
+    if (!remoteP) return p
+    return { ...p, sousParties: mergeById(p.sousParties ?? [], remoteP.sousParties) }
+  })
+  const onlyRemote = remoteParties.filter((rp) => !localIds.has(rp.id))
+  return onlyRemote.length ? [...merged, ...onlyRemote] : merged
+}
+
+function mergeChapitres(localArr, remoteArr) {
+  if (!remoteArr?.length) return localArr
+  const remoteById = new Map(remoteArr.map((c) => [c.id, c]))
+  const merged = localArr.map((c) => {
+    const remoteC = remoteById.get(c.id)
+    if (!remoteC) return c
+    return { ...c, parties: mergeSommaire(c.parties ?? [], remoteC.parties) }
+  })
+  const localIds = new Set(localArr.map((c) => c.id))
+  const onlyRemote = remoteArr.filter((c) => !localIds.has(c.id))
+  return onlyRemote.length ? [...merged, ...onlyRemote] : merged
+}
+
 export function mergeStates(local, remote) {
   if (!remote) return local
   return {
     ...local,
     exams: mergeById(local.exams, remote.exams),
     devoirs: mergeById(local.devoirs, remote.devoirs),
-    chapitres: mergeById(local.chapitres, remote.chapitres),
+    chapitres: mergeChapitres(local.chapitres, remote.chapitres),
     pushSubscriptions: mergeByEndpoint(local.pushSubscriptions, remote.pushSubscriptions),
     // Écrit uniquement côté serveur (cron de notifications push dans
     // mcp-server/, jamais par l'app) — on prend toujours la valeur distante

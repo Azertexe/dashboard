@@ -88,6 +88,40 @@ describe('mergeStates', () => {
     ])
   })
 
+  it("une partie/sous-partie ajoutée à distance (ex. serveur MCP) sur un chapitre déjà connu localement n'est pas effacée par le prochain cycle sync→fusion→réécriture", () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      chapitres: [
+        {
+          id: 'c1',
+          nom: 'Chapitre local',
+          parties: [{ id: 'p1', nom: 'Partie déjà connue', sousParties: [] }],
+        },
+      ],
+    }
+    // Le distant a la même partie p1 (avec une nouvelle sous-partie) ET une
+    // toute nouvelle partie p2 — aucune des deux n'a été tapée localement.
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [
+        {
+          id: 'c1',
+          nom: 'Chapitre local',
+          parties: [
+            { id: 'p1', nom: 'Partie déjà connue', sousParties: [{ id: 'sp1', nom: 'Ajoutée à distance' }] },
+            { id: 'p2', nom: 'Nouvelle partie distante', sousParties: [] },
+          ],
+        },
+      ],
+    }
+    const merged = mergeStates(local, remote)
+    const p1 = merged.chapitres[0].parties.find((p) => p.id === 'p1')
+    expect(p1.sousParties).toEqual([{ id: 'sp1', nom: 'Ajoutée à distance' }])
+    expect(merged.chapitres[0].parties.map((p) => p.id).sort()).toEqual(['p1', 'p2'])
+  })
+
   it("lastPushSentDate : prend toujours la valeur distante (seul le serveur l'écrit) plutôt qu'une copie locale périmée", () => {
     const local = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-20' }
     const remote = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-22' }
