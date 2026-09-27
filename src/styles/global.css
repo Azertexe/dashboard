@@ -461,10 +461,19 @@ select {
 }
 
 /* Trait d'un partiel (par opposition à un devoir) : plus visible, couleur
-   d'accent — survoler bascule le texte de l'en-tête plutôt qu'une bulle. */
+   d'accent, ET nettement plus haut (30px contre 20px) pour qu'il se
+   distingue vraiment des traits de devoirs au premier coup d'oeil — survoler
+   bascule le texte de l'en-tête plutôt qu'une bulle. */
+.gauge-tick-exam {
+  top: -12px;
+  height: 30px;
+}
+
 .gauge-tick-exam .gauge-tick-line {
+  height: 30px;
+  width: 3px;
   background: var(--accent);
-  opacity: 0.6;
+  opacity: 0.75;
 }
 
 .gauge-tick-exam:hover .gauge-tick-line {
