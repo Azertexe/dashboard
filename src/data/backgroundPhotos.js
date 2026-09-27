@@ -16,7 +16,15 @@ export const BACKGROUND_PHOTOS = {
     ],
     iphone: [],
   },
-  volcanique: { desktop: [], iphone: [] },
+  volcanique: {
+    desktop: [
+      'bg/volcanique/desktop/01.webp',
+      'bg/volcanique/desktop/02.webp',
+      'bg/volcanique/desktop/03.webp',
+      'bg/volcanique/desktop/04.webp',
+    ],
+    iphone: [],
+  },
   detente: { desktop: [], iphone: [] },
 }
 

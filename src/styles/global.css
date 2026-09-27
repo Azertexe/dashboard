@@ -1443,6 +1443,14 @@ select {
 
 .bottom-tabs {
   display: none;
+  /* Flou renforcé par rapport à .glass-strong : la barre d'onglets reste
+     à l'écran en permanence par-dessus le fond photo qui défile (cf.
+     BackgroundSlideshow.jsx), et a besoin de plus de flou + d'un fond plus
+     opaque que les autres panneaux pour que les onglets restent distincts
+     quelle que soit la photo affichée derrière. */
+  background: rgba(10, 14, 19, 0.58);
+  backdrop-filter: blur(48px) saturate(1.7);
+  -webkit-backdrop-filter: blur(48px) saturate(1.7);
 }
 
 @media (max-width: 640px) {

@@ -249,9 +249,10 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
   correctif du bug de survol iOS sur la jauge d'examen). Un couple
   thème/format vide dans ce tableau retombe simplement sur la texture rayée
   d'origine — rien à casser en ajoutant les photos d'un thème ou d'un format
-  à la fois. Actuellement : **Glacier** a 4 photos paysage (tons bleus) côté
-  `desktop` ; aucune côté `iphone`, et rien encore pour **Volcanique**
-  (rouge/orange) ni **Détente** (vert). Pour en ajouter : déposer des
+  à la fois. Actuellement : **Glacier** et **Volcanique** ont chacun 4
+  photos paysage côté `desktop` (tons bleus / rouge-orange) ; aucune côté
+  `iphone` pour l'un ou l'autre, et rien encore pour **Détente** (vert).
+  Pour en ajouter : déposer des
   `.webp` compressés (~1920px de large suffit pour un fond, pas la peine de
   photos brutes de plusieurs Mo) dans `public/bg/<thème>/<format>/`, puis
   compléter le tableau correspondant dans `data/backgroundPhotos.js`.
