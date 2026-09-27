@@ -150,7 +150,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <BackgroundSlideshow key={state.theme} theme={state.theme} />
+      <BackgroundSlideshow key={`${state.theme}-${layoutMode}`} theme={state.theme} layoutMode={layoutMode} />
       <div className={`app-content${pickerOpen ? ' blurred' : ''}`}>
         <div className="app-card">
           {screen !== 'home' && <Header onOpenSettings={() => setSettingsOpen(true)} />}

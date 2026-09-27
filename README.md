@@ -242,17 +242,22 @@ discret en haut à droite ouvre Réglages depuis l'accueil.
 - **Fond photo qui défile** : chaque thème peut avoir son propre jeu de
   photos, qui défilent en fondu enchaîné toutes les 8 secondes
   (`BackgroundSlideshow.jsx`, liste dans `data/backgroundPhotos.js`, fichiers
-  dans `public/bg/<thème>/`). Un thème sans photo dans ce tableau retombe
-  simplement sur la texture rayée d'origine — rien à casser en ajoutant les
-  photos d'un thème à la fois. Actuellement : **Glacier** a 4 photos (tons
-  bleus) ; **Volcanique** (rouge/orange) et **Détente** (vert) n'en ont pas
-  encore. Pour en ajouter : déposer des `.webp` compressés (~1920px de large
-  suffit pour un fond, pas la peine de photos brutes de plusieurs Mo) dans
-  `public/bg/<thème>/`, puis compléter le tableau correspondant dans
-  `data/backgroundPhotos.js`. L'effet liquid glass (blur + saturation) est
-  déjà en place sur les panneaux et fonctionne par-dessus, avec un léger
-  voile sombre sur les photos pour garder le texte lisible quelle que soit
-  la photo affichée.
+  dans `public/bg/<thème>/<format>/`). Deux jeux séparés par disposition —
+  `desktop` (photos paysage, sert PC et Mac) et `iphone` (photos portrait,
+  sert la disposition iPhone) — puisque la bonne photo dépend de l'orientation
+  de l'écran, pas seulement du thème (même signal `layoutMode` que le
+  correctif du bug de survol iOS sur la jauge d'examen). Un couple
+  thème/format vide dans ce tableau retombe simplement sur la texture rayée
+  d'origine — rien à casser en ajoutant les photos d'un thème ou d'un format
+  à la fois. Actuellement : **Glacier** a 4 photos paysage (tons bleus) côté
+  `desktop` ; aucune côté `iphone`, et rien encore pour **Volcanique**
+  (rouge/orange) ni **Détente** (vert). Pour en ajouter : déposer des
+  `.webp` compressés (~1920px de large suffit pour un fond, pas la peine de
+  photos brutes de plusieurs Mo) dans `public/bg/<thème>/<format>/`, puis
+  compléter le tableau correspondant dans `data/backgroundPhotos.js`.
+  L'effet liquid glass (blur + saturation) est déjà en place sur les
+  panneaux et fonctionne par-dessus, avec un léger voile sombre sur les
+  photos pour garder le texte lisible quelle que soit la photo affichée.
 
 ### Effets visuels et "liquid glass"
 
