@@ -58,9 +58,17 @@ export default function App() {
     return () => clearTimeout(id)
   }, [toast])
 
-  // Rappel d'export périodique tant qu'il n'y a pas de sync cloud.
+  // Rappel d'export périodique tant qu'il n'y a pas de sync cloud. Dépend de
+  // `hasChapitres` (booléen, pas du tableau entier) plutôt que de tourner une
+  // seule fois au montage : sur un appareil qui démarre avant la fin du
+  // premier chargement Firebase, `state.chapitres` est encore vide à ce
+  // moment-là et un effet à [] ne se redéclencherait jamais une fois les
+  // données arrivées — le rappel resterait silencieusement sauté pour toute
+  // la session. Ce booléen ne bascule qu'une fois (vide → non-vide), donc ça
+  // garde bien "un seul rappel par ouverture d'app".
+  const hasChapitres = state.chapitres.length > 0
   useEffect(() => {
-    if (state.chapitres.length === 0) return
+    if (!hasChapitres) return
     const last = lastExportAt()
     if (last && Date.now() - last < EXPORT_REMINDER_MS) return
     const id = setTimeout(
@@ -68,9 +76,7 @@ export default function App() {
       1500,
     )
     return () => clearTimeout(id)
-    // Un seul rappel par ouverture d'app.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [hasChapitres])
 
   // Notifications navigateur pour les badges en retard (si activées).
   useEffect(() => {

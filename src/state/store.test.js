@@ -163,6 +163,26 @@ describe('mergeStates', () => {
     expect(merged.history.map((h) => h.id).sort()).toEqual(['h1', 'h2'])
   })
 
+  it('history fusionné garde au plus 300 événements (les plus récents), même fusionné depuis deux appareils', () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      history: Array.from({ length: 300 }, (_, i) => ({ id: `h-${i}`, at: i })),
+    }
+    // Le distant apporte 5 événements plus récents, jamais vus localement.
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      history: Array.from({ length: 5 }, (_, i) => ({ id: `h-remote-${i}`, at: 300 + i })),
+    }
+    const merged = mergeStates(local, remote)
+    expect(merged.history).toHaveLength(300)
+    expect(merged.history.map((h) => h.id)).not.toContain('h-0') // les plus anciens tombent
+    expect(merged.history.map((h) => h.id)).toContain('h-remote-4') // les plus récents restent
+  })
+
   it("lastPushSentDate : prend toujours la valeur distante (seul le serveur l'écrit) plutôt qu'une copie locale périmée", () => {
     const local = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-20' }
     const remote = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-22' }

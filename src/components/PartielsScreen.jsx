@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
-import { daysBetween, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
+import {
+  daysBetween,
+  todayWithinSchoolYear,
+  formatDaysLeft,
+  formatDateFr,
+  deadlineStyle,
+  SCHOOL_YEAR_START,
+  SCHOOL_YEAR_END,
+} from '../logic/dates.js'
 import EmptyState from './EmptyState.jsx'
 
 const PREP_LABEL = { urgent: 'Urgent', fait: 'Fait' }
@@ -36,18 +44,13 @@ export default function PartielsScreen({ now, onGoHome, onOpenExam }) {
           return (
             <div key={e.id} className="devoir-row glass-tight">
               <div className="devoir-name" style={{ cursor: 'pointer' }} onClick={() => onOpenExam(e.id)}>
-                {e.matiere} —{' '}
-                {new Date(e.date + 'T00:00:00').toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'short',
-                })}
+                {e.matiere} — {formatDateFr(e.date, { day: 'numeric', month: 'short' })}
               </div>
               {e.prepStatut && (
                 <div className={`exam-prep-tag prep-${e.prepStatut}`}>{PREP_LABEL[e.prepStatut]}</div>
               )}
-              <div className="devoir-j">
-                J{j >= 0 ? '-' : '+'}
-                {Math.abs(j)}
+              <div className="devoir-j" style={deadlineStyle(j)}>
+                {formatDaysLeft(j)}
               </div>
               <button
                 className="devoir-del"

@@ -4,6 +4,7 @@ import { COURSES, courseName } from '../data/courses.js'
 import {
   daysBetween,
   deadlineStyle,
+  formatDaysLeft,
   isSameLocalDay,
   todayWithinSchoolYear,
   SCHOOL_YEAR_START,
@@ -66,8 +67,7 @@ export default function DevoirsScreen({ now, onGoHome }) {
               {d.courseId && <div className="devoir-course-tag">{courseName(d.courseId)}</div>}
               {!d.fait && (
                 <div className="devoir-j" style={deadlineStyle(j)}>
-                  J{j >= 0 ? '-' : '+'}
-                  {Math.abs(j)}
+                  {formatDaysLeft(j)}
                 </div>
               )}
             </div>

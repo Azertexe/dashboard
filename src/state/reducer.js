@@ -480,6 +480,17 @@ function mergeResources(localRes, remoteRes) {
   return merged
 }
 
+// mergeById est additive et ne raccourcit jamais — sur `history`, laissé
+// tel quel, un cycle sync→fusion→réécriture pourrait donc repousser le
+// document Firestore au-delà de la limite MAX_HISTORY que seul appendHistory
+// (au clic réel d'une couleur) fait normalement respecter. On réapplique
+// donc la même coupe ici, en gardant les événements les plus récents.
+function mergeHistory(localArr, remoteArr) {
+  const merged = mergeById(localArr, remoteArr)
+  if (!merged || merged.length <= MAX_HISTORY) return merged
+  return [...merged].sort((a, b) => a.at - b.at).slice(merged.length - MAX_HISTORY)
+}
+
 export function mergeStates(local, remote) {
   if (!remote) return local
   return {
@@ -488,7 +499,7 @@ export function mergeStates(local, remote) {
     devoirs: mergeById(local.devoirs, remote.devoirs),
     chapitres: mergeChapitres(local.chapitres, remote.chapitres),
     resources: mergeResources(local.resources, remote.resources),
-    history: mergeById(local.history, remote.history),
+    history: mergeHistory(local.history, remote.history),
     pushSubscriptions: mergeByEndpoint(local.pushSubscriptions, remote.pushSubscriptions),
     // Écrit uniquement côté serveur (cron de notifications push dans
     // mcp-server/, jamais par l'app) — on prend toujours la valeur distante
