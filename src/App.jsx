@@ -23,7 +23,7 @@ const NOTIFY_CHECK_MS = 10 * 60 * 1000
 const LAYOUT_KEY = 'l3-physique-layout'
 
 export default function App() {
-  const { state } = useStore()
+  const { state, dispatch } = useStore()
   const now = useNow()
 
   // 'home' | 'liste' | 'detail'
@@ -77,6 +77,16 @@ export default function App() {
     )
     return () => clearTimeout(id)
   }, [hasChapitres])
+
+  // Vide la corbeille des devoirs cochés la veille (ou avant) — à chaque
+  // tick de `now` (cf. useNow.js, ~60s), pas seulement au montage, pour que
+  // la purge se déclenche dans la minute qui suit le changement de jour
+  // civil même si l'app est restée ouverte depuis la veille. Référence
+  // d'état inchangée si rien à purger (cf. reducer.js) : la quasi-totalité
+  // de ces ticks ne provoquent donc ni re-render ni sync inutile.
+  useEffect(() => {
+    dispatch({ type: 'PURGE_TRASHED_DEVOIRS', now })
+  }, [now, dispatch])
 
   // Notifications navigateur pour les badges en retard (si activées).
   useEffect(() => {

@@ -1433,6 +1433,26 @@ select {
   transform: scale(1.02);
 }
 
+.icon-btn-badged {
+  position: relative;
+}
+
+.icon-btn-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 600 10px var(--font-mono);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .settings-fab {
   position: absolute;
   z-index: 5;

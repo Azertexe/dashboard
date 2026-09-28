@@ -118,6 +118,38 @@ describe('devoirs — fait / rattachement à une matière', () => {
     state = reducer(state, { type: 'TOGGLE_DEVOIR_FAIT', id: d1.id })
     expect(state.devoirs[0].faitAt).toBeNull()
   })
+
+  it('PURGE_TRASHED_DEVOIRS retire les devoirs cochés un jour civil local antérieur, garde les autres', () => {
+    const hier = new Date('2026-10-01T10:00:00').getTime()
+    const aujourdhui = new Date('2026-10-02T09:00:00').getTime()
+    let state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'Coché hier', dateEcheance: '2026-10-01' })
+    state = reducer(state, { type: 'ADD_DEVOIR', nom: 'Coché aujourd\'hui', dateEcheance: '2026-10-01' })
+    state = reducer(state, { type: 'ADD_DEVOIR', nom: 'Pas fait', dateEcheance: '2026-10-05' })
+    const [dHier, dAujourdhui] = state.devoirs
+
+    // Simule : dHier coché hier (faitAt = hier), dAujourdhui coché aujourd'hui.
+    state = {
+      ...state,
+      devoirs: state.devoirs.map((d) => {
+        if (d.id === dHier.id) return { ...d, fait: true, faitAt: hier }
+        if (d.id === dAujourdhui.id) return { ...d, fait: true, faitAt: aujourdhui }
+        return d
+      }),
+    }
+
+    const purged = reducer(state, { type: 'PURGE_TRASHED_DEVOIRS', now: aujourdhui })
+    expect(purged.devoirs.find((d) => d.id === dHier.id)).toBeUndefined()
+    expect(purged.devoirs.find((d) => d.id === dAujourdhui.id)).toBeDefined()
+    expect(purged.devoirs).toHaveLength(2)
+  })
+
+  it("PURGE_TRASHED_DEVOIRS renvoie exactement le même état si rien n'est à purger (évite un re-render/sync inutile)", () => {
+    const now = Date.now()
+    let state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
+    state = reducer(state, { type: 'TOGGLE_DEVOIR_FAIT', id: state.devoirs[0].id })
+    const purged = reducer(state, { type: 'PURGE_TRASHED_DEVOIRS', now })
+    expect(purged).toBe(state)
+  })
 })
 
 describe('sommaire (parties/sous-parties) — sans rapport avec le badge, qui reste unique par chapitre', () => {

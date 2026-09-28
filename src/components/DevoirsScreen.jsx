@@ -1,35 +1,22 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { COURSES, courseName } from '../data/courses.js'
-import {
-  daysBetween,
-  deadlineStyle,
-  formatDaysLeft,
-  isSameLocalDay,
-  todayWithinSchoolYear,
-  SCHOOL_YEAR_START,
-  SCHOOL_YEAR_END,
-} from '../logic/dates.js'
+import { daysBetween, deadlineStyle, formatDaysLeft, todayWithinSchoolYear, SCHOOL_YEAR_START, SCHOOL_YEAR_END } from '../logic/dates.js'
 import EmptyState from './EmptyState.jsx'
+import DevoirsTrashModal from './DevoirsTrashModal.jsx'
 
 export default function DevoirsScreen({ now, onGoHome }) {
   const { state, dispatch } = useStore()
   const [nom, setNom] = useState('')
   const [dateEcheance, setDateEcheance] = useState(() => todayWithinSchoolYear(now))
   const [courseId, setCourseId] = useState('')
+  const [trashOpen, setTrashOpen] = useState(false)
 
-  // Un devoir coché reste barré le jour même (pour pouvoir vérifier/décocher
-  // sans qu'il disparaisse aussitôt), puis se retire tout seul de la liste à
-  // partir du lendemain — plus besoin de le supprimer à la main.
-  const visible = state.devoirs.filter((d) => !d.fait || !d.faitAt || isSameLocalDay(d.faitAt, now))
-
-  // Pas faits d'abord (triés par échéance), faits relégués en bas — les voir
-  // encore permet de décocher par erreur, sans qu'ils gênent la lecture du
-  // "reste à faire".
-  const sorted = [...visible].sort((a, b) => {
-    if (a.fait !== b.fait) return a.fait ? 1 : -1
-    return new Date(a.dateEcheance) - new Date(b.dateEcheance)
-  })
+  // Cocher un devoir l'envoie aussitôt à la corbeille (cf. TOGGLE_DEVOIR_FAIT
+  // / DevoirsTrashModal) — cette liste ne montre donc plus que ce qui reste
+  // à faire, triée par échéance.
+  const sorted = [...state.devoirs].filter((d) => !d.fait).sort((a, b) => new Date(a.dateEcheance) - new Date(b.dateEcheance))
+  const trashCount = state.devoirs.filter((d) => d.fait).length
 
   const add = () => {
     if (!nom.trim() || !dateEcheance) return
@@ -45,7 +32,13 @@ export default function DevoirsScreen({ now, onGoHome }) {
         <div className="pill" onClick={onGoHome}>
           ← Accueil
         </div>
-        <div className="screen-title">Devoirs</div>
+        <div className="screen-title" style={{ flex: 1 }}>
+          Devoirs
+        </div>
+        <button className="icon-btn icon-btn-badged" onClick={() => setTrashOpen(true)} title="Corbeille" aria-label="Corbeille">
+          🗑
+          {trashCount > 0 && <span className="icon-btn-badge">{trashCount}</span>}
+        </button>
       </div>
 
       <div className="glass devoirs-card">
@@ -54,22 +47,20 @@ export default function DevoirsScreen({ now, onGoHome }) {
         {sorted.map((d) => {
           const j = daysBetween(now, d.dateEcheance)
           return (
-            <div key={d.id} className={`devoir-row glass-tight${d.fait ? ' devoir-fait' : ''}`}>
+            <div key={d.id} className="devoir-row glass-tight">
               <button
-                className={`devoir-check${d.fait ? ' checked' : ''}`}
+                className="devoir-check"
                 onClick={() => dispatch({ type: 'TOGGLE_DEVOIR_FAIT', id: d.id })}
-                aria-label={d.fait ? 'Marquer non fait' : 'Marquer fait'}
-                title={d.fait ? 'Marquer non fait' : 'Marquer fait'}
+                aria-label="Marquer fait"
+                title="Marquer fait"
               >
                 ✓
               </button>
               <div className="devoir-name">{d.nom}</div>
               {d.courseId && <div className="devoir-course-tag">{courseName(d.courseId)}</div>}
-              {!d.fait && (
-                <div className="devoir-j" style={deadlineStyle(j)}>
-                  {formatDaysLeft(j)}
-                </div>
-              )}
+              <div className="devoir-j" style={deadlineStyle(j)}>
+                {formatDaysLeft(j)}
+              </div>
             </div>
           )
         })}
@@ -103,6 +94,8 @@ export default function DevoirsScreen({ now, onGoHome }) {
           </div>
         </div>
       </div>
+
+      {trashOpen && <DevoirsTrashModal onClose={() => setTrashOpen(false)} />}
     </div>
   )
 }
