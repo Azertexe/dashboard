@@ -22,7 +22,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
 
   const ch = chapitres
     .filter((c) => c.courseId === courseId && c.side === side)
-    .sort((a, b) => b.createdAt - a.createdAt)
+    .sort((a, b) => a.createdAt - b.createdAt)
   const filtered = search.trim()
     ? ch.filter((c) => normalize(c.nom).includes(normalize(search)))
     : ch
@@ -53,7 +53,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
 
       <div className="glass course-accent-card" style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-          <div className="label-mono">Chapitres · du plus récent au plus ancien</div>
+          <div className="label-mono">Chapitres · du plus ancien au plus récent</div>
           {!adding && (
             <div className="pill pill-course-accent" onClick={() => setAdding(true)}>
               + Chapitre
