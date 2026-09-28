@@ -122,6 +122,47 @@ describe('mergeStates', () => {
     expect(merged.chapitres[0].parties.map((p) => p.id).sort()).toEqual(['p1', 'p2'])
   })
 
+  it("un lien de ressource ajouté à distance (ex. serveur MCP) n'est pas effacé par une copie locale en retard ou vide", () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      resources: {
+        maths: { revision: { url: 'https://local.test/rev', label: 'Révision' }, methode: null, polys: [] },
+      },
+    }
+    // Le distant a un lien "méthode" pour maths (jamais vu localement), ET
+    // une toute nouvelle matière "physique" (jamais vue localement non plus).
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      resources: {
+        maths: {
+          revision: { url: 'https://remote.test/rev-plus-vieux', label: 'Ancienne révision' },
+          methode: { url: 'https://remote.test/methode', label: 'Méthode' },
+          polys: [{ id: 'poly1', url: 'https://remote.test/poly1', label: 'Poly 1' }],
+        },
+        physique: { revision: null, methode: { url: 'https://remote.test/phys', label: 'Méthode physique' }, polys: [] },
+      },
+    }
+    const merged = mergeStates(local, remote)
+    // La révision locale n'est jamais écrasée par la distante.
+    expect(merged.resources.maths.revision).toEqual({ url: 'https://local.test/rev', label: 'Révision' })
+    // Le champ méthode, absent localement, est repris du distant.
+    expect(merged.resources.maths.methode).toEqual({ url: 'https://remote.test/methode', label: 'Méthode' })
+    expect(merged.resources.maths.polys).toEqual([{ id: 'poly1', url: 'https://remote.test/poly1', label: 'Poly 1' }])
+    // Une matière entièrement absente localement est reprise du distant.
+    expect(merged.resources.physique).toEqual(remote.resources.physique)
+  })
+
+  it("un événement de progression (history) ajouté ailleurs n'est pas perdu au prochain cycle sync→fusion→réécriture", () => {
+    const local = { exams: [], devoirs: [], chapitres: [], history: [{ id: 'h1', at: 1 }] }
+    const remote = { exams: [], devoirs: [], chapitres: [], history: [{ id: 'h1', at: 1 }, { id: 'h2', at: 2 }] }
+    const merged = mergeStates(local, remote)
+    expect(merged.history.map((h) => h.id).sort()).toEqual(['h1', 'h2'])
+  })
+
   it("lastPushSentDate : prend toujours la valeur distante (seul le serveur l'écrit) plutôt qu'une copie locale périmée", () => {
     const local = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-20' }
     const remote = { exams: [], devoirs: [], chapitres: [], lastPushSentDate: '2026-09-22' }
