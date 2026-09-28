@@ -1433,6 +1433,20 @@ select {
   transform: scale(1.02);
 }
 
+/* État "à confirmer" de ConfirmButton.jsx (bouton de suppression), sur les
+ * deux formes de bouton destructeur de l'appli. */
+.pill-danger {
+  background: var(--rouge-bg);
+  color: var(--rouge-ink);
+  border-color: transparent;
+}
+
+.icon-btn-danger {
+  background: var(--rouge-bg);
+  color: var(--rouge-ink);
+  border-color: transparent;
+}
+
 .icon-btn-badged {
   position: relative;
 }

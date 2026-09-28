@@ -10,6 +10,7 @@ import {
   SCHOOL_YEAR_END,
 } from '../logic/dates.js'
 import EmptyState from './EmptyState.jsx'
+import ConfirmButton from './ConfirmButton.jsx'
 
 const PREP_LABEL = { urgent: 'Urgent', fait: 'Fait' }
 
@@ -52,17 +53,16 @@ export default function PartielsScreen({ now, onGoHome, onOpenExam }) {
               <div className="devoir-j" style={deadlineStyle(j)}>
                 {formatDaysLeft(j)}
               </div>
-              <button
+              <ConfirmButton
+                tag="button"
                 className="devoir-del"
-                onClick={() => {
-                  if (confirm(`Supprimer le partiel "${e.matiere}" ?`)) {
-                    dispatch({ type: 'DELETE_EXAM', id: e.id })
-                  }
-                }}
-                aria-label="Supprimer"
-              >
-                ×
-              </button>
+                confirmClassName="devoir-del icon-btn-danger"
+                label="×"
+                confirmLabel="✓"
+                title="Supprimer"
+                confirmTitle="Confirmer la suppression"
+                onConfirm={() => dispatch({ type: 'DELETE_EXAM', id: e.id })}
+              />
             </div>
           )
         })}

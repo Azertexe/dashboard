@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { courseAccentStyle, courseName } from '../data/courses.js'
 import EmptyState from './EmptyState.jsx'
+import ConfirmButton from './ConfirmButton.jsx'
 
 /** Nom éditable en place : texte + crayon, qui se change en input + ✓/× au
  * clic sur le crayon. Partagé par les parties et les sous-parties du
  * sommaire (mêmes deux boutons, ni badge ni autre champ à ces niveaux-là). */
-function EditableName({ value, onSave, onDelete, deleteConfirm, big }) {
+function EditableName({ value, onSave, onDelete, big }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
 
@@ -56,15 +57,16 @@ function EditableName({ value, onSave, onDelete, deleteConfirm, big }) {
       >
         ✎
       </button>
-      <button
+      <ConfirmButton
+        tag="button"
         className="icon-btn"
+        confirmClassName="icon-btn icon-btn-danger"
+        label="×"
+        confirmLabel="✓"
         title="Supprimer"
-        onClick={() => {
-          if (confirm(deleteConfirm)) onDelete()
-        }}
-      >
-        ×
-      </button>
+        confirmTitle="Confirmer la suppression"
+        onConfirm={onDelete}
+      />
     </div>
   )
 }
@@ -83,7 +85,6 @@ function SousPartieRow({ chapitreId, partieId, sousPartie, dispatch }) {
         })
       }
       onDelete={() => dispatch({ type: 'DELETE_SOUS_PARTIE', chapitreId, partieId, sousPartieId: sousPartie.id })}
-      deleteConfirm={`Supprimer "${sousPartie.nom}" ?`}
     />
   )
 }
@@ -113,7 +114,6 @@ function PartieRow({ chapitreId, partie, dispatch }) {
             value={partie.nom}
             onSave={(nom) => dispatch({ type: 'EDIT_PARTIE', chapitreId, partieId: partie.id, patch: { nom } })}
             onDelete={() => dispatch({ type: 'DELETE_PARTIE', chapitreId, partieId: partie.id })}
-            deleteConfirm={`Supprimer "${partie.nom}" et ses sous-parties ?`}
           />
         </div>
       </div>
