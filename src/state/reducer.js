@@ -453,6 +453,33 @@ function mergeChapitres(localArr, remoteArr) {
   return onlyRemote.length ? [...merged, ...onlyRemote] : merged
 }
 
+// `resources` a la même forme de piège que `chapitres` avant sa fusion
+// dédiée : un objet keyé par courseId, jamais parcouru par mergeById (qui
+// ne sait fusionner que des tableaux). Sans ça, `{...local}` dans
+// mergeStates prend `resources` intégralement du côté local — un appareil
+// dont la copie locale de `resources` est en retard (ou vide, ex. juste
+// après une réinstallation / un cache vidé) efface silencieusement au
+// prochain push tout lien ajouté ailleurs (ex. via le serveur MCP). Même
+// principe de fusion additive : par matière, puis par champ.
+function mergeResourceBucket(localBucket, remoteBucket) {
+  if (!remoteBucket) return localBucket ?? null
+  const local = localBucket ?? { revision: null, methode: null, polys: [] }
+  return {
+    revision: local.revision ?? remoteBucket.revision ?? null,
+    methode: local.methode ?? remoteBucket.methode ?? null,
+    polys: mergeById(local.polys ?? [], remoteBucket.polys ?? []),
+  }
+}
+
+function mergeResources(localRes, remoteRes) {
+  if (!remoteRes) return localRes
+  const merged = { ...localRes }
+  for (const courseId of Object.keys(remoteRes)) {
+    merged[courseId] = mergeResourceBucket(localRes?.[courseId], remoteRes[courseId])
+  }
+  return merged
+}
+
 export function mergeStates(local, remote) {
   if (!remote) return local
   return {
@@ -460,6 +487,8 @@ export function mergeStates(local, remote) {
     exams: mergeById(local.exams, remote.exams),
     devoirs: mergeById(local.devoirs, remote.devoirs),
     chapitres: mergeChapitres(local.chapitres, remote.chapitres),
+    resources: mergeResources(local.resources, remote.resources),
+    history: mergeById(local.history, remote.history),
     pushSubscriptions: mergeByEndpoint(local.pushSubscriptions, remote.pushSubscriptions),
     // Écrit uniquement côté serveur (cron de notifications push dans
     // mcp-server/, jamais par l'app) — on prend toujours la valeur distante
