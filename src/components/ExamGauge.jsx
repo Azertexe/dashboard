@@ -7,6 +7,8 @@ import {
   isoDaysBetween,
   addDaysIso,
   todayWithinSchoolYear,
+  isoDateLocal,
+  formatDateFr,
 } from '../logic/dates.js'
 
 // Étendue minimale de la vue, pour éviter un affichage dégénéré si la date
@@ -69,7 +71,7 @@ export default function ExamGauge({ exams, devoirs, now, layoutMode, onOpen, onO
     .map((d) => ({ ...d, pos: positionOn(d.dateEcheance), j: daysBetween(now, d.dateEcheance) }))
   const hiddenExamsCount = exams.length - examTicks.length
 
-  const todayIso = new Date(now).toISOString().slice(0, 10)
+  const todayIso = isoDateLocal(now)
   const todayPos = Math.max(0, Math.min(100, (isoDaysBetween(GAUGE_START, todayIso) / totalDays) * 100))
 
   return (
@@ -83,11 +85,7 @@ export default function ExamGauge({ exams, devoirs, now, layoutMode, onOpen, onO
         >
           <div className="label-mono">{hoverExamId ? 'Partiel' : 'Prochain partiel'}</div>
           <div style={{ fontSize: 19 }}>
-            {displayExam.matiere} —{' '}
-            {new Date(displayExam.date + 'T00:00:00').toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'short',
-            })}
+            {displayExam.matiere} — {formatDateFr(displayExam.date, { day: 'numeric', month: 'short' })}
           </div>
         </div>
         <div className="exam-days">

@@ -24,13 +24,13 @@ export function isoDaysBetween(fromIso, toIso) {
 export function addDaysIso(iso, days) {
   const d = new Date(iso + 'T00:00:00')
   d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+  return isoDateLocal(d.getTime())
 }
 
 /** Date du jour (ou la borne la plus proche) au format ISO, pour ouvrir le
  * calendrier d'ajout d'un devoir/partiel sur une date déjà valide. */
 export function todayWithinSchoolYear(now) {
-  const today = new Date(now).toISOString().slice(0, 10)
+  const today = isoDateLocal(now)
   if (today < SCHOOL_YEAR_START) return SCHOOL_YEAR_START
   if (today > SCHOOL_YEAR_END) return SCHOOL_YEAR_END
   return today
@@ -48,7 +48,7 @@ export function nextExam(exams, now) {
  * sans heure ; ici on part d'un vrai instant (Date.now()) et il faut donc
  * choisir un fuseau pour décider "quel jour" — celui de l'appareil, pour
  * matcher l'intuition de l'utilisateur. */
-function isoDateLocal(ms) {
+export function isoDateLocal(ms) {
   const d = new Date(ms)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
@@ -64,4 +64,16 @@ export function deadlineStyle(j) {
   if (j <= 3) return { color: 'oklch(0.75 0.16 25)' }
   if (j <= 7) return { color: 'oklch(0.82 0.14 55)' }
   return { color: 'var(--text-dim)' }
+}
+
+/** "J-3" (à venir) ou "J+2" (en retard) — partagé par tous les écrans
+ * affichant un délai (devoirs, partiels, agenda, fiche détail). */
+export function formatDaysLeft(j) {
+  return `J${j >= 0 ? '-' : '+'}${Math.abs(j)}`
+}
+
+/** Date ISO ('YYYY-MM-DD') formatée en français court ("12 oct") ou long
+ * ("lundi 12 octobre") selon les options `toLocaleDateString` fournies. */
+export function formatDateFr(iso, options) {
+  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', options)
 }

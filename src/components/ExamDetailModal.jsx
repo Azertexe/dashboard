@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
-import { daysBetween } from '../logic/dates.js'
+import { daysBetween, formatDaysLeft, formatDateFr } from '../logic/dates.js'
 
 const PREP_OPTIONS = [
   { value: 'urgent', label: 'Urgent' },
@@ -45,13 +45,7 @@ export default function ExamDetailModal({ exam, now, onClose }) {
           <div>
             <div className="settings-title">{exam.matiere}</div>
             <div className="modal-subtitle">
-              {new Date(exam.date + 'T00:00:00').toLocaleDateString('fr-FR', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}{' '}
-              — J{j >= 0 ? '-' : '+'}
-              {Math.abs(j)}
+              {formatDateFr(exam.date, { weekday: 'long', day: 'numeric', month: 'long' })} — {formatDaysLeft(j)}
             </div>
           </div>
           <button className="icon-btn" onClick={onClose}>

@@ -1,5 +1,6 @@
 import { needsAttention } from './badges.js'
 import { courseName } from '../data/courses.js'
+import { isoDateLocal } from './dates.js'
 
 const NOTIFIED_KEY = 'l3-physique-notified'
 const PERMISSION_KEY = 'l3-physique-notifications-enabled'
@@ -35,7 +36,7 @@ export function checkAndNotify(chapitres, now = Date.now()) {
   if (!notificationsSupported() || !notificationsEnabled()) return
   if (Notification.permission !== 'granted') return
 
-  const today = new Date(now).toISOString().slice(0, 10)
+  const today = isoDateLocal(now)
   const notified = loadNotified()
   let changed = false
 

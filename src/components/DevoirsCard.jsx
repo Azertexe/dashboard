@@ -1,4 +1,4 @@
-import { daysBetween, deadlineStyle } from '../logic/dates.js'
+import { daysBetween, deadlineStyle, formatDaysLeft } from '../logic/dates.js'
 
 /** Résumé lecture seule sur l'accueil — clic pour aller gérer les devoirs. */
 export default function DevoirsCard({ devoirs, now, onOpen }) {
@@ -20,8 +20,7 @@ export default function DevoirsCard({ devoirs, now, onOpen }) {
           <div key={d.id} className="devoir-row glass-tight">
             <div className="devoir-name">{d.nom}</div>
             <div className="devoir-j" style={deadlineStyle(j)}>
-              J{j >= 0 ? '-' : '+'}
-              {Math.abs(j)}
+              {formatDaysLeft(j)}
             </div>
           </div>
         )

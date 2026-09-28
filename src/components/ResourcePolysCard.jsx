@@ -1,10 +1,5 @@
 import { useState } from 'react'
-
-function normalizeUrl(url) {
-  const trimmed = url.trim()
-  if (!trimmed) return trimmed
-  return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
-}
+import { normalizeUrl } from '../logic/url.js'
 
 /** Carte "Polys & annexes" : plusieurs liens (PDF/HTML) par matière. */
 export default function ResourcePolysCard({ polys, onAdd, onDelete }) {
