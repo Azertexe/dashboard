@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { normalizeUrl } from '../logic/url.js'
+import ConfirmButton from './ConfirmButton.jsx'
 
 /** Carte "Polys & annexes" : plusieurs liens (PDF/HTML) par matière. */
 export default function ResourcePolysCard({ polys, onAdd, onDelete }) {
@@ -37,15 +38,16 @@ export default function ResourcePolysCard({ polys, onAdd, onDelete }) {
               <a href={p.url} target="_blank" rel="noreferrer">
                 {p.label}
               </a>
-              <button
+              <ConfirmButton
+                tag="button"
                 className="icon-btn"
-                onClick={() => {
-                  if (confirm(`Retirer "${p.label}" ?`)) onDelete(p.id)
-                }}
+                confirmClassName="icon-btn icon-btn-danger"
+                label="×"
+                confirmLabel="✓"
                 title="Retirer"
-              >
-                ×
-              </button>
+                confirmTitle="Confirmer"
+                onConfirm={() => onDelete(p.id)}
+              />
             </div>
           ))}
         </div>

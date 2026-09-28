@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { normalizeUrl } from '../logic/url.js'
+import ConfirmButton from './ConfirmButton.jsx'
 
 /** Carte ressource éditable (fiche de révision / méthode) : lien vers un
  * PDF/HTML hébergé dans le repo ou une URL externe, éditable en place. */
@@ -73,16 +74,16 @@ export default function ResourceLinkCard({ title, sub, value, onSave, onDelete }
         >
           ✎
         </button>
-        <button
+        <ConfirmButton
+          tag="button"
           className="icon-btn"
-          onClick={(e) => {
-            e.preventDefault()
-            if (confirm(`Retirer le lien "${value.label}" ?`)) onDelete()
-          }}
+          confirmClassName="icon-btn icon-btn-danger"
+          label="×"
+          confirmLabel="✓"
           title="Retirer"
-        >
-          ×
-        </button>
+          confirmTitle="Confirmer"
+          onConfirm={onDelete}
+        />
       </div>
     </a>
   )

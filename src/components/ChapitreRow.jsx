@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { BadgeWithUndo } from './Badge.jsx'
 import { useStore } from '../state/store.jsx'
 import { ETATS } from '../data/etats.js'
+import ConfirmButton from './ConfirmButton.jsx'
 
 /** Ligne compacte : nom + 1 badge (celui du contexte Cours/TD courant). Utilisée
  * dans la vue "Cours"/"TD" groupée par matière. */
@@ -31,11 +32,6 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
   }))
 
   const onActivate = (s) => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id, side: s })
-  const onDelete = () => {
-    if (confirm(`Supprimer "${chapitre.nom}" ? Cette action est définitive.`)) {
-      dispatch({ type: 'DELETE_CHAPITRE', id: chapitre.id })
-    }
-  }
   const startEdit = () => {
     setDraft({
       nom: chapitre.nom,
@@ -111,9 +107,14 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
             Annuler
           </div>
           <div style={{ flex: 1 }} />
-          <div className="pill" onClick={onDelete}>
-            Supprimer
-          </div>
+          <ConfirmButton
+            className="pill"
+            confirmClassName="pill pill-danger"
+            label="Supprimer"
+            confirmLabel="Confirmer ?"
+            title="Suppression définitive"
+            onConfirm={() => dispatch({ type: 'DELETE_CHAPITRE', id: chapitre.id })}
+          />
         </div>
       </div>
     )

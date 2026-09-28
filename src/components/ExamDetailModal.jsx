@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../state/store.jsx'
 import { daysBetween, formatDaysLeft, formatDateFr } from '../logic/dates.js'
+import ConfirmButton from './ConfirmButton.jsx'
 
 const PREP_OPTIONS = [
   { value: 'urgent', label: 'Urgent' },
@@ -29,13 +30,6 @@ export default function ExamDetailModal({ exam, now, onClose }) {
   const save = () => {
     dispatch({ type: 'EDIT_EXAM', id: exam.id, patch: { notes: draft } })
     setEditing(false)
-  }
-
-  const onDelete = () => {
-    if (confirm(`Supprimer le partiel "${exam.matiere}" ?`)) {
-      dispatch({ type: 'DELETE_EXAM', id: exam.id })
-      onClose()
-    }
   }
 
   return (
@@ -114,9 +108,16 @@ export default function ExamDetailModal({ exam, now, onClose }) {
           )}
         </div>
 
-        <div className="pill" onClick={onDelete}>
-          Supprimer le partiel
-        </div>
+        <ConfirmButton
+          className="pill"
+          confirmClassName="pill pill-danger"
+          label="Supprimer le partiel"
+          confirmLabel="Confirmer ?"
+          onConfirm={() => {
+            dispatch({ type: 'DELETE_EXAM', id: exam.id })
+            onClose()
+          }}
+        />
       </div>
     </div>
   )
