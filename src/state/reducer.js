@@ -6,6 +6,7 @@ import {
   setForcedAlert,
   badgeStatus,
 } from '../logic/badges.js'
+import { isSameLocalDay } from '../logic/dates.js'
 
 // Logique d'état pure (reducer + migrations + fusion de sync) — aucune
 // dépendance à React ni à Firebase, pour pouvoir être réutilisée telle
@@ -302,15 +303,24 @@ export function reducer(state, action) {
         devoirs: state.devoirs.map((d) => {
           if (d.id !== action.id) return d
           const fait = !d.fait
-          // faitAt sert uniquement à savoir depuis quand un devoir est fait,
-          // pour le masquer automatiquement le jour suivant (cf.
-          // DevoirsScreen.jsx) plutôt que de compter sur une suppression
-          // manuelle — rien à faire ici si on décoche, juste l'oublier.
+          // Cocher un devoir l'envoie à la corbeille (faitAt = maintenant,
+          // cf. PURGE_TRASHED_DEVOIRS) ; le décocher = "Annuler" depuis la
+          // corbeille, qui l'en retire aussitôt (cf. DevoirsTrashModal.jsx).
           return { ...d, fait, faitAt: fait ? Date.now() : null }
         }),
       }
     case 'DELETE_DEVOIR':
       return { ...state, devoirs: state.devoirs.filter((d) => d.id !== action.id) }
+    // Vide la corbeille des devoirs cochés depuis un jour civil local
+    // antérieur à `action.now` — un devoir coché n'y reste donc qu'un jour
+    // avant d'être définitivement supprimé (cf. DevoirsScreen.jsx). Référence
+    // inchangée si rien à purger, pour ne pas déclencher un re-render/sync
+    // inutile à chaque appel périodique (cf. App.jsx).
+    case 'PURGE_TRASHED_DEVOIRS': {
+      const isStale = (d) => d.fait && d.faitAt && !isSameLocalDay(d.faitAt, action.now)
+      if (!state.devoirs.some(isStale)) return state
+      return { ...state, devoirs: state.devoirs.filter((d) => !isStale(d)) }
+    }
     case 'ADD_EXAM': {
       const exam = {
         id: newId('exam'),
