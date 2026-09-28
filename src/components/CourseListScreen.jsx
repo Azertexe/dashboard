@@ -17,8 +17,11 @@ export default function CourseListScreen({ chapitres, side, now, onGoHome, onOpe
         {COURSES.map((course) => {
           const ch = chapitres
             .filter((c) => c.courseId === course.id && c.side === side)
-            .sort((a, b) => b.createdAt - a.createdAt)
-          const shown = ch.slice(0, 2)
+            .sort((a, b) => a.createdAt - b.createdAt)
+          // Aperçu = les chapitres les plus récents (les plus pertinents en un
+          // coup d'œil), mais affichés dans le même ordre chronologique que le
+          // reste de l'appli (le plus ancien des deux en premier).
+          const shown = ch.slice(-2)
           const rest = ch.length - shown.length
 
           return (

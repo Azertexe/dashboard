@@ -13,7 +13,7 @@ export function toMarkdown(state, now = Date.now()) {
   for (const course of COURSES) {
     const ch = state.chapitres
       .filter((c) => c.courseId === course.id)
-      .sort((a, b) => b.createdAt - a.createdAt)
+      .sort((a, b) => a.createdAt - b.createdAt)
     if (ch.length === 0) continue
     lines.push(`## ${course.nom}`, '')
     for (const side of ['cours', 'td']) {
