@@ -1,4 +1,4 @@
-// Liste fixe des matières suivies (confirmée avec l'utilisateur — 7 cours).
+// Liste fixe des matières suivies (confirmée avec l'utilisateur).
 // `hue` donne à chaque matière sa propre teinte (bordure/pastille) pour les
 // distinguer visuellement dans les listes — sans rapport avec la couleur des
 // badges de révision, qui reste indexée sur l'urgence (rouge/orange/jaune/vert).
@@ -8,8 +8,6 @@ export const COURSES = [
   { id: 'optique-coherente', nom: 'Optique cohérente', hue: 190 },
   { id: 'mecanique-analytique', nom: 'Mécanique analytique', hue: 40 },
   { id: 'electromagnetisme', nom: 'Électromagnétisme', hue: 150 },
-  { id: 'anglais', nom: 'Anglais', hue: 335 },
-  { id: 'informatique', nom: 'Informatique', hue: 95 },
 ]
 
 export function courseName(courseId) {
