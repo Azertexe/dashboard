@@ -124,6 +124,13 @@ export function migrateChapitre(c) {
     // (ancien choix "un badge par partie") n'existe plus : un chapitre n'a
     // toujours qu'un seul badge, quel que soit son sommaire.
     parties: (c.parties ?? []).map(migratePartie),
+    // Position d'affichage dans la liste (cf. SET_CHAPITRE_POSITION) — par
+    // défaut égale à createdAt, donc identique au tri chronologique existant
+    // tant que personne n'a forcé de position à la main. Un chapitre
+    // recréé après une suppression accidentelle a un createdAt tout récent
+    // et atterrit sinon en bas de liste ; forcer sa position le remet là où
+    // il devrait être sans devoir re-taper tout le sommaire dans le bon ordre.
+    ordre: c.ordre ?? c.createdAt,
   }
 }
 
@@ -215,6 +222,7 @@ function updateSousPartie(state, chapitreId, partieId, sousPartieId, fn) {
 export function reducer(state, action) {
   switch (action.type) {
     case 'ADD_CHAPITRE': {
+      const now = Date.now()
       const chapitre = {
         id: newId('ch'),
         courseId: action.courseId,
@@ -225,7 +233,8 @@ export function reducer(state, action) {
         badgeTD: emptyBadge(),
         badgeCours: emptyBadge(),
         commentaires: '',
-        createdAt: Date.now(),
+        createdAt: now,
+        ordre: now, // position d'affichage — cf. migrateChapitre/SET_CHAPITRE_POSITION
         parties: [], // sommaire (plan) du chapitre — voir ADD_PARTIE/ADD_SOUS_PARTIE, sans rapport avec le badge
       }
       return { ...state, chapitres: [...state.chapitres, chapitre] }
@@ -238,6 +247,31 @@ export function reducer(state, action) {
       return {
         ...state,
         chapitres: state.chapitres.map((c) => (c.id === action.id ? { ...c, ...patch } : c)),
+      }
+    }
+    // Force la position d'affichage d'un chapitre parmi ses "frères" (même
+    // matière ET même côté Cours/TD — le seul groupe dans lequel un ordre a
+    // un sens, cf. tri de CourseDetailScreen/CourseListScreen/exportData).
+    // `position` est un rang 1-based tel que vu par l'utilisateur ; on
+    // retire le chapitre visé de la liste triée de ses frères, on le
+    // réinsère à ce rang (borné à la taille du groupe), puis on réattribue
+    // un `ordre` entier séquentiel à TOUT le groupe — pas seulement au
+    // chapitre déplacé — pour que l'ordre reste total et sans collision,
+    // sans jamais toucher aux chapitres des autres matières/côtés.
+    case 'SET_CHAPITRE_POSITION': {
+      const target = state.chapitres.find((c) => c.id === action.id)
+      if (!target) return state
+      const siblingIds = state.chapitres
+        .filter((c) => c.courseId === target.courseId && c.side === target.side)
+        .sort((a, b) => (a.ordre ?? a.createdAt) - (b.ordre ?? b.createdAt))
+        .map((c) => c.id)
+      const withoutTarget = siblingIds.filter((sid) => sid !== action.id)
+      const clamped = Math.max(1, Math.min(action.position, withoutTarget.length + 1))
+      withoutTarget.splice(clamped - 1, 0, action.id)
+      const ordreById = new Map(withoutTarget.map((sid, i) => [sid, i]))
+      return {
+        ...state,
+        chapitres: state.chapitres.map((c) => (ordreById.has(c.id) ? { ...c, ordre: ordreById.get(c.id) } : c)),
       }
     }
     case 'DELETE_CHAPITRE':
