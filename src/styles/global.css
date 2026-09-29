@@ -1487,8 +1487,11 @@ select {
      BackgroundSlideshow.jsx), et a besoin de plus de flou que les autres
      panneaux pour que les onglets restent distincts quelle que soit la
      photo affichée derrière. Fond blanc translucide (comme le reste du
-     liquid glass) plutôt que sombre, une fois le vrai flou en place. */
-  background: rgba(255, 255, 255, 0.16);
+     liquid glass) plutôt que sombre, une fois le vrai flou en place.
+     Opacité doublée (0.16 → 0.34) : sur une photo de fond très claire/
+     lumineuse (ex. ville de nuit), le flou seul laissait encore trop
+     transparaître le détail derrière pour bien distinguer les onglets. */
+  background: rgba(255, 255, 255, 0.34);
   backdrop-filter: blur(48px) saturate(1.7);
 }
 
@@ -1528,6 +1531,9 @@ select {
     font: 400 11px var(--font-mono);
     letter-spacing: 0.06em;
     color: var(--text-dim);
+    /* Filet de sécurité pour la lisibilité, indépendant du flou : la photo
+       de fond change et peut être très claire pile derrière la barre. */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
     cursor: pointer;
     user-select: none;
     transition: background 0.18s ease, transform 0.15s ease;
@@ -1580,6 +1586,7 @@ select {
   font: 400 11px var(--font-mono);
   letter-spacing: 0.06em;
   color: var(--text-dim);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   cursor: pointer;
   user-select: none;
   transition: background 0.18s ease, transform 0.15s ease;
