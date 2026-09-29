@@ -1488,11 +1488,12 @@ select {
      panneaux pour que les onglets restent distincts quelle que soit la
      photo affichée derrière. Fond blanc translucide (comme le reste du
      liquid glass) plutôt que sombre, une fois le vrai flou en place.
-     Opacité doublée (0.16 → 0.34) : sur une photo de fond très claire/
-     lumineuse (ex. ville de nuit), le flou seul laissait encore trop
-     transparaître le détail derrière pour bien distinguer les onglets. */
-  background: rgba(255, 255, 255, 0.34);
-  backdrop-filter: blur(48px) saturate(1.7);
+     Le 0.34 essayé ensuite rendait la barre trop grise/opaque (retour
+     utilisateur) — ce qui manquait, c'est du flou, pas du remplissage :
+     opacité ramenée proche de l'origine, blur nettement monté (48→72px)
+     et saturate relevé pour compenser le délavage que le flou seul cause. */
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(72px) saturate(2.1);
 }
 
 @media (max-width: 640px) {
