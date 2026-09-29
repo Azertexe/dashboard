@@ -27,16 +27,49 @@ export function emptyState() {
     history: [], // { id, at, chapitreId, courseId, side, level } — un événement par couleur VALIDÉE (clic réel), pour le graphe de progression
     pushSubscriptions: [], // { endpoint, keys: {p256dh, auth} } — un par appareil abonné aux notifications push (optionnel, voir mcp-server/)
     lastPushSentDate: null, // 'YYYY-MM-DD' — évite d'envoyer plus d'un résumé push par jour (cf. mcp-server/src/index.js)
+    // { id, at } — un par suppression (chapitre, devoir, partiel, partie,
+    // sous-partie, lien de ressource, poly). Sans ça, la fusion additive de
+    // mergeStates (conçue pour ne jamais perdre un AJOUT concurrent) ne peut
+    // pas distinguer "un autre appareil vient d'ajouter ceci" de "je viens
+    // de le supprimer, le serveur ne le sait juste pas encore" — dans les
+    // deux cas l'élément manque en local mais existe côté distant, donc sans
+    // tombstone la fusion le "ressuscite" en le rajoutant. Concrètement,
+    // sans ce champ, une suppression était annulée dès le cycle
+    // sync→fusion→réécriture suivant, y compris sur l'appareil qui vient de
+    // supprimer (son propre push relit le distant, pas encore à jour, juste
+    // avant d'écrire). Voir mergeStates/mergeById plus bas.
+    deletedIds: [],
   }
 }
 
 // Le journal ne garde que les N derniers événements, pour ne pas laisser le
 // document Firestore grossir indéfiniment au fil des années.
 const MAX_HISTORY = 300
+// Même principe pour les tombstones de suppression : inutile de les garder
+// indéfiniment une fois que tous les appareils ont eu l'occasion de
+// synchroniser (largement le cas après quelques centaines de suppressions).
+const MAX_DELETED_IDS = 500
 
 function appendHistory(state, event) {
   const history = [...state.history, event]
   return history.length > MAX_HISTORY ? history.slice(history.length - MAX_HISTORY) : history
+}
+
+function appendTombstones(state, ids) {
+  const now = Date.now()
+  const deletedIds = [...state.deletedIds, ...ids.map((id) => ({ id, at: now }))]
+  return deletedIds.length > MAX_DELETED_IDS ? deletedIds.slice(deletedIds.length - MAX_DELETED_IDS) : deletedIds
+}
+
+function appendTombstone(state, id) {
+  return appendTombstones(state, [id])
+}
+
+// revision/methode n'ont pas d'id propre (un seul lien par matière et par
+// champ, pas un tableau) — clé synthétique pour pouvoir quand même les
+// tombstoner comme le reste.
+function resourceLinkTombstoneId(courseId, kind) {
+  return `resource:${courseId}:${kind}`
 }
 
 // Ancien format : `statut`/`activatedAt` vivaient sur le chapitre (partagés
@@ -208,7 +241,11 @@ export function reducer(state, action) {
       }
     }
     case 'DELETE_CHAPITRE':
-      return { ...state, chapitres: state.chapitres.filter((c) => c.id !== action.id) }
+      return {
+        ...state,
+        chapitres: state.chapitres.filter((c) => c.id !== action.id),
+        deletedIds: appendTombstone(state, action.id),
+      }
     case 'ACTIVATE_CHAPITRE':
       return updateChapitre(state, action.id, (c) => activateChapitre(c, action.side))
     case 'MARK_BADGE': {
@@ -262,6 +299,7 @@ export function reducer(state, action) {
             ? { ...c, parties: c.parties.filter((p) => p.id !== action.partieId) }
             : c,
         ),
+        deletedIds: appendTombstone(state, action.partieId),
       }
     case 'ADD_SOUS_PARTIE': {
       const sousPartie = { id: newId('sp'), nom: action.nom, createdAt: Date.now() }
@@ -281,10 +319,13 @@ export function reducer(state, action) {
       }))
     }
     case 'DELETE_SOUS_PARTIE':
-      return updatePartie(state, action.chapitreId, action.partieId, (p) => ({
-        ...p,
-        sousParties: p.sousParties.filter((sp) => sp.id !== action.sousPartieId),
-      }))
+      return {
+        ...updatePartie(state, action.chapitreId, action.partieId, (p) => ({
+          ...p,
+          sousParties: p.sousParties.filter((sp) => sp.id !== action.sousPartieId),
+        })),
+        deletedIds: appendTombstone(state, action.sousPartieId),
+      }
     case 'ADD_DEVOIR': {
       const devoir = {
         id: newId('dev'),
@@ -310,16 +351,27 @@ export function reducer(state, action) {
         }),
       }
     case 'DELETE_DEVOIR':
-      return { ...state, devoirs: state.devoirs.filter((d) => d.id !== action.id) }
+      return {
+        ...state,
+        devoirs: state.devoirs.filter((d) => d.id !== action.id),
+        deletedIds: appendTombstone(state, action.id),
+      }
     // Vide la corbeille des devoirs cochés depuis un jour civil local
     // antérieur à `action.now` — un devoir coché n'y reste donc qu'un jour
     // avant d'être définitivement supprimé (cf. DevoirsScreen.jsx). Référence
     // inchangée si rien à purger, pour ne pas déclencher un re-render/sync
-    // inutile à chaque appel périodique (cf. App.jsx).
+    // inutile à chaque appel périodique (cf. App.jsx). Tombstone chaque
+    // devoir purgé, sinon un appareil qui n'a pas encore vu la purge (ou le
+    // propre prochain cycle de sync de cet appareil) le ressuscite.
     case 'PURGE_TRASHED_DEVOIRS': {
       const isStale = (d) => d.fait && d.faitAt && !isSameLocalDay(d.faitAt, action.now)
-      if (!state.devoirs.some(isStale)) return state
-      return { ...state, devoirs: state.devoirs.filter((d) => !isStale(d)) }
+      const stale = state.devoirs.filter(isStale)
+      if (stale.length === 0) return state
+      return {
+        ...state,
+        devoirs: state.devoirs.filter((d) => !isStale(d)),
+        deletedIds: appendTombstones(state, stale.map((d) => d.id)),
+      }
     }
     case 'ADD_EXAM': {
       const exam = {
@@ -343,7 +395,11 @@ export function reducer(state, action) {
       }
     }
     case 'DELETE_EXAM':
-      return { ...state, exams: state.exams.filter((e) => e.id !== action.id) }
+      return {
+        ...state,
+        exams: state.exams.filter((e) => e.id !== action.id),
+        deletedIds: appendTombstone(state, action.id),
+      }
     case 'SET_RESOURCE_LINK': {
       const bucket = state.resources[action.courseId] || { revision: null, methode: null, polys: [] }
       return {
@@ -359,6 +415,7 @@ export function reducer(state, action) {
       return {
         ...state,
         resources: { ...state.resources, [action.courseId]: { ...bucket, [action.kind]: null } },
+        deletedIds: appendTombstone(state, resourceLinkTombstoneId(action.courseId, action.kind)),
       }
     }
     case 'ADD_POLY': {
@@ -380,6 +437,7 @@ export function reducer(state, action) {
           ...state.resources,
           [action.courseId]: { ...bucket, polys: bucket.polys.filter((p) => p.id !== action.polyId) },
         },
+        deletedIds: appendTombstone(state, action.polyId),
       }
     }
     case 'SET_THEME':
@@ -402,20 +460,30 @@ export function reducer(state, action) {
 }
 
 // Fusionne un tableau distant dans le tableau local en n'ajoutant QUE ce qui
-// manque localement (union par id) — jamais de suppression, jamais d'écrasement
-// d'un élément qu'on a déjà. Utilisé des deux côtés de la sync (envoi ET
-// réception) pour qu'un appareil ne puisse jamais effacer silencieusement ce
-// qu'un autre vient d'ajouter, même en cas d'événement mal chronométré (ex. un
-// partiel tapé pile pendant qu'une mise à jour distante arrive). Contrepartie
-// assumée : une suppression faite sur un appareil peut être "ressuscitée" si
-// l'autre appareil pousse encore l'ancienne version avant d'avoir vu la
-// suppression — accepté, perdre une donnée tapée est pire qu'un doublon à
-// re-supprimer.
-export function mergeById(localArr, remoteArr) {
-  if (!remoteArr?.length) return localArr
-  const localIds = new Set(localArr.map((x) => x.id))
-  const onlyRemote = remoteArr.filter((x) => !localIds.has(x.id))
-  return onlyRemote.length ? [...localArr, ...onlyRemote] : localArr
+// manque localement (union par id) — jamais d'écrasement d'un élément qu'on a
+// déjà. Utilisé des deux côtés de la sync (envoi ET réception) pour qu'un
+// appareil ne puisse jamais effacer silencieusement ce qu'un autre vient
+// d'ajouter, même en cas d'événement mal chronométré (ex. un partiel tapé
+// pile pendant qu'une mise à jour distante arrive).
+//
+// `deletedIds` (les tombstones de mergeStates) est ce qui distingue un ajout
+// concurrent (à garder) d'une suppression pas encore vue par l'autre côté (à
+// ne PAS ressusciter) — sans lui, tout id absent du local mais présent côté
+// distant serait traité comme un ajout, y compris juste après l'avoir
+// supprimé soi-même : le tout premier cycle sync→fusion→réécriture qui suit
+// une suppression relit encore l'ancien distant (pas à jour) et rajoutait
+// l'élément avant même que la suppression ait eu la moindre chance d'être
+// écrite. Avec `deletedIds`, on retire aussi les entrées déjà tombstonées du
+// LOCAL (pas seulement du distant) : un appareil resté longtemps hors ligne,
+// qui a donc encore une copie qu'un autre a supprimée entre-temps, la perd
+// dès qu'il reçoit ce tombstone — plutôt que de la garder indéfiniment et de
+// risquer de la ressusciter à son tour à son prochain push.
+export function mergeById(localArr, remoteArr, deletedIds = new Set()) {
+  const local = deletedIds.size ? localArr.filter((x) => !deletedIds.has(x.id)) : localArr
+  if (!remoteArr?.length) return local
+  const localIds = new Set(local.map((x) => x.id))
+  const onlyRemote = remoteArr.filter((x) => !localIds.has(x.id) && !deletedIds.has(x.id))
+  return onlyRemote.length ? [...local, ...onlyRemote] : local
 }
 
 // Même principe que mergeById, mais par `endpoint` — les abonnements push
@@ -438,28 +506,30 @@ function mergeByEndpoint(localArr, remoteArr) {
 // appareil (c'est le bug que ça corrige). On refait donc la même fusion
 // additive par id, mais un niveau plus profond : partie par partie, puis
 // sous-partie par sous-partie.
-function mergeSommaire(localParties, remoteParties) {
-  if (!remoteParties?.length) return localParties
-  const localIds = new Set(localParties.map((p) => p.id))
-  const merged = localParties.map((p) => {
+function mergeSommaire(localParties, remoteParties, deletedIds) {
+  const local = deletedIds.size ? localParties.filter((p) => !deletedIds.has(p.id)) : localParties
+  if (!remoteParties?.length) return local
+  const localIds = new Set(local.map((p) => p.id))
+  const merged = local.map((p) => {
     const remoteP = remoteParties.find((rp) => rp.id === p.id)
     if (!remoteP) return p
-    return { ...p, sousParties: mergeById(p.sousParties ?? [], remoteP.sousParties) }
+    return { ...p, sousParties: mergeById(p.sousParties ?? [], remoteP.sousParties, deletedIds) }
   })
-  const onlyRemote = remoteParties.filter((rp) => !localIds.has(rp.id))
+  const onlyRemote = remoteParties.filter((rp) => !localIds.has(rp.id) && !deletedIds.has(rp.id))
   return onlyRemote.length ? [...merged, ...onlyRemote] : merged
 }
 
-function mergeChapitres(localArr, remoteArr) {
-  if (!remoteArr?.length) return localArr
+function mergeChapitres(localArr, remoteArr, deletedIds) {
+  const local = deletedIds.size ? localArr.filter((c) => !deletedIds.has(c.id)) : localArr
+  if (!remoteArr?.length) return local
   const remoteById = new Map(remoteArr.map((c) => [c.id, c]))
-  const merged = localArr.map((c) => {
+  const merged = local.map((c) => {
     const remoteC = remoteById.get(c.id)
     if (!remoteC) return c
-    return { ...c, parties: mergeSommaire(c.parties ?? [], remoteC.parties) }
+    return { ...c, parties: mergeSommaire(c.parties ?? [], remoteC.parties, deletedIds) }
   })
-  const localIds = new Set(localArr.map((c) => c.id))
-  const onlyRemote = remoteArr.filter((c) => !localIds.has(c.id))
+  const localIds = new Set(local.map((c) => c.id))
+  const onlyRemote = remoteArr.filter((c) => !localIds.has(c.id) && !deletedIds.has(c.id))
   return onlyRemote.length ? [...merged, ...onlyRemote] : merged
 }
 
@@ -471,21 +541,28 @@ function mergeChapitres(localArr, remoteArr) {
 // après une réinstallation / un cache vidé) efface silencieusement au
 // prochain push tout lien ajouté ailleurs (ex. via le serveur MCP). Même
 // principe de fusion additive : par matière, puis par champ.
-function mergeResourceBucket(localBucket, remoteBucket) {
-  if (!remoteBucket) return localBucket ?? null
+function mergeResourceBucket(courseId, localBucket, remoteBucket, deletedIds) {
+  const revisionGone = deletedIds.has(resourceLinkTombstoneId(courseId, 'revision'))
+  const methodeGone = deletedIds.has(resourceLinkTombstoneId(courseId, 'methode'))
+  if (!remoteBucket) {
+    if (!revisionGone && !methodeGone) return localBucket ?? null
+    const local = localBucket ?? { revision: null, methode: null, polys: [] }
+    return { ...local, revision: revisionGone ? null : local.revision, methode: methodeGone ? null : local.methode }
+  }
   const local = localBucket ?? { revision: null, methode: null, polys: [] }
   return {
-    revision: local.revision ?? remoteBucket.revision ?? null,
-    methode: local.methode ?? remoteBucket.methode ?? null,
-    polys: mergeById(local.polys ?? [], remoteBucket.polys ?? []),
+    revision: revisionGone ? null : (local.revision ?? remoteBucket.revision ?? null),
+    methode: methodeGone ? null : (local.methode ?? remoteBucket.methode ?? null),
+    polys: mergeById(local.polys ?? [], remoteBucket.polys ?? [], deletedIds),
   }
 }
 
-function mergeResources(localRes, remoteRes) {
-  if (!remoteRes) return localRes
+function mergeResources(localRes, remoteRes, deletedIds) {
+  if (!remoteRes && deletedIds.size === 0) return localRes
   const merged = { ...localRes }
-  for (const courseId of Object.keys(remoteRes)) {
-    merged[courseId] = mergeResourceBucket(localRes?.[courseId], remoteRes[courseId])
+  const courseIds = new Set([...Object.keys(localRes ?? {}), ...Object.keys(remoteRes ?? {})])
+  for (const courseId of courseIds) {
+    merged[courseId] = mergeResourceBucket(courseId, localRes?.[courseId], remoteRes?.[courseId], deletedIds)
   }
   return merged
 }
@@ -501,16 +578,33 @@ function mergeHistory(localArr, remoteArr) {
   return [...merged].sort((a, b) => a.at - b.at).slice(merged.length - MAX_HISTORY)
 }
 
+// Les tombstones eux-mêmes se fusionnent en additif classique (par id) — un
+// appareil doit connaître les suppressions faites ailleurs pour ne pas les
+// ressusciter à son tour — plafonné comme `history`, en gardant les plus
+// récents.
+function mergeTombstones(localArr, remoteArr) {
+  const merged = mergeById(localArr ?? [], remoteArr)
+  if (merged.length <= MAX_DELETED_IDS) return merged
+  return [...merged].sort((a, b) => a.at - b.at).slice(merged.length - MAX_DELETED_IDS)
+}
+
 export function mergeStates(local, remote) {
   if (!remote) return local
+  // Union des tombstones LOCAUX et DISTANTS : une suppression faite sur cet
+  // appareil doit continuer à se protéger elle-même (local), et une
+  // suppression faite ailleurs et déjà remontée au serveur doit aussi
+  // empêcher CET appareil de ressusciter sa propre copie périmée (distant) —
+  // cf. le commentaire de mergeById plus haut.
+  const deletedIds = new Set([...(local.deletedIds ?? []), ...(remote.deletedIds ?? [])].map((d) => d.id))
   return {
     ...local,
-    exams: mergeById(local.exams, remote.exams),
-    devoirs: mergeById(local.devoirs, remote.devoirs),
-    chapitres: mergeChapitres(local.chapitres, remote.chapitres),
-    resources: mergeResources(local.resources, remote.resources),
+    exams: mergeById(local.exams, remote.exams, deletedIds),
+    devoirs: mergeById(local.devoirs, remote.devoirs, deletedIds),
+    chapitres: mergeChapitres(local.chapitres, remote.chapitres, deletedIds),
+    resources: mergeResources(local.resources, remote.resources, deletedIds),
     history: mergeHistory(local.history, remote.history),
     pushSubscriptions: mergeByEndpoint(local.pushSubscriptions, remote.pushSubscriptions),
+    deletedIds: mergeTombstones(local.deletedIds, remote.deletedIds),
     // Écrit uniquement côté serveur (cron de notifications push dans
     // mcp-server/, jamais par l'app) — on prend toujours la valeur distante
     // la plus fraîche plutôt que de risquer d'écraser son garde-fou
