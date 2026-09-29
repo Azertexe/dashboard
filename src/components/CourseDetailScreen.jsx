@@ -22,7 +22,7 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
 
   const ch = chapitres
     .filter((c) => c.courseId === courseId && c.side === side)
-    .sort((a, b) => a.createdAt - b.createdAt)
+    .sort((a, b) => (a.ordre ?? a.createdAt) - (b.ordre ?? b.createdAt))
   const filtered = search.trim()
     ? ch.filter((c) => normalize(c.nom).includes(normalize(search)))
     : ch
@@ -94,7 +94,15 @@ export default function CourseDetailScreen({ courseId, chapitres, side, now, onB
         {filtered.length > 0 && (
           <div className="chapitre-list">
             {filtered.map((c) => (
-              <ChapitreRowFull key={c.id} chapitre={c} side={side} now={now} onOpenParties={onOpenParties} />
+              <ChapitreRowFull
+                key={c.id}
+                chapitre={c}
+                side={side}
+                now={now}
+                position={ch.findIndex((sibling) => sibling.id === c.id) + 1}
+                siblingsCount={ch.length}
+                onOpenParties={onOpenParties}
+              />
             ))}
           </div>
         )}

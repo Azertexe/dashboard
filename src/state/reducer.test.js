@@ -226,6 +226,56 @@ describe('sommaire (parties/sous-parties) — sans rapport avec le badge, qui re
   })
 })
 
+describe("SET_CHAPITRE_POSITION — forcer la position d'un chapitre (ex. recréé après une suppression accidentelle)", () => {
+  function chapitre(id, courseId, side, ordre) {
+    return { id, courseId, side, nom: id, ordre, createdAt: ordre, parties: [] }
+  }
+
+  it('déplace le chapitre visé au rang demandé et réindexe ses frères (même matière + même côté) en conséquence', () => {
+    const state = {
+      ...emptyState(),
+      chapitres: [
+        chapitre('a', 'optique-coherente', 'cours', 0),
+        chapitre('b', 'optique-coherente', 'cours', 1),
+        chapitre('c', 'optique-coherente', 'cours', 2),
+      ],
+    }
+    // "c" (recréé après une suppression accidentelle) doit reprendre la 1ère place.
+    const next = reducer(state, { type: 'SET_CHAPITRE_POSITION', id: 'c', position: 1 })
+    const order = [...next.chapitres].sort((x, y) => x.ordre - y.ordre).map((c) => c.id)
+    expect(order).toEqual(['c', 'a', 'b'])
+  })
+
+  it('une position hors bornes est bornée à la taille du groupe (jamais de trou ni de plantage)', () => {
+    const state = {
+      ...emptyState(),
+      chapitres: [chapitre('a', 'optique-coherente', 'cours', 0), chapitre('b', 'optique-coherente', 'cours', 1)],
+    }
+    const tropLoin = reducer(state, { type: 'SET_CHAPITRE_POSITION', id: 'a', position: 99 })
+    expect([...tropLoin.chapitres].sort((x, y) => x.ordre - y.ordre).map((c) => c.id)).toEqual(['b', 'a'])
+
+    const negatif = reducer(state, { type: 'SET_CHAPITRE_POSITION', id: 'b', position: -5 })
+    expect([...negatif.chapitres].sort((x, y) => x.ordre - y.ordre).map((c) => c.id)).toEqual(['b', 'a'])
+  })
+
+  it("ne touche jamais les chapitres d'une autre matière ou d'un autre côté (Cours/TD)", () => {
+    const autreMatiere = chapitre('x', 'mecanique-analytique', 'cours', 0)
+    const autreCote = chapitre('y', 'optique-coherente', 'td', 0)
+    const state = {
+      ...emptyState(),
+      chapitres: [chapitre('a', 'optique-coherente', 'cours', 0), chapitre('b', 'optique-coherente', 'cours', 1), autreMatiere, autreCote],
+    }
+    const next = reducer(state, { type: 'SET_CHAPITRE_POSITION', id: 'b', position: 1 })
+    expect(next.chapitres.find((c) => c.id === 'x').ordre).toBe(0)
+    expect(next.chapitres.find((c) => c.id === 'y').ordre).toBe(0)
+  })
+
+  it('un id inconnu ne fait rien (pas de plantage)', () => {
+    const state = { ...emptyState(), chapitres: [chapitre('a', 'optique-coherente', 'cours', 0)] }
+    expect(reducer(state, { type: 'SET_CHAPITRE_POSITION', id: 'inconnu', position: 1 })).toBe(state)
+  })
+})
+
 describe('migration : anciennes parties à badge → sommaire (juste le nom, plus de badge)', () => {
   it('garde le nom des anciennes parties et laisse leurs sous-parties vides, sans partitionMode', () => {
     const legacy = {
@@ -244,6 +294,16 @@ describe('migration : anciennes parties à badge → sommaire (juste le nom, plu
     expect(migrated.parties).toEqual([{ id: 'pt-1', nom: 'Exercice 1', createdAt: expect.any(Number), sousParties: [] }])
     expect(migrated.parties[0]).not.toHaveProperty('badgeCours')
     expect(migrated.parties[0]).not.toHaveProperty('description')
+  })
+
+  it("un chapitre sans `ordre` (ancien format) hérite de son createdAt — tri chronologique inchangé tant qu'on n'a rien forcé", () => {
+    const legacy = { id: 'ch-1', courseId: 'optique-coherente', side: 'cours', nom: 'Ch', createdAt: 12345 }
+    expect(migrateChapitre(legacy).ordre).toBe(12345)
+  })
+
+  it('un `ordre` déjà présent (position forcée à la main) est conservé tel quel à la migration', () => {
+    const legacy = { id: 'ch-1', courseId: 'optique-coherente', side: 'cours', nom: 'Ch', createdAt: 12345, ordre: 0 }
+    expect(migrateChapitre(legacy).ordre).toBe(0)
   })
 })
 

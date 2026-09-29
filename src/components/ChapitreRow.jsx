@@ -20,7 +20,7 @@ export function ChapitreRowCompact({ chapitre, side, now }) {
  * du badge, cf. onOpenParties) + crayon. Le crayon ouvre un panneau d'édition
  * (métadonnées, badge/activation UNIQUEMENT pour le côté courant — Cours et
  * TD ne se croisent jamais sur le même écran). */
-export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
+export function ChapitreRowFull({ chapitre, side, now, position, siblingsCount, onOpenParties }) {
   const { dispatch } = useStore()
   const [editing, setEditing] = useState(false)
   const parties = chapitre.parties ?? []
@@ -29,6 +29,7 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
     description: chapitre.description,
     commentaires: chapitre.commentaires,
     etat: chapitre.etat,
+    position,
   }))
 
   const onActivate = (s) => dispatch({ type: 'ACTIVATE_CHAPITRE', id: chapitre.id, side: s })
@@ -38,11 +39,16 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
       description: chapitre.description,
       commentaires: chapitre.commentaires,
       etat: chapitre.etat,
+      position,
     })
     setEditing(true)
   }
   const saveEdit = () => {
-    dispatch({ type: 'EDIT_CHAPITRE', id: chapitre.id, patch: draft })
+    const { position: newPosition, ...patch } = draft
+    dispatch({ type: 'EDIT_CHAPITRE', id: chapitre.id, patch })
+    if (newPosition !== position) {
+      dispatch({ type: 'SET_CHAPITRE_POSITION', id: chapitre.id, position: newPosition })
+    }
     setEditing(false)
   }
 
@@ -98,6 +104,19 @@ export function ChapitreRowFull({ chapitre, side, now, onOpenParties }) {
           <div className="pill" onClick={() => onOpenParties(chapitre.id)}>
             {parties.length > 0 ? `${parties.length} partie${parties.length > 1 ? 's' : ''}` : 'Voir/ajouter'} →
           </div>
+        </div>
+        <div className="field-row">
+          <label>Position ({siblingsCount})</label>
+          <input
+            type="number"
+            min={1}
+            max={siblingsCount}
+            value={draft.position}
+            onChange={(e) => {
+              const v = Math.max(1, Math.min(siblingsCount, Number(e.target.value) || 1))
+              setDraft((d) => ({ ...d, position: v }))
+            }}
+          />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <div className="pill pill-accent" onClick={saveEdit}>
