@@ -8,6 +8,7 @@ vi.mock('./firestore.js', () => ({
 // Importés après le mock pour que tools.js reçoive les versions mockées.
 const { fetchState, writeState } = await import('./firestore.js')
 const { TOOLS } = await import('./tools.js')
+const { COURSES } = await import('../../src/data/courses.js')
 
 function tool(name) {
   return TOOLS.find((t) => t.name === name)
@@ -115,7 +116,7 @@ describe('get_state (lecture seule)', () => {
     expect(writeState).not.toHaveBeenCalled()
     expect(result.partiels[0]).toMatchObject({ id: 'exam-1', matiere: 'Optique' })
     expect(result.devoirs[0]).toMatchObject({ id: 'dev-1', nom: 'TP1' })
-    expect(result.matieres.length).toBe(7)
+    expect(result.matieres.length).toBe(COURSES.length)
   })
 
   it("résume aussi les ressources, indexées par nom de matière", async () => {
