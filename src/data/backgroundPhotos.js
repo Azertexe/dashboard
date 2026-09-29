@@ -14,7 +14,7 @@ export const BACKGROUND_PHOTOS = {
       'bg/glacier/desktop/03.webp',
       'bg/glacier/desktop/04.webp',
     ],
-    iphone: [],
+    iphone: ['bg/glacier/iphone/01.webp', 'bg/glacier/iphone/02.webp'],
   },
   volcanique: {
     desktop: [
