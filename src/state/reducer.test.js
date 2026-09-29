@@ -246,3 +246,97 @@ describe('migration : anciennes parties à badge → sommaire (juste le nom, plu
     expect(migrated.parties[0]).not.toHaveProperty('description')
   })
 })
+
+// Chaque suppression doit poser un tombstone (deletedIds) — sinon
+// mergeStates ne peut pas distinguer "je viens de supprimer ceci" d'"un
+// autre appareil vient d'ajouter ceci", et la fusion additive de la sync le
+// ressuscite au cycle suivant (bug signalé : "quand je supprime un chapitre
+// il réapparaît"). Voir store.test.js pour la reproduction complète au
+// niveau de mergeStates.
+describe('tombstones (deletedIds) posés par chaque suppression', () => {
+  it('DELETE_CHAPITRE pose un tombstone pour le chapitre supprimé', () => {
+    let state = reducer(emptyState(), { type: 'ADD_CHAPITRE', courseId: 'optique-coherente', side: 'cours', nom: 'Ch' })
+    const id = state.chapitres[0].id
+    state = reducer(state, { type: 'DELETE_CHAPITRE', id })
+    expect(state.deletedIds).toEqual([{ id, at: expect.any(Number) }])
+  })
+
+  it('DELETE_DEVOIR pose un tombstone pour le devoir supprimé', () => {
+    let state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
+    const id = state.devoirs[0].id
+    state = reducer(state, { type: 'DELETE_DEVOIR', id })
+    expect(state.deletedIds).toEqual([{ id, at: expect.any(Number) }])
+  })
+
+  it('PURGE_TRASHED_DEVOIRS pose un tombstone pour chaque devoir purgé', () => {
+    const hier = new Date('2026-10-01T10:00:00').getTime()
+    const aujourdhui = new Date('2026-10-02T09:00:00').getTime()
+    let state = reducer(emptyState(), { type: 'ADD_DEVOIR', nom: 'TP1', dateEcheance: '2026-10-01' })
+    const id = state.devoirs[0].id
+    state = { ...state, devoirs: [{ ...state.devoirs[0], fait: true, faitAt: hier }] }
+    state = reducer(state, { type: 'PURGE_TRASHED_DEVOIRS', now: aujourdhui })
+    expect(state.deletedIds).toEqual([{ id, at: expect.any(Number) }])
+  })
+
+  it('DELETE_EXAM pose un tombstone pour le partiel supprimé', () => {
+    let state = reducer(emptyState(), { type: 'ADD_EXAM', matiere: 'Optique', date: '2026-10-12' })
+    const id = state.exams[0].id
+    state = reducer(state, { type: 'DELETE_EXAM', id })
+    expect(state.deletedIds).toEqual([{ id, at: expect.any(Number) }])
+  })
+
+  it('DELETE_PARTIE pose un tombstone pour la partie supprimée', () => {
+    let state = reducer(emptyState(), { type: 'ADD_CHAPITRE', courseId: 'optique-coherente', side: 'cours', nom: 'Ch' })
+    const chapitreId = state.chapitres[0].id
+    state = reducer(state, { type: 'ADD_PARTIE', chapitreId, nom: 'Partie A' })
+    const partieId = state.chapitres[0].parties[0].id
+    state = reducer(state, { type: 'DELETE_PARTIE', chapitreId, partieId })
+    expect(state.deletedIds).toEqual([{ id: partieId, at: expect.any(Number) }])
+  })
+
+  it('DELETE_SOUS_PARTIE pose un tombstone pour la sous-partie supprimée', () => {
+    let state = reducer(emptyState(), { type: 'ADD_CHAPITRE', courseId: 'optique-coherente', side: 'cours', nom: 'Ch' })
+    const chapitreId = state.chapitres[0].id
+    state = reducer(state, { type: 'ADD_PARTIE', chapitreId, nom: 'Partie A' })
+    const partieId = state.chapitres[0].parties[0].id
+    state = reducer(state, { type: 'ADD_SOUS_PARTIE', chapitreId, partieId, nom: 'Sous 1' })
+    const sousPartieId = state.chapitres[0].parties[0].sousParties[0].id
+    state = reducer(state, { type: 'DELETE_SOUS_PARTIE', chapitreId, partieId, sousPartieId })
+    expect(state.deletedIds).toEqual([{ id: sousPartieId, at: expect.any(Number) }])
+  })
+
+  it('DELETE_RESOURCE_LINK pose un tombstone à clé synthétique (courseId + champ)', () => {
+    let state = reducer(emptyState(), {
+      type: 'SET_RESOURCE_LINK',
+      courseId: 'maths-physique',
+      kind: 'revision',
+      url: 'https://test.example/rev',
+      label: 'Révision',
+    })
+    state = reducer(state, { type: 'DELETE_RESOURCE_LINK', courseId: 'maths-physique', kind: 'revision' })
+    expect(state.deletedIds).toEqual([{ id: 'resource:maths-physique:revision', at: expect.any(Number) }])
+  })
+
+  it('DELETE_POLY pose un tombstone pour le poly supprimé', () => {
+    let state = reducer(emptyState(), {
+      type: 'ADD_POLY',
+      courseId: 'maths-physique',
+      url: 'https://test.example/poly',
+      label: 'Poly 1',
+    })
+    const polyId = state.resources['maths-physique'].polys[0].id
+    state = reducer(state, { type: 'DELETE_POLY', courseId: 'maths-physique', polyId })
+    expect(state.deletedIds).toEqual([{ id: polyId, at: expect.any(Number) }])
+  })
+
+  it('les tombstones ne dépassent pas 500 entrées — les plus anciennes tombent', () => {
+    const old = Array.from({ length: 500 }, (_, i) => ({ id: `d-${i}`, at: i }))
+    let state = reducer(emptyState(), { type: 'ADD_CHAPITRE', courseId: 'optique-coherente', side: 'cours', nom: 'Ch' })
+    state = { ...state, deletedIds: old }
+    const id = state.chapitres[0].id
+    state = reducer(state, { type: 'DELETE_CHAPITRE', id })
+    expect(state.deletedIds).toHaveLength(500)
+    expect(state.deletedIds.map((d) => d.id)).not.toContain('d-0')
+    expect(state.deletedIds.map((d) => d.id)).toContain(id)
+  })
+})

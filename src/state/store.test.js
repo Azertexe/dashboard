@@ -26,6 +26,20 @@ describe('mergeById (fusion additive de la sync Firebase)', () => {
     const remote = [{ id: 'a' }, { id: 'b' }]
     expect(mergeById([], remote)).toEqual(remote)
   })
+
+  it("un id tombstoné (deletedIds) n'est jamais ré-ajouté depuis le distant, même absent du local", () => {
+    const local = [{ id: 'a' }]
+    const remote = [{ id: 'a' }, { id: 'b' }]
+    const deletedIds = new Set(['b'])
+    expect(mergeById(local, remote, deletedIds)).toEqual([{ id: 'a' }])
+  })
+
+  it("un id tombstoné est aussi retiré du LOCAL s'il y est encore (appareil resté hors ligne, suppression faite ailleurs)", () => {
+    const local = [{ id: 'a' }, { id: 'b' }]
+    const remote = [{ id: 'a' }]
+    const deletedIds = new Set(['b'])
+    expect(mergeById(local, remote, deletedIds)).toEqual([{ id: 'a' }])
+  })
 })
 
 describe('mergeStates', () => {
@@ -191,5 +205,95 @@ describe('mergeStates', () => {
     // Si le distant n'a rien (jamais envoyé), on garde ce que le local avait déjà reçu.
     const remoteEmpty = { exams: [], devoirs: [], chapitres: [] }
     expect(mergeStates(local, remoteEmpty).lastPushSentDate).toBe('2026-09-20')
+  })
+
+  // Bug signalé : "quand je supprime un chapitre il réapparaît". Scénario
+  // exact : je supprime un chapitre → mon state local ne l'a plus → mon
+  // propre effet de sync (store.jsx) relit le distant AVANT d'avoir eu le
+  // temps d'y écrire la suppression → mergeStates(local sans le chapitre,
+  // distant qui l'a encore) le traitait comme un AJOUT distant et le
+  // rajoutait, y compris dans ce que je repoussais sur Firestore juste
+  // après (la suppression n'était donc jamais écrite du tout).
+  it("un chapitre supprimé localement ne réapparaît PAS même si le distant (pas encore à jour) l'a encore — y compris juste après l'avoir supprimé soi-même", () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      // Le chapitre vient d'être supprimé : deletedIds le tombstone.
+      chapitres: [{ id: 'c1', nom: 'Reste' }],
+      deletedIds: [{ id: 'c2', at: Date.now() }],
+    }
+    // Le distant n'a pas encore vu la suppression (c'est justement le push
+    // qui doit l'y écrire) : il a toujours c2.
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [
+        { id: 'c1', nom: 'Reste' },
+        { id: 'c2', nom: 'Supprimé — ne doit pas revenir' },
+      ],
+    }
+    const merged = mergeStates(local, remote)
+    expect(merged.chapitres.map((c) => c.id)).toEqual(['c1'])
+  })
+
+  it("un chapitre supprimé sur UN AUTRE appareil (déjà remonté au serveur) disparaît aussi d'un appareil resté hors ligne qui en avait encore une copie", () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      // Cet appareil n'a jamais supprimé quoi que ce soit lui-même — il a
+      // juste une copie périmée de c2, supprimé ailleurs entre-temps.
+      chapitres: [
+        { id: 'c1', nom: 'Reste' },
+        { id: 'c2', nom: 'Supprimé ailleurs' },
+      ],
+      deletedIds: [],
+    }
+    // Le serveur a déjà vu la suppression de c2 (un autre appareil l'a
+    // poussée) : il ne l'a plus dans ses chapitres, et porte le tombstone.
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [{ id: 'c1', nom: 'Reste' }],
+      deletedIds: [{ id: 'c2', at: Date.now() }],
+    }
+    const merged = mergeStates(local, remote)
+    expect(merged.chapitres.map((c) => c.id)).toEqual(['c1'])
+  })
+
+  it('un lien de ressource supprimé localement (revision) ne réapparaît pas si le distant (pas encore à jour) le porte encore', () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      resources: { maths: { revision: null, methode: null, polys: [] } },
+      deletedIds: [{ id: 'resource:maths:revision', at: Date.now() }],
+    }
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      resources: { maths: { revision: { url: 'https://old.test', label: 'Ancien lien' }, methode: null, polys: [] } },
+    }
+    const merged = mergeStates(local, remote)
+    expect(merged.resources.maths.revision).toBeNull()
+  })
+
+  it('les tombstones se fusionnent en additif (union) et ne dépassent pas 500 entrées, en gardant les plus récentes', () => {
+    const local = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      deletedIds: Array.from({ length: 500 }, (_, i) => ({ id: `d-${i}`, at: i })),
+    }
+    const remote = {
+      exams: [],
+      devoirs: [],
+      chapitres: [],
+      deletedIds: Array.from({ length: 3 }, (_, i) => ({ id: `d-remote-${i}`, at: 500 + i })),
+    }
+    const merged = mergeStates(local, remote)
+    expect(merged.deletedIds).toHaveLength(500)
+    expect(merged.deletedIds.map((d) => d.id)).not.toContain('d-0')
+    expect(merged.deletedIds.map((d) => d.id)).toContain('d-remote-2')
   })
 })
