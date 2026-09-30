@@ -18,9 +18,18 @@ self.addEventListener('activate', (event) => {
   )
 })
 
-// Notification push (résumé quotidien envoyé par mcp-server/, optionnel —
-// voir src/logic/push.js). Le payload est du texte brut (titre + corps),
-// pas du JSON, pour rester simple des deux côtés.
+// Notification push (rappels envoyés par mcp-server/, optionnel — voir
+// src/logic/push.js). Le payload est du texte brut (titre + corps), pas du
+// JSON, pour rester simple des deux côtés. Toujours affichée, que l'onglet
+// du site soit ouvert ou non (c'est justement l'intérêt du push par rapport
+// aux notifications navigateur, qui elles requièrent l'onglet ouvert) —
+// showNotification() est appelé sans condition sur l'état de la page.
+//
+// Pas de `tag` fixe partagé entre tous les envois : plusieurs rappels de
+// nature différente peuvent arriver rapprochés (ex. un par badge à 7h) et
+// doivent tous rester visibles plutôt que de se remplacer silencieusement
+// les uns les autres (comportement par défaut d'un `tag` identique sans
+// `renotify: true`).
 self.addEventListener('push', (event) => {
   const text = event.data?.text() ?? 'Il y a du nouveau sur ton suivi de révisions.'
   const [title, ...rest] = text.split('\n')
@@ -29,7 +38,6 @@ self.addEventListener('push', (event) => {
       body: rest.join('\n') || text,
       icon: `${SCOPE}icons/icon-192.png`,
       badge: `${SCOPE}icons/icon-192.png`,
-      tag: 'l3-physique-digest', // remplace une notif du même jour plutôt que d'empiler
     }),
   )
 })

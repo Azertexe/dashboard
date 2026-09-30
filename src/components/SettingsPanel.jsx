@@ -9,7 +9,15 @@ import {
   setNotificationsEnabled,
   notificationsSupported,
 } from '../logic/notifications.js'
-import { pushSupported, pushRequiresInstall, subscribeToPush, unsubscribeFromPush } from '../logic/push.js'
+import {
+  pushSupported,
+  pushRequiresInstall,
+  subscribeToPush,
+  unsubscribeFromPush,
+  workerUrl,
+  setWorkerUrl,
+  sendTestPush,
+} from '../logic/push.js'
 
 const LAYOUT_LABEL = { pc: 'PC', mac: 'Mac', iphone: 'iPhone' }
 
@@ -154,6 +162,47 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
       }
     } finally {
       setPushBusy(false)
+    }
+  }
+
+  // URL du Worker Cloudflare (mcp-server/), utilisée uniquement par le
+  // bouton de test ci-dessous — propre à chaque déploiement, jamais
+  // synchronisée (cf. logic/push.js).
+  const [workerUrlValue, setWorkerUrlValue] = useState(() => workerUrl())
+  const [testStatus, setTestStatus] = useState(null) // { ok: bool, message: string } | null
+  const [testBusy, setTestBusy] = useState(false)
+
+  const onWorkerUrlChange = (e) => {
+    setWorkerUrlValue(e.target.value)
+    setWorkerUrl(e.target.value)
+  }
+
+  const runNotificationTest = async () => {
+    setTestBusy(true)
+    setTestStatus(null)
+    const messages = []
+    let ok = true
+    try {
+      if (notifOn && notificationsSupported() && Notification.permission === 'granted') {
+        new Notification('L3 Physique — Test', { body: 'Les notifications navigateur fonctionnent.' })
+        messages.push('Navigateur : notification affichée.')
+      }
+      if (pushEndpoint) {
+        try {
+          const result = await sendTestPush(workerUrlValue)
+          messages.push(`Push : envoyé à ${result.sent} appareil(s)${result.failed ? `, ${result.failed} échec(s)` : ''}.`)
+        } catch (err) {
+          ok = false
+          messages.push(`Push : ${err.message}`)
+        }
+      }
+      if (messages.length === 0) {
+        ok = false
+        messages.push("Active au moins une des notifications ci-dessus d'abord.")
+      }
+    } finally {
+      setTestStatus({ ok, message: messages.join(' ') })
+      setTestBusy(false)
     }
   }
 
@@ -312,6 +361,49 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
                   <li>À 18h, un rappel pour chacun de ces badges pas encore validé dans la journée.</li>
                   <li>Un résumé plus large (devoirs/partiels à venir compris) une fois par jour à 3h.</li>
                 </ul>
+                <div className="settings-note" style={{ padding: 0, marginTop: 8 }}>
+                  Une notification s'affiche que le site soit ouvert ou fermé — dès qu'elle est
+                  envoyée par le serveur, elle apparaît sur cet appareil.
+                </div>
+              </div>
+            )}
+
+            {(notifOn || pushEndpoint) && (
+              <div className="settings-subpanel" style={{ marginTop: 10 }}>
+                {pushEndpoint && (
+                  <input
+                    type="text"
+                    value={workerUrlValue}
+                    onChange={onWorkerUrlChange}
+                    placeholder="URL du serveur (https://xxx.workers.dev)"
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'var(--glass-1)',
+                      border: '1px solid var(--glass-border)',
+                      outline: 'none',
+                      font: 'inherit',
+                      fontSize: 12.5,
+                      marginBottom: 8,
+                    }}
+                  />
+                )}
+                <div
+                  className="pill"
+                  onClick={testBusy ? undefined : runNotificationTest}
+                  style={testBusy ? { opacity: 0.6, pointerEvents: 'none' } : undefined}
+                >
+                  Vérifier les notifications
+                </div>
+                {testStatus && (
+                  <div
+                    className="settings-note"
+                    style={{ padding: 0, marginTop: 8, color: testStatus.ok ? undefined : 'var(--orange-ink, var(--text-dim))' }}
+                  >
+                    {testStatus.message}
+                  </div>
+                )}
               </div>
             )}
           </div>

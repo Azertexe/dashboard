@@ -2,6 +2,7 @@ import { TOOLS } from './tools.js'
 import { runBackup } from './backup.js'
 import { sendDigestPushIfDue } from './digestPush.js'
 import { runHourlyNotifications } from './scheduledNotifications.js'
+import { sendTestPush } from './testPush.js'
 
 // Serveur MCP distant (transport "Streamable HTTP") pour le dashboard L3
 // Physique — expose en outils ce que l'app fait déjà (lire/modifier
@@ -91,6 +92,15 @@ export default {
 
     if (url.pathname === '/' && request.method === 'GET') {
       return json({ ok: true, name: 'l3-physique-dashboard MCP server', endpoint: '/mcp' })
+    }
+
+    // Appelé directement par le bouton "Vérifier les notifications"
+    // (Réglages, côté app) — même garde-fou (MCP_TOKEN si configuré) que
+    // /mcp, pour ne pas laisser n'importe qui déclencher des envois.
+    if (url.pathname === '/test-push' && request.method === 'POST') {
+      if (!isAuthorized(request, env)) return json(rpcError(null, -32001, 'Non autorisé'), 401)
+      const result = await sendTestPush(env)
+      return json(result)
     }
 
     if (url.pathname !== '/mcp') {

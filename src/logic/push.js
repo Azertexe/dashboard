@@ -46,3 +46,41 @@ export async function unsubscribeFromPush() {
   const subscription = await registration.pushManager.getSubscription()
   await subscription?.unsubscribe()
 }
+
+// URL du Worker Cloudflare (mcp-server/), pour le bouton "Vérifier les
+// notifications" (Réglages) — jamais commitée (propre à chaque déploiement),
+// donc stockée localement plutôt que dans l'état synchronisé.
+const WORKER_URL_KEY = 'l3-physique-worker-url'
+
+export function workerUrl() {
+  return localStorage.getItem(WORKER_URL_KEY) ?? ''
+}
+
+export function setWorkerUrl(url) {
+  localStorage.setItem(WORKER_URL_KEY, url.trim().replace(/\/+$/, ''))
+}
+
+/** Demande au Worker d'envoyer immédiatement une notification de test à
+ * tous les appareils abonnés — voir mcp-server/src/testPush.js. Lève une
+ * erreur explicite (message affichable tel quel) plutôt que de renvoyer
+ * silencieusement un échec, pour que le bouton Réglages puisse dire
+ * précisément ce qui ne va pas. */
+export async function sendTestPush(url) {
+  if (!url) throw new Error("Renseigne d'abord l'URL du serveur (Réglages).")
+  let res
+  try {
+    res = await fetch(`${url}/test-push`, { method: 'POST' })
+  } catch {
+    throw new Error('Impossible de joindre le serveur — vérifie l\'URL et ta connexion.')
+  }
+  if (!res.ok) throw new Error(`Le serveur a répondu une erreur (${res.status}).`)
+  const result = await res.json()
+  if (result.skipped) {
+    const reasons = {
+      'not-configured': 'Le serveur push n\'est pas configuré (VAPID_PRIVATE_KEY_JWK manquant côté Cloudflare).',
+      'no-subscriptions': 'Aucun appareil abonné — active le push ci-dessus avant de tester.',
+    }
+    throw new Error(reasons[result.reason] ?? `Rien envoyé (${result.reason}).`)
+  }
+  return result
+}
