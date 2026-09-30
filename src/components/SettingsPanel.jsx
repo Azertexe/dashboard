@@ -74,7 +74,7 @@ const FEATURES = [
   },
   {
     title: 'Notifications',
-    desc: "Rappel navigateur (onglet ouvert requis), une fois par jour maximum, quand un badge prend du retard. Une option \"push\" séparée peut aussi prévenir app fermée, si le serveur MCP optionnel est configuré (voir mcp-server/README.md).",
+    desc: "Rappel navigateur (onglet ouvert requis), une fois par jour maximum, quand un badge prend du retard. En push (app fermée, si le serveur MCP optionnel est configuré) : rappel groupé toutes les heures (8h-22h) tant qu'un badge est en retard, une notification à 7h pour chaque badge qui devient actif ce jour-là, un rappel à 18h pour ceux pas encore validés, et un résumé plus large une fois par jour à 3h.",
   },
   {
     title: 'Synchronisation',
@@ -260,43 +260,60 @@ export default function SettingsPanel({ onClose, layoutMode, onChangeLayout, now
           </div>
         </div>
 
-        {notificationsSupported() && (
+        {(notificationsSupported() || pushSupported()) && (
           <div className="glass-tight settings-section">
             <div className="settings-section-title">Notifications</div>
-            <div className="settings-row">
-              <div className="settings-row-desc">
-                {notifOn
-                  ? 'Activées — badges en retard signalés une fois par jour, tant que l\'onglet est ouvert.'
-                  : "Recevoir une notification quand un badge prend du retard (nécessite l'onglet ouvert)."}
-              </div>
-              <div className="pill" onClick={toggleNotifications}>
-                {notifOn ? 'Désactiver' : 'Activer'}
-              </div>
-            </div>
-          </div>
-        )}
 
-        {pushSupported() && (
-          <div className="glass-tight settings-section">
-            <div className="settings-section-title">Notifications push</div>
-            <div className="settings-row">
-              <div className="settings-row-desc">
-                {pushRequiresInstall()
-                  ? "Sur iPhone, il faut d'abord ajouter le site à l'écran d'accueil (Partager → \"Sur l'écran d'accueil\") avant de pouvoir les activer."
-                  : pushEndpoint
-                    ? "Activées sur cet appareil — un résumé une fois par jour si quelque chose presse, même app fermée. Nécessite que le serveur MCP soit configuré côté Cloudflare (optionnel, voir mcp-server/README.md) ; sinon rien n'est envoyé."
-                    : "Résumé quotidien même app fermée (contrairement à \"Notifications\" ci-dessus, qui a besoin de l'onglet ouvert). Nécessite le serveur MCP configuré (optionnel)."}
-              </div>
-              {!pushRequiresInstall() && (
-                <div
-                  className="pill"
-                  onClick={pushBusy ? undefined : togglePush}
-                  style={pushBusy ? { opacity: 0.6, pointerEvents: 'none' } : undefined}
-                >
-                  {pushEndpoint ? 'Désactiver' : 'Activer'}
+            {notificationsSupported() && (
+              <div className="settings-row">
+                <div className="settings-row-desc">
+                  <strong>Navigateur</strong> —{' '}
+                  {notifOn
+                    ? "activées : badges en retard signalés une fois par jour, tant que l'onglet est ouvert."
+                    : "badges en retard signalés une fois par jour, tant que l'onglet reste ouvert."}
                 </div>
-              )}
-            </div>
+                <div className="pill" onClick={toggleNotifications}>
+                  {notifOn ? 'Désactiver' : 'Activer'}
+                </div>
+              </div>
+            )}
+
+            {pushSupported() && (
+              <div className="settings-row" style={{ marginTop: notificationsSupported() ? 10 : 0 }}>
+                <div className="settings-row-desc">
+                  <strong>Push (app fermée)</strong> —{' '}
+                  {pushRequiresInstall()
+                    ? "sur iPhone, il faut d'abord ajouter le site à l'écran d'accueil (Partager → \"Sur l'écran d'accueil\") avant de pouvoir les activer."
+                    : pushEndpoint
+                      ? 'activées sur cet appareil.'
+                      : "reçois des rappels même app fermée."}
+                </div>
+                {!pushRequiresInstall() && (
+                  <div
+                    className="pill"
+                    onClick={pushBusy ? undefined : togglePush}
+                    style={pushBusy ? { opacity: 0.6, pointerEvents: 'none' } : undefined}
+                  >
+                    {pushEndpoint ? 'Désactiver' : 'Activer'}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {pushSupported() && !pushRequiresInstall() && (
+              <div className="settings-subpanel" style={{ marginTop: 10 }}>
+                <div className="settings-note" style={{ padding: 0 }}>
+                  Ce que le push envoie (Europe/Paris), si le serveur MCP est configuré côté
+                  Cloudflare (optionnel, voir mcp-server/README.md) — sinon rien n'est envoyé :
+                </div>
+                <ul style={{ margin: '6px 0 0', paddingLeft: 18, fontSize: 12, color: 'var(--text-dim)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <li>Toutes les heures entre 8h et 22h, un rappel groupé tant qu'au moins un badge est en retard.</li>
+                  <li>À 7h, une notification par badge qui devient actif (à réviser) ce jour-là.</li>
+                  <li>À 18h, un rappel pour chacun de ces badges pas encore validé dans la journée.</li>
+                  <li>Un résumé plus large (devoirs/partiels à venir compris) une fois par jour à 3h.</li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
 

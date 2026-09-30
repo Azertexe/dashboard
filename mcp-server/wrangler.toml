@@ -2,10 +2,14 @@ name = "l3-physique-mcp"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
 
-# Sauvegarde automatique quotidienne (backup.js), no-op tant que GIST_TOKEN/
-# GIST_ID ne sont pas configurés. Ne s'applique qu'aux déploiements via
-# `wrangler deploy` — si le Worker a été collé dans l'éditeur en ligne
-# Cloudflare, ce déclencheur doit être ajouté à la main : Worker → Triggers
-# → Cron Triggers → "0 3 * * *" (même README).
+# Deux déclencheurs (voir index.js pour lequel fait quoi) : sauvegarde +
+# résumé quotidien à 3h (no-op tant que GIST_TOKEN/GIST_ID ou
+# VAPID_PRIVATE_KEY_JWK ne sont pas configurés), et les rappels
+# badges-en-retard/récap du jour toutes les heures (scheduledNotifications.js,
+# no-op tant que VAPID_PRIVATE_KEY_JWK n'est pas configuré). Ne s'applique
+# qu'aux déploiements via `wrangler deploy` — si le Worker a été collé dans
+# l'éditeur en ligne Cloudflare, ces deux déclencheurs doivent être ajoutés à
+# la main : Worker → Triggers → Cron Triggers → "0 3 * * *" ET "0 * * * *"
+# (même README).
 [triggers]
-crons = ["0 3 * * *"]
+crons = ["0 3 * * *", "0 * * * *"]

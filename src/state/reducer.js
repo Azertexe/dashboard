@@ -27,6 +27,15 @@ export function emptyState() {
     history: [], // { id, at, chapitreId, courseId, side, level } — un événement par couleur VALIDÉE (clic réel), pour le graphe de progression
     pushSubscriptions: [], // { endpoint, keys: {p256dh, auth} } — un par appareil abonné aux notifications push (optionnel, voir mcp-server/)
     lastPushSentDate: null, // 'YYYY-MM-DD' — évite d'envoyer plus d'un résumé push par jour (cf. mcp-server/src/index.js)
+    // Écrits uniquement par le serveur MCP (cron horaire, cf.
+    // mcp-server/src/scheduledNotifications.js), jamais par l'app — même
+    // principe anti-doublon que lastPushSentDate, mais pour les 3 nouveaux
+    // rappels : badges en retard (une fois par créneau horaire), badges
+    // devenus actifs aujourd'hui le matin, et rappel du soir pour ceux
+    // encore pas validés.
+    lastOverdueNotifSlot: null, // 'YYYY-MM-DDTHH' (heure Europe/Paris) du dernier rappel groupé "en retard" envoyé
+    lastMorningNotifDate: null, // 'YYYY-MM-DD' (Europe/Paris) du dernier envoi du récap 7h
+    lastEveningNotifDate: null, // 'YYYY-MM-DD' (Europe/Paris) du dernier envoi du rappel 18h
     // { id, at } — un par suppression (chapitre, devoir, partiel, partie,
     // sous-partie, lien de ressource, poly). Sans ça, la fusion additive de
     // mergeStates (conçue pour ne jamais perdre un AJOUT concurrent) ne peut
@@ -645,5 +654,8 @@ export function mergeStates(local, remote) {
     // anti-doublon avec une copie locale périmée (l'app elle-même ne
     // modifie jamais ce champ).
     lastPushSentDate: remote.lastPushSentDate ?? local.lastPushSentDate,
+    lastOverdueNotifSlot: remote.lastOverdueNotifSlot ?? local.lastOverdueNotifSlot,
+    lastMorningNotifDate: remote.lastMorningNotifDate ?? local.lastMorningNotifDate,
+    lastEveningNotifDate: remote.lastEveningNotifDate ?? local.lastEveningNotifDate,
   }
 }

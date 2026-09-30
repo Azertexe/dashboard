@@ -1,6 +1,7 @@
 import { TOOLS } from './tools.js'
 import { runBackup } from './backup.js'
 import { sendDigestPushIfDue } from './digestPush.js'
+import { runHourlyNotifications } from './scheduledNotifications.js'
 
 // Serveur MCP distant (transport "Streamable HTTP") pour le dashboard L3
 // Physique — expose en outils ce que l'app fait déjà (lire/modifier
@@ -126,12 +127,22 @@ export default {
     return json(Array.isArray(body) ? responses : responses[0])
   },
 
-  // Cron Trigger (voir wrangler.toml) — sauvegarde quotidienne et résumé
-  // push, tous deux no-op tant que leurs variables ne sont pas configurées
-  // (cf. backup.js / digestPush.js). Indépendants l'un de l'autre : un échec
-  // sur l'un ne doit jamais empêcher l'autre.
+  // Cron Trigger (voir wrangler.toml) — deux déclencheurs distincts, chacun
+  // reconnu par event.cron :
+  // - quotidien 3h : sauvegarde + résumé push large (devoirs/partiels/badges
+  //   en retard, cf. backup.js / digestPush.js) ;
+  // - horaire : les 3 rappels de scheduledNotifications.js (badges en
+  //   retard 8h-22h, récap 7h, rappel du soir 18h — chacun no-op en dehors
+  //   de son heure). Tous no-op tant que VAPID_PRIVATE_KEY_JWK n'est pas
+  //   configuré. Indépendants les uns des autres : un échec sur l'un ne doit
+  //   jamais empêcher les autres.
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(runBackup(env))
-    ctx.waitUntil(sendDigestPushIfDue(env))
+    if (event.cron === '0 3 * * *') {
+      ctx.waitUntil(runBackup(env))
+      ctx.waitUntil(sendDigestPushIfDue(env))
+    }
+    if (event.cron === '0 * * * *') {
+      ctx.waitUntil(runHourlyNotifications(env))
+    }
   },
 }
