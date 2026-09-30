@@ -154,9 +154,9 @@ describe('cycle complet valide->attente->actif', () => {
 })
 
 describe('needsAttention', () => {
-  it('is true only for an active orange or jaune badge', () => {
+  it('is true immediately for an active orange or jaune badge', () => {
     const rouge = makeChapitre({ badgeCours: activeBadge(NOW - 1.5 * DAY_MS) })
-    expect(needsAttention(rouge, 'cours', NOW)).toBe(false)
+    expect(needsAttention(rouge, 'cours', NOW)).toBe(false) // rouge actif depuis 0.5j (< 1j de grâce)
 
     let c = markBadgeNow(rouge, 'cours', NOW) // -> attente vers orange
     expect(needsAttention(c, 'cours', NOW)).toBe(false) // en attente, pas encore actif
@@ -165,6 +165,18 @@ describe('needsAttention', () => {
 
     c = markBadgeNow(c, 'cours', NOW + 3 * DAY_MS) // valide orange -> attente vers jaune
     expect(needsAttention(c, 'cours', NOW + 3 * DAY_MS + 7 * DAY_MS)).toBe(true) // jaune actif
+  })
+
+  it('is false for a rouge badge active less than 1 day (point de départ normal du cycle)', () => {
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 1.9 * DAY_MS) }) // actif depuis 0.9j
+    expect(badgeStatus(c, 'cours', NOW).level).toBe(BADGE_LEVELS.ROUGE)
+    expect(needsAttention(c, 'cours', NOW)).toBe(false)
+  })
+
+  it('becomes true for a rouge badge active for 1 full day without a click (oubli réel)', () => {
+    const c = makeChapitre({ badgeCours: activeBadge(NOW - 2 * DAY_MS) }) // actif depuis 1j
+    expect(badgeStatus(c, 'cours', NOW).level).toBe(BADGE_LEVELS.ROUGE)
+    expect(needsAttention(c, 'cours', NOW)).toBe(true)
   })
 
   it('is false for an active vert badge (the pulse is enough)', () => {
