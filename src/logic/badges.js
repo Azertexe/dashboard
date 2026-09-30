@@ -164,10 +164,13 @@ export function activeSinceTimestamp(chapitre, side, now = Date.now()) {
 }
 
 /**
- * Vrai si ce badge mérite un signal d'alerte au niveau de la matière (orange
- * ou jaune ACTIFS : "vous prenez du retard"). Une attente en cours (grisée)
- * n'alerte pas — ce n'est pas encore le moment d'agir — et le vert (avec son
- * pulse bleu) se signale déjà tout seul.
+ * Vrai si ce badge mérite un signal d'alerte au niveau de la matière : orange
+ * ou jaune ACTIFS ("vous prenez du retard"), immédiatement — ou rouge ACTIF
+ * resté sans clic depuis plus d'1 jour (le tout premier jour du rouge actif
+ * reste le point de départ normal du cycle, pas un retard ; au-delà, ça
+ * devient un vrai oubli). Une attente en cours (grisée) n'alerte pas — ce
+ * n'est pas encore le moment d'agir — et le vert (avec son pulse bleu) se
+ * signale déjà tout seul.
  *
  * Le forçage debug (forcedAlert) ne peut jouer que sur un badge EN COULEUR
  * (phase 'active') — jamais pendant une attente grisée ni en standby, sinon
@@ -178,7 +181,13 @@ export function needsAttention(chapitre, side, now = Date.now()) {
   const badge = badgeOf(chapitre, side)
   const { phase, level } = badgeStatus(chapitre, side, now)
   if (badge.forcedAlert != null) return phase === 'active' && badge.forcedAlert
-  return phase === 'active' && (level === BADGE_LEVELS.ORANGE || level === BADGE_LEVELS.JAUNE)
+  if (phase !== 'active') return false
+  if (level === BADGE_LEVELS.ORANGE || level === BADGE_LEVELS.JAUNE) return true
+  if (level === BADGE_LEVELS.ROUGE) {
+    const since = activeSinceTimestamp(chapitre, side, now)
+    return since != null && now - since >= DAY_MS
+  }
+  return false
 }
 
 /** Mode debug (Réglages) : force l'affichage (ou le masquage) du point
