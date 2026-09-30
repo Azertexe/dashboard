@@ -2,9 +2,21 @@ import { COURSES } from '../data/courses.js'
 import ExamGauge from './ExamGauge.jsx'
 import DevoirsCard from './DevoirsCard.jsx'
 import MountainLogo from './MountainLogo.jsx'
+import TodayBriefCard from './TodayBriefCard.jsx'
 import { useStore } from '../state/store.jsx'
 
-export default function Home({ now, layoutMode, onGoCours, onGoTd, onGoPartiels, onGoDevoirs, onGoStats, onGoAgenda, onOpenExam }) {
+export default function Home({
+  now,
+  layoutMode,
+  onGoCours,
+  onGoTd,
+  onGoPartiels,
+  onGoDevoirs,
+  onGoStats,
+  onGoAgenda,
+  onOpenExam,
+  onOpenCourse,
+}) {
   const { state, dispatch } = useStore()
   const nbChapitres = state.chapitres.length
 
@@ -14,6 +26,8 @@ export default function Home({ now, layoutMode, onGoCours, onGoTd, onGoPartiels,
 
   return (
     <div className="home-shell">
+      <TodayBriefCard now={now} onOpenCourse={onOpenCourse} />
+
       <ExamGauge
         exams={state.exams}
         devoirs={state.devoirs}

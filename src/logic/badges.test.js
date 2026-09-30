@@ -10,6 +10,7 @@ import {
   activateChapitre,
   forceBadgeLevel,
   setForcedAlert,
+  activeSinceTimestamp,
 } from './badges.js'
 
 function emptyBadge() {
@@ -326,6 +327,43 @@ describe('activateChapitre', () => {
   it('is a no-op if that side is already active', () => {
     const c = makeChapitre({ badgeCours: activeBadge(NOW - DAY_MS) })
     expect(activateChapitre(c, 'cours', NOW + DAY_MS)).toBe(c)
+  })
+})
+
+describe('activeSinceTimestamp (détection "devenu actif aujourd\'hui", cf. notifications 7h/18h)', () => {
+  it('renvoie null si le badge est en standby ou encore en attente (pas encore actif)', () => {
+    const standby = makeChapitre()
+    expect(activeSinceTimestamp(standby, 'cours', NOW)).toBeNull()
+
+    const enAttente = makeChapitre({ badgeCours: activeBadge(NOW - 0.5 * DAY_MS) }) // rouge pas encore atteint (attend 1j)
+    expect(activeSinceTimestamp(enAttente, 'cours', NOW)).toBeNull()
+  })
+
+  it("renvoie l'instant exact où le rouge est devenu actif (activatedAt + 1 jour, le délai 'none')", () => {
+    const activatedAt = NOW - 1.5 * DAY_MS
+    const c = makeChapitre({ badgeCours: activeBadge(activatedAt) })
+    expect(badgeStatus(c, 'cours', NOW).level).toBe(BADGE_LEVELS.ROUGE)
+    expect(activeSinceTimestamp(c, 'cours', NOW)).toBe(activatedAt + DAY_MS)
+  })
+
+  it("après un clic, l'ancre change (validatedAt) et le délai suit la couleur validée (orange : 3 jours)", () => {
+    const activatedAt = NOW - 10 * DAY_MS
+    let c = makeChapitre({ badgeCours: activeBadge(activatedAt) })
+    c = markBadgeNow(c, 'cours', NOW - 4 * DAY_MS) // valide le rouge il y a 4 jours
+    expect(badgeStatus(c, 'cours', NOW).level).toBe(BADGE_LEVELS.ORANGE) // 4j > 3j d'attente
+    expect(activeSinceTimestamp(c, 'cours', NOW)).toBe((NOW - 4 * DAY_MS) + 3 * DAY_MS)
+  })
+
+  it("un badge validé CE MATIN n'a plus le même activeSinceTimestamp que ce matin (se décale, pas besoin de suivi séparé)", () => {
+    const activatedAt = NOW - 10 * DAY_MS
+    let c = makeChapitre({ badgeCours: activeBadge(activatedAt) })
+    // Ce matin : rouge devient actif (attente 'none' déjà écoulée depuis longtemps).
+    const matin = activeSinceTimestamp(c, 'cours', NOW)
+    // L'utilisateur clique (valide le rouge) ce matin même.
+    c = markBadgeNow(c, 'cours', NOW)
+    // Ce soir, tant que l'attente vers l'orange (3j) n'est pas écoulée : phase 'wait', donc null.
+    expect(activeSinceTimestamp(c, 'cours', NOW + 8 * 60 * 60 * 1000)).toBeNull()
+    expect(activeSinceTimestamp(c, 'cours', NOW + 8 * 60 * 60 * 1000)).not.toBe(matin)
   })
 })
 

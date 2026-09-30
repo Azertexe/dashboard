@@ -192,6 +192,7 @@ export default function App() {
                 onGoStats={goStats}
                 onGoAgenda={goAgenda}
                 onOpenExam={setOpenExamId}
+                onOpenCourse={openCourseFromAgenda}
               />
             )}
 

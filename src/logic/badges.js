@@ -146,6 +146,23 @@ export function badgeStatus(chapitre, side, now = Date.now()) {
   return { phase: 'active', level: nextLevel, daysLeft: 0, pulse, fromClick: false }
 }
 
+/** Timestamp (ms) auquel la couleur ACTIVE actuelle a été atteinte — null si
+ * ce badge n'est pas dans la phase 'active' (standby ou en attente). Sert à
+ * détecter "ce badge est devenu actif AUJOURD'HUI" — chaque appelant décide
+ * seul de ce que "aujourd'hui" veut dire (fuseau de l'appareil côté app via
+ * isSameLocalDay, Europe/Paris côté serveur MCP), badges.js reste agnostique
+ * du fuseau. Se re-décale tout seul si le badge est re-validé (nouvelle
+ * ancre) : un badge du matin déjà coché n'a donc plus ce même timestamp le
+ * soir, pas besoin de suivre "déjà notifié" séparément. */
+export function activeSinceTimestamp(chapitre, side, now = Date.now()) {
+  const status = badgeStatus(chapitre, side, now)
+  if (status.phase !== 'active') return null
+  const badge = badgeOf(chapitre, side)
+  const stageKey = badge.validatedStage ?? 'none'
+  const anchor = badge.validatedAt ?? badge.activatedAt
+  return anchor + WAIT_DAYS[stageKey] * DAY_MS
+}
+
 /**
  * Vrai si ce badge mérite un signal d'alerte au niveau de la matière (orange
  * ou jaune ACTIFS : "vous prenez du retard"). Une attente en cours (grisée)
