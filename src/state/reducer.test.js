@@ -1,5 +1,27 @@
 import { describe, it, expect } from 'vitest'
-import { reducer, migrateChapitre, migrateDevoir, emptyState } from './reducer.js'
+import { reducer, migrateChapitre, migrateDevoir, emptyState, stableStringify } from './reducer.js'
+
+describe('stableStringify — indépendant de l\'ordre des clés (cf. state/store.jsx)', () => {
+  it('donne le même résultat pour deux objets aux clés dans un ordre différent', () => {
+    const a = { x: 1, y: 2, z: { p: 1, q: 2 } }
+    const b = { z: { q: 2, p: 1 }, y: 2, x: 1 }
+    expect(stableStringify(a)).toBe(stableStringify(b))
+  })
+
+  it('donne un résultat différent si les valeurs diffèrent réellement', () => {
+    expect(stableStringify({ a: 1 })).not.toBe(stableStringify({ a: 2 }))
+  })
+
+  it("préserve l'ordre des éléments d'un tableau (il porte du sens)", () => {
+    expect(stableStringify([1, 2, 3])).not.toBe(stableStringify([3, 2, 1]))
+  })
+
+  it('gère les tableaux d\'objets aux clés dans un ordre différent', () => {
+    const a = [{ id: 1, nom: 'x' }]
+    const b = [{ nom: 'x', id: 1 }]
+    expect(stableStringify(a)).toBe(stableStringify(b))
+  })
+})
 
 describe('abonnements push', () => {
   it('SUBSCRIBE_PUSH ajoute un abonnement, ignore un doublon (même endpoint)', () => {

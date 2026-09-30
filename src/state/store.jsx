@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { subscribeRemoteState, pushRemoteState, fetchRemoteState, firebaseConfigured } from '../firebase/sync.js'
-import { emptyState, normalizeState, reducer, mergeStates } from './reducer.js'
+import { emptyState, normalizeState, reducer, mergeStates, stableStringify } from './reducer.js'
 
 // mergeById/mergeStates/reducer vivent dans reducer.js (aucune dépendance
 // React/Firebase) pour pouvoir être réutilisés par autre chose que l'app —
@@ -64,7 +64,14 @@ export function StoreProvider({ children }) {
         clearTimeout(stallTimer)
         setSyncStatus('synced')
         if (!remoteState) return
-        const remoteJSON = JSON.stringify(remoteState)
+        // stableStringify (clés triées) plutôt que JSON.stringify brut : deux
+        // objets logiquement identiques mais construits différemment (état
+        // local accumulé au fil de très nombreuses actions reducer vs. état
+        // tel que renvoyé par Firestore) ont un ordre de clés différent —
+        // JSON.stringify les verrait alors, à tort, comme "différents" à
+        // chaque comparaison, ce qui empêche le statut de jamais repasser à
+        // "Synchronisé" (boucle perpétuelle de fusion/republication).
+        const remoteJSON = stableStringify(remoteState)
         // Soit un doublon d'événement, soit l'écho de notre propre écriture
         // (Firestore renvoie toujours un snapshot après un push) : dans les
         // deux cas, rien à réappliquer.
@@ -77,7 +84,7 @@ export function StoreProvider({ children }) {
         // ajouté quelque chose localement (pas encore poussé) au moment où
         // cette mise à jour distante arrive, on ne l'écrase pas.
         const merged = mergeStates(stateRef.current, remoteState)
-        if (JSON.stringify(merged) !== JSON.stringify(stateRef.current)) {
+        if (stableStringify(merged) !== stableStringify(stateRef.current)) {
           dispatch({ type: 'IMPORT_STATE', state: merged })
         }
       },
@@ -95,7 +102,7 @@ export function StoreProvider({ children }) {
 
   useEffect(() => {
     if (!firebaseConfigured()) return
-    const json = JSON.stringify(state)
+    const json = stableStringify(state)
     // Cet état EST ce qu'on vient de recevoir d'un autre appareil : ne pas
     // le republier (sinon boucle inutile, même si sans risque).
     if (json === lastRemoteJSONRef.current) return
@@ -106,7 +113,7 @@ export function StoreProvider({ children }) {
       // appareil entre-temps et pas encore reçu par celui-ci.
       const remote = await fetchRemoteState()
       const merged = mergeStates(state, remote)
-      const mergedJSON = JSON.stringify(merged)
+      const mergedJSON = stableStringify(merged)
       lastLocalPushedJSONRef.current = mergedJSON
       lastRemoteJSONRef.current = mergedJSON
       await pushRemoteState(merged, () => setSyncStatus('error'))
