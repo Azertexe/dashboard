@@ -659,3 +659,22 @@ export function mergeStates(local, remote) {
     lastEveningNotifDate: remote.lastEveningNotifDate ?? local.lastEveningNotifDate,
   }
 }
+
+/** JSON.stringify dont l'ordre des clés d'un objet ne dépend jamais de leur
+ * ordre d'insertion (triées alphabétiquement à chaque niveau) — l'ordre des
+ * éléments d'un tableau, lui, reste inchangé (il porte du sens). À utiliser
+ * partout où deux objets logiquement identiques doivent comparer égaux même
+ * construits différemment (state/store.jsx : état local reconstruit au fil
+ * de très nombreuses actions reducer vs. état tel que renvoyé par Firestore),
+ * sous peine de détecter un "changement" fantôme à chaque comparaison — donc
+ * de rester bloqué en boucle de sync (statut "Synchronisation…" qui ne
+ * repasse jamais à "Synchronisé") sur un appareil dont l'état local a
+ * accumulé un ordre de clés différent de celui du document distant. */
+export function stableStringify(value) {
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).sort()
+    return `{${keys.map((k) => `${JSON.stringify(k)}:${stableStringify(value[k])}`).join(',')}}`
+  }
+  return JSON.stringify(value)
+}
