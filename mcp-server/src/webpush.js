@@ -123,7 +123,7 @@ const VAPID_SUBJECT = 'mailto:push@l3-physique.invalid'
 // viennent bien de ce serveur ; identique à src/logic/push.js côté app).
 // Seule la clé privée correspondante (VAPID_PRIVATE_KEY_JWK, un secret
 // Cloudflare) permet de signer avec elle.
-export const VAPID_PUBLIC_KEY = 'BIp7O-NSO3PZsDXfJYh4o_vrDd9DlDxgt7hZjUKQzuLpDvCuJt7mLHYlGNd2MNtbxRHilWOKJhUAnaxJ6DDFYLw'
+export const VAPID_PUBLIC_KEY = 'BGfdyF75ZDVZqVCm8vfiAkQ-z5dAbfl1mpbyo958Q_wKS70nt4AlzLnOVbj9H9aXfubHo0eR-DxiFft02h38tw8'
 
 /** Envoie une notification push (texte brut) à un abonnement donné.
  * `env` doit fournir VAPID_PRIVATE_KEY_JWK (secret Cloudflare). */
