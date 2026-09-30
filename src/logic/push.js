@@ -2,7 +2,7 @@
 // config Firebase : elle ne sert qu'à vérifier que les push viennent bien de
 // ce serveur, la clé privée correspondante reste côté serveur, en secret
 // Cloudflare). Générée une seule fois pour ce projet.
-export const VAPID_PUBLIC_KEY = 'BIp7O-NSO3PZsDXfJYh4o_vrDd9DlDxgt7hZjUKQzuLpDvCuJt7mLHYlGNd2MNtbxRHilWOKJhUAnaxJ6DDFYLw'
+export const VAPID_PUBLIC_KEY = 'BGfdyF75ZDVZqVCm8vfiAkQ-z5dAbfl1mpbyo958Q_wKS70nt4AlzLnOVbj9H9aXfubHo0eR-DxiFft02h38tw8'
 
 export function pushSupported() {
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window
